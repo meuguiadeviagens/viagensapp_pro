@@ -11,7 +11,7 @@
     
     <style>
 
-/* --- ESTILOS PARA O BOTÃO VOLTAR AO TOPO --- */
+/* --- ESTILOS PARA O BOTÃO VOLTAR AO TOPO ---  https://meuguiadeviagens.github.io/viagensapp_pro */
         #back-to-top-btn {
             transition: opacity 0.3s, transform 0.3s;
         }
@@ -1373,7 +1373,7 @@
             createUserWithEmailAndPassword,
             signOut 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; 
-        import { getDatabase, ref, onValue, set, push, remove, update } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, push, remove, update, get } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         // Configuração do Firebase
         const firebaseConfig = {
@@ -2698,28 +2698,59 @@ window.addEventListener('popstate', (event) => {
         }
         
         function setupTripsListener() {
-            if (!tripsRef) return;
-            onValue(tripsRef, (snapshot) => {
-                const data = snapshot.val();
-                tripsData = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+            // As importações de 'get' e 'ref' do Firebase já devem estar no topo do seu script
+            // import { getDatabase, ref, onValue, set, push, remove, update, get } from "...";
+            
+            const user = auth.currentUser;
+            if (!user) return;
+
+            // 1. Aponta para a lista de "atalhos" do usuário (ex: /users/UID_ATUAL/memberOf)
+            const memberOfRef = ref(db, `users/${user.uid}/memberOf`);
+
+            // 2. Fica "ouvindo" qualquer mudança nessa lista de atalhos
+            onValue(memberOfRef, async (snapshot) => {
+                const tripIdsObject = snapshot.val(); // Ex: { "ID_VIAGEM_1": true, "ID_VIAGEM_2": true }
+
+                if (!tripIdsObject) {
+                    tripsData = []; // Limpa os dados se o usuário não pertence a nenhuma viagem
+                    renderTripLists(); // Renderiza a lista (que mostrará a mensagem de "nenhuma viagem")
+                    return;
+                }
+
+                // 3. Pega apenas as chaves (os IDs das viagens) do objeto
+                const tripIds = Object.keys(tripIdsObject);
+
+                // 4. Cria uma lista de "promessas" para buscar os detalhes de cada viagem
+                const tripPromises = tripIds.map(tripId => {
+                    const tripRef = ref(db, `trips/${tripId}`);
+                    // Usa get() para buscar os dados da viagem uma única vez
+                    return get(tripRef); 
+                });
+
+                // 5. Espera todas as buscas terminarem
+                const tripSnapshots = await Promise.all(tripPromises);
+
+                // 6. Monta o array final de viagens, juntando o ID com os dados
+                const newTripsData = tripSnapshots
+                    .filter(snap => snap.exists()) // Garante que a viagem realmente existe em /trips
+                    .map(snap => ({
+                        id: snap.key,
+                        ...snap.val()
+                    }));
+
+                // Atualiza a variável global com os novos dados
+                tripsData = newTripsData;
                 
+                // Ordena os dados como antes
                 tripsData.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
 
+                // A lógica para decidir qual tela renderizar continua a mesma
                 if (document.getElementById('details-view').classList.contains('hidden')) {
                     renderTripLists();
-                } else if(currentTripId) {
+                } else if (currentTripId) {
                     const currentTripExists = tripsData.some(t => t.id === currentTripId);
                     if (currentTripExists) {
                         renderTripDetails(currentTripId);
-
-                        if (isReorganizing) {
-                            if (reorganizationMode === 'days') {
-                                initializeDaySorting();
-                            } else if (reorganizationMode === 'activities') {
-                                initializeActivitySorting();
-                            }
-                        }
-
                     } else {
                         showTripsView();
                     }
@@ -3886,8 +3917,25 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         // --- LISTENERS DOS FORMULÁRIOS ---
         document.getElementById('add-trip-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            // Pega o usuário logado no momento.
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Você precisa estar logado para criar uma viagem.");
+                return;
+            }
+
             const tripName = document.getElementById('trip-name').value;
-            const newTrip = {
+
+            // 1. Define a referência para a coleção principal de viagens (/trips)
+            const mainTripsRef = ref(db, 'trips');
+            
+            // 2. Usa push() para gerar uma chave (ID) única para a nova viagem
+            const newTripRef = push(mainTripsRef);
+            const newTripId = newTripRef.key; // Guarda o ID da nova viagem
+
+            // 3. Monta o objeto da viagem, já incluindo a lista de "membros"
+            const newTripData = {
                 name: tripName,
                 destination: document.getElementById('trip-destination').value,
                 startDate: document.getElementById('trip-start-date').value,
@@ -3895,10 +3943,24 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 imageUrl: `https://placehold.co/600x400/a3e635/1e293b?text=${encodeURIComponent(tripName)}`,
                 featured: false,
                 customLinkText: '',
-                customLinkUrl: ''
+                customLinkUrl: '',
+                members: {
+                    // Adiciona o UID do usuário atual como o "owner" (dono)
+                    [user.uid]: "owner" 
+                }
             };
-            const newTripRef = push(tripsRef);
-            await set(newTripRef, newTrip);
+
+            // 4. Prepara as duas operações que faremos no banco de dados
+            const updates = {};
+            // Operação A: Salva os dados completos da viagem em /trips/{novoId}
+            updates[`/trips/${newTripId}`] = newTripData;
+            // Operação B: Cria o "atalho" para o usuário em /users/{uid}/memberOf/{novoId}
+            updates[`/users/${user.uid}/memberOf/${newTripId}`] = true;
+
+            // 5. Executa as duas operações de uma só vez para garantir a consistência
+            const dbRef = ref(db);
+            await update(dbRef, updates);
+
             closeModal('add-trip-modal');
         });
 
