@@ -11,6 +11,14 @@
     
     <style>
 
+        #app:has(#details-view:not(.hidden)) #trips-view {
+            display: none !important;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
 /* --- ESTILOS PARA O BOTÃO VOLTAR AO TOPO ---  https://meuguiadeviagens.github.io/viagensapp_pro */
         #back-to-top-btn {
             transition: opacity 0.3s, transform 0.3s;
@@ -231,50 +239,59 @@
     </form>
 
     <div id="signup-view" class="hidden max-w-lg mx-auto mt-12 mb-12 p-8 bg-white rounded-lg shadow-lg">
-    <h2 class="text-2xl font-bold mb-6 text-center">Crie sua Conta</h2>
-    <p class="text-sm text-center text-slate-500 mb-6">
-        O e-mail e a senha que você digitou na tela anterior serão usados para criar sua conta.
-    </p>
-    <form id="signup-form" class="space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="signup-fullname" class="block text-sm font-medium text-slate-600">Nome completo</label>
-                <input type="text" id="signup-fullname" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
+        <h2 class="text-2xl font-bold mb-6 text-center">Crie sua Conta</h2>
+        
+        <form id="signup-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="signup-email" class="block text-sm font-medium text-slate-600">E-mail</label>
+                    <input type="email" id="signup-email" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
+                </div>
+                <div>
+                    <label for="signup-password" class="block text-sm font-medium text-slate-600">Senha (mínimo 6 caracteres)</label>
+                    <input type="password" id="signup-password" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
+                </div>
+            </div>
+
+            <div class="border-t pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="signup-fullname" class="block text-sm font-medium text-slate-600">Nome completo</label>
+                    <input type="text" id="signup-fullname" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
+                </div>
+                <div>
+                    <label for="signup-birthdate" class="block text-sm font-medium text-slate-600">Data de Nascimento</label>
+                    <input type="date" id="signup-birthdate" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="signup-cpf" class="block text-sm font-medium text-slate-600">CPF</label>
+                    <input type="text" id="signup-cpf" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
+                </div>
+                <div>
+                    <label for="signup-passport" class="block text-sm font-medium text-slate-600">Passaporte (Opcional)</label>
+                    <input type="text" id="signup-passport" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md">
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="signup-country" class="block text-sm font-medium text-slate-600">País de residência</label>
+                    <input type="text" id="signup-country" value="Brasil" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
+                </div>
+                <div>
+                    <label for="signup-city" class="block text-sm font-medium text-slate-600">Cidade/UF</label>
+                    <input type="text" id="signup-city" placeholder="Ex: São Paulo/SP" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
+                </div>
             </div>
             <div>
-                <label for="signup-birthdate" class="block text-sm font-medium text-slate-600">Data de Nascimento</label>
-                <input type="date" id="signup-birthdate" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
+                <label for="signup-phone" class="block text-sm font-medium text-slate-600">Telefone</label>
+                <input type="tel" id="signup-phone" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
             </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="signup-cpf" class="block text-sm font-medium text-slate-600">CPF</label>
-                <input type="text" id="signup-cpf" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
+            <div class="flex flex-col md:flex-row justify-end gap-3 pt-4">
+                <button id="cancel-signup-btn" type="button" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Voltar</button>
+                <button id="confirm-signup-btn" type="submit" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Finalizar Cadastro</button>
             </div>
-            <div>
-                <label for="signup-passport" class="block text-sm font-medium text-slate-600">Passaporte (Opcional)</label>
-                <input type="text" id="signup-passport" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md">
-            </div>
-        </div>
-         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label for="signup-country" class="block text-sm font-medium text-slate-600">País de residência</label>
-                <input type="text" id="signup-country" value="Brasil" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
-            </div>
-            <div>
-                <label for="signup-city" class="block text-sm font-medium text-slate-600">Cidade/UF</label>
-                <input type="text" id="signup-city" placeholder="Ex: São Paulo/SP" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
-            </div>
-        </div>
-         <div>
-            <label for="signup-phone" class="block text-sm font-medium text-slate-600">Telefone</label>
-            <input type="tel" id="signup-phone" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
-        </div>
-        <div class="flex flex-col md:flex-row justify-end gap-3 pt-4">
-            <button id="cancel-signup-btn" type="button" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Voltar</button>
-            <button id="confirm-signup-btn" type="submit" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Finalizar Cadastro</button>
-        </div>
-    </form>
+        </form>
     </div>
 
     <div id="app" class="max-w-7xl mx-auto p-4 md:p-8 hidden">
@@ -301,7 +318,6 @@
                             <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-slate-100">Sair</a>
                         </div>
                     </div>
-                </div>
                 </div>
             </header>
 
@@ -1137,9 +1153,8 @@
                     <input type="text" id="note-title" placeholder="Ex: Dica de restaurante do amigo" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
                 </div>
                 <div>
-                    <label for="note-author" class="block text-sm font-medium text-slate-600">Incluído por</label>
-                    <select id="note-author" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
-                        </select>
+                    <label class="block text-sm font-medium text-slate-600">Incluído por</label>
+                    <p id="note-author-display" class="mt-1 block w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-md text-slate-600"></p>
                 </div>
                 <div>
                     <label for="note-description" class="block text-sm font-medium text-slate-600">Descrição</label>
@@ -1220,7 +1235,7 @@
         </div>
     </div>
 
-    </div> <div id="view-expense-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+    <div id="view-expense-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
         <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md m-4">
             <h3 id="view-expense-description" class="text-2xl font-semibold text-slate-800 mb-2"></h3>
             <p class="text-lg font-medium text-slate-600 mb-4">Total: <span id="view-expense-amount" class="font-bold text-indigo-600"></span></p>
@@ -1397,6 +1412,8 @@
         
         // Variáveis globais
         let db, tripsRef;
+        let activeTripListeners = {};
+        let currentUserProfile = {};
         let tripsData = []; 
         let currentTripId = null;
         let currentEditingItemIndex = null;
@@ -1473,7 +1490,7 @@ window.addEventListener('popstate', (event) => {
 
             // 5. Salva a lista atualizada no banco de dados
             const updates = { [`/${currentTripId}/paidSettlements`]: currentPaidSettlements };
-            await update(tripsRef, updates);
+            await update(ref(db, 'trips'), updates);
 
             // 6. Atualiza o estilo visual do item instantaneamente
             const transactionElement = checkbox.closest('.transaction-item');
@@ -1715,7 +1732,7 @@ window.addEventListener('popstate', (event) => {
                 const trip = tripsData.find(t => t.id === currentTripId);
                 const updatedExpenses = (trip.sharedExpenses || []).filter(e => e.id !== expenseId);
                 const updates = { [`/${currentTripId}/sharedExpenses`]: updatedExpenses };
-                await update(tripsRef, updates);
+                await update(ref(db, 'trips'), updates);
                 closeModal('confirm-delete-modal');
             });
         };
@@ -1771,12 +1788,15 @@ window.addEventListener('popstate', (event) => {
                 console.log("Usuário logado:", user.uid);
 
                 db = getDatabase(app);
-                tripsRef = ref(db, `users/${user.uid}/trips`);
+                
 
                 // --- NOVO: BUSCA O PERFIL DO USUÁRIO ---
                 const userProfileRef = ref(db, `users/${user.uid}/profile`);
                     onValue(userProfileRef, (snapshot) => {
                         const profile = snapshot.val();
+
+                currentUserProfile = profile || {}; // Guarda o perfil do usuário logado
+
                         if (profile && profile.fullName) {
                             const firstName = profile.fullName.split(' ')[0];
                             document.getElementById('user-menu-name').textContent = firstName;
@@ -1839,12 +1859,8 @@ window.addEventListener('popstate', (event) => {
         // Ação do formulário de CADASTRO DETALHADO
         document.getElementById('signup-form').addEventListener('submit', (e) => {
             e.preventDefault();
-
-            // 1. Pega os dados de login (que continuam na outra tela)
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-
-            // 2. Pega os novos dados do perfil
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value;
             const profileData = {
                 fullName: document.getElementById('signup-fullname').value,
                 birthDate: document.getElementById('signup-birthdate').value,
@@ -1854,30 +1870,32 @@ window.addEventListener('popstate', (event) => {
                 city: document.getElementById('signup-city').value,
                 phone: document.getElementById('signup-phone').value,
             };
-
-            // 3. Validação básica
             if (!email || !password || !profileData.fullName || !profileData.birthDate || !profileData.cpf) {
                 alert('Por favor, preencha todos os campos obrigatórios.');
                 return;
             }
+            let userId;
 
-            // 4. Cria o usuário no Firebase Authentication
             createUserWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
+                .then(async (userCredential) => {
                     const user = userCredential.user;
-                    console.log('Usuário criado no Auth:', user.uid);
+                    userId = user.uid;
+                    
+                    const encodedEmail = btoa(email.toLowerCase());
 
-                    // 5. Se der certo, salva os dados adicionais no Realtime Database
-                    const userProfileRef = ref(db, `users/${user.uid}/profile`);
-                    return set(userProfileRef, profileData);
-                })
-                .then(() => {
-                    alert('Conta criada com sucesso! Você já está logado.');
-                    // O onAuthStateChanged cuidará de esconder as telas de login/cadastro
-                    // e mostrar a tela principal do app.
+                    try {
+                        // Operação 1: Salva o perfil
+                        await set(ref(db, `users/${userId}/profile`), profileData);
+                        // Operação 2: Salva o índice de e-mail
+                        await set(ref(db, `emailToUid/${encodedEmail}`), userId);
+                        
+                        alert('Conta criada com sucesso! Você já está logado.');
+                    } catch (error) {
+                        console.error("Erro ao salvar dados do novo usuário:", error);
+                        alert("A conta foi criada, mas houve um erro ao salvar os dados do perfil.");
+                    }
                 })
                 .catch((error) => {
-                    // 6. Lida com erros
                     console.error("Erro no cadastro:", error.code);
                     if (error.code === 'auth/weak-password') {
                         alert('Senha muito fraca. A senha deve ter pelo menos 6 caracteres.');
@@ -1928,7 +1946,7 @@ window.addEventListener('popstate', (event) => {
             if (expenseIndex > -1) {
                 currentExpenses[expenseIndex] = updatedExpense;
                 const updates = { [`/${currentTripId}/sharedExpenses`]: currentExpenses };
-                await update(tripsRef, updates);
+                await update(ref(db, 'trips'), updates);
                 closeModal('edit-expense-modal');
             } else {
                 alert('Erro: não foi possível encontrar a despesa para atualizar.');
@@ -2042,38 +2060,100 @@ window.addEventListener('popstate', (event) => {
             const nameInput = document.getElementById('traveler-name');
             const emailInput = document.getElementById('traveler-email');
             const name = nameInput.value.trim();
-            const email = emailInput.value.trim();
+            const email = emailInput.value.trim().toLowerCase();
 
             if (!name || !email) {
                 alert('Por favor, preencha o nome e o e-mail do viajante.');
                 return;
             }
 
+            const encodedEmail = btoa(email);
+            const emailToUidRef = ref(db, `emailToUid/${encodedEmail}`);
+            const snapshot = await get(emailToUidRef);
+
+            if (!snapshot.exists()) {
+                alert('Usuário não encontrado. Peça para que ele crie uma conta primeiro.');
+                return;
+            }
+
+            const newTravelerUid = snapshot.val();
             const trip = tripsData.find(t => t.id === currentTripId);
             const currentTravelers = trip.travelers || [];
+
+            if (currentTravelers.some(traveler => traveler.email.toLowerCase() === email)) {
+                alert('Este viajante já foi adicionado à viagem.');
+                return;
+            }
             
             const newTraveler = { name, email };
             const updatedTravelers = [...currentTravelers, newTraveler];
 
-            const updates = { [`/${currentTripId}/travelers`]: updatedTravelers };
-            await update(tripsRef, updates);
+            const updates = {};
+            updates[`/trips/${currentTripId}/travelers`] = updatedTravelers;
+            updates[`/trips/${currentTripId}/members/${newTravelerUid}`] = true;
+            updates[`/users/${newTravelerUid}/memberOf/${currentTripId}`] = true;
 
-            // Limpa os campos após adicionar
-            nameInput.value = '';
-            emailInput.value = '';
-            renderTravelersList(currentTripId);
-            // O listener do onValue irá chamar renderTravelersList automaticamente
+            try {
+                await update(ref(db), updates);
+                nameInput.value = '';
+                emailInput.value = '';
+            } catch (error) {
+                console.error("Erro ao adicionar viajante:", error);
+                alert("Ocorreu um erro ao adicionar o viajante. Verifique as permissões do banco de dados.");
+            }
+
+            renderTravelersList(currentTripId); 
         };
 
         window.removeTraveler = async (index) => {
             const trip = tripsData.find(t => t.id === currentTripId);
-            const currentTravelers = trip.travelers || [];
-            
-            currentTravelers.splice(index, 1); // Remove o viajante pelo índice
+            if (!trip || !trip.travelers) return;
 
-            const updates = { [`/${currentTripId}/travelers`]: currentTravelers };
-            await update(tripsRef, updates);
-            renderTravelersList(currentTripId);
+            // 1. Identifica o viajante a ser removido com base no índice
+            const travelerToRemove = trip.travelers[index];
+            if (!travelerToRemove) {
+                console.error("Viajante não encontrado no índice fornecido.");
+                return;
+            }
+
+            const emailToRemove = travelerToRemove.email.toLowerCase();
+
+            // 2. Pede confirmação ao usuário, pois é uma ação destrutiva
+            if (!confirm(`Tem certeza que deseja remover ${travelerToRemove.name} da viagem? Esta ação também removerá o acesso dele(a) à viagem.`)) {
+                return;
+            }
+
+            // 3. Encontra o UID (ID de usuário) do viajante a ser removido
+            const encodedEmail = btoa(emailToRemove);
+            const emailToUidRef = ref(db, `emailToUid/${encodedEmail}`);
+            const snapshot = await get(emailToUidRef);
+
+            let uidToRemove = null;
+            if (snapshot.exists()) {
+                uidToRemove = snapshot.val();
+            } else {
+                console.warn(`UID para o e-mail ${emailToRemove} não encontrado. O viajante será removido da lista, mas o acesso pode não ser totalmente revogado se o UID não for encontrado.`);
+            }
+
+            // 4. Prepara a atualização de "mão dupla" para a remoção
+            // Cria um novo array de viajantes sem a pessoa que foi removida
+            const updatedTravelers = trip.travelers.filter((_, i) => i !== index);
+
+            const updates = {};
+            // Lado 1: Atualiza a lista de 'travelers' da viagem
+            updates[`/trips/${currentTripId}/travelers`] = updatedTravelers;
+
+            if (uidToRemove) {
+                // Lado 2: Remove o viajante da lista de 'members' da viagem (revoga a permissão)
+                updates[`/trips/${currentTripId}/members/${uidToRemove}`] = null; // null para deletar
+                // Lado 3: Remove a viagem da lista 'memberOf' do viajante (remove da lista dele)
+                updates[`/users/${uidToRemove}/memberOf/${currentTripId}`] = null; // null para deletar
+            }
+
+            // 5. Executa a atualização atômica
+            await update(ref(db), updates);
+            
+            // O listener em tempo real cuidará de atualizar a interface do usuário
         };
                  
 
@@ -2698,66 +2778,87 @@ window.addEventListener('popstate', (event) => {
         }
         
         function setupTripsListener() {
-            // As importações de 'get' e 'ref' do Firebase já devem estar no topo do seu script
-            // import { getDatabase, ref, onValue, set, push, remove, update, get } from "...";
-            
             const user = auth.currentUser;
             if (!user) return;
 
-            // 1. Aponta para a lista de "atalhos" do usuário (ex: /users/UID_ATUAL/memberOf)
+            // A referência para a lista de viagens do usuário continua a mesma
             const memberOfRef = ref(db, `users/${user.uid}/memberOf`);
 
-            // 2. Fica "ouvindo" qualquer mudança nessa lista de atalhos
-            onValue(memberOfRef, async (snapshot) => {
-                const tripIdsObject = snapshot.val(); // Ex: { "ID_VIAGEM_1": true, "ID_VIAGEM_2": true }
+            // Este listener principal descobre QUAIS viagens o usuário tem
+            onValue(memberOfRef, (snapshot) => {
+                const tripIdsObject = snapshot.val() || {};
+                const newTripIds = Object.keys(tripIdsObject);
 
-                if (!tripIdsObject) {
-                    tripsData = []; // Limpa os dados se o usuário não pertence a nenhuma viagem
-                    renderTripLists(); // Renderiza a lista (que mostrará a mensagem de "nenhuma viagem")
-                    return;
-                }
+                // --- Gerenciamento Inteligente de Listeners ---
 
-                // 3. Pega apenas as chaves (os IDs das viagens) do objeto
-                const tripIds = Object.keys(tripIdsObject);
-
-                // 4. Cria uma lista de "promessas" para buscar os detalhes de cada viagem
-                const tripPromises = tripIds.map(tripId => {
-                    const tripRef = ref(db, `trips/${tripId}`);
-                    // Usa get() para buscar os dados da viagem uma única vez
-                    return get(tripRef); 
+                // 1. Desconecta listeners de viagens que o usuário não tem mais acesso
+                Object.keys(activeTripListeners).forEach(tripId => {
+                    if (!newTripIds.includes(tripId)) {
+                        const { unsubscribe } = activeTripListeners[tripId];
+                        unsubscribe(); // Desconecta o "ouvinte" daquela viagem
+                        delete activeTripListeners[tripId];
+                        console.log(`Listener para a viagem ${tripId} desconectado.`);
+                    }
                 });
 
-                // 5. Espera todas as buscas terminarem
-                const tripSnapshots = await Promise.all(tripPromises);
+                // Remove viagens antigas da lista local
+                tripsData = tripsData.filter(trip => newTripIds.includes(trip.id));
 
-                // 6. Monta o array final de viagens, juntando o ID com os dados
-                const newTripsData = tripSnapshots
-                    .filter(snap => snap.exists()) // Garante que a viagem realmente existe em /trips
-                    .map(snap => ({
-                        id: snap.key,
-                        ...snap.val()
-                    }));
+                // 2. Conecta listeners para CADA viagem, individualmente
+                newTripIds.forEach(tripId => {
+                    // Só conecta se já não estivermos "ouvindo" esta viagem
+                    if (!activeTripListeners[tripId]) {
+                        const tripRef = ref(db, `trips/${tripId}`);
+                        
+                        // onValue retorna uma função "unsubscribe" que podemos usar para desconectar depois
+                        const unsubscribe = onValue(tripRef, (tripSnapshot) => {
+                            if (tripSnapshot.exists()) {
+                                const updatedTrip = { id: tripSnapshot.key, ...tripSnapshot.val() };
+                                
+                                // Atualiza ou adiciona a viagem na nossa lista de dados local
+                                const index = tripsData.findIndex(t => t.id === updatedTrip.id);
+                                if (index > -1) {
+                                    tripsData[index] = updatedTrip; // Atualiza a viagem existente
+                                } else {
+                                    tripsData.push(updatedTrip); // Adiciona a nova viagem
+                                }
 
-                // Atualiza a variável global com os novos dados
-                tripsData = newTripsData;
-                
-                // Ordena os dados como antes
-                tripsData.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+                                // Reordena e redesenha a tela com os dados atualizados
+                                tripsData.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+                                renderCurrentView(); // Esta é a função que redesenha a tela
+                            } else {
+                                // Se a viagem foi deletada da base de dados, removemos da lista local
+                                tripsData = tripsData.filter(t => t.id !== tripId);
+                                renderCurrentView();
+                            }
+                        });
 
-                // A lógica para decidir qual tela renderizar continua a mesma
-                if (document.getElementById('details-view').classList.contains('hidden')) {
-                    renderTripLists();
-                } else if (currentTripId) {
-                    const currentTripExists = tripsData.some(t => t.id === currentTripId);
-                    if (currentTripExists) {
-                        renderTripDetails(currentTripId);
-                    } else {
-                        showTripsView();
+                        // Guarda a função de "unsubscribe" para uso futuro
+                        activeTripListeners[tripId] = { unsubscribe };
+                        console.log(`Listener para a viagem ${tripId} conectado.`);
                     }
+                });
+
+                // Se o usuário não tiver mais nenhuma viagem, limpa a tela
+                if (newTripIds.length === 0) {
+                    tripsData = [];
+                    activeTripListeners = {};
+                    renderCurrentView();
                 }
-            }, error => {
-                console.error("Error listening to Realtime Database:", error);
             });
+        }
+
+        function renderCurrentView() {
+            const trip = tripsData.find(t => t.id === currentTripId);
+
+            if (currentTripId && trip) {
+                // Se temos um ID de viagem ativo e essa viagem existe, renderiza os detalhes
+                renderTripDetails(currentTripId);
+            } else {
+                // Caso contrário, mostra a lista de viagens
+                renderTripLists();
+                showTripsView(); // Garante que a tela correta está visível
+            }
         }
 
           function setupIconPickers() {
@@ -3019,29 +3120,41 @@ let dividerHtml = '';
         };
         
         window.showTripsView = () => {
+            currentTripId = null; 
             history.pushState({ view: 'trips' }, 'Todas as Viagens', '#');
 
+            // --- A LÓGICA CORRETA DE NAVEGAÇÃO ---
+            // Mostra o painel da lista de viagens
             document.getElementById('trips-view').classList.remove('hidden');
+            // Esconde o painel de detalhes
             document.getElementById('details-view').classList.add('hidden');
-            document.getElementById('back-to-trips-btn').classList.add('hidden'); 
-            currentTripId = null;
-        }
+
+            // Esconde o botão flutuante de "voltar"
+            document.getElementById('back-to-trips-btn').classList.add('hidden');
+        };
 
         window.showTripDetails = (tripId) => {
+            currentTripId = tripId;
             history.pushState({ view: 'details', tripId: tripId }, 'Detalhes da Viagem', '#trip=' + tripId);
-
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
+            // Prepara os painéis internos para a visualização
             document.getElementById('documents-panel').classList.add('collapsed');
             document.getElementById('spending-panel').classList.add('collapsed');
-            // O painel de anotações inicia aberto por padrão (sem a classe 'collapsed')
             document.getElementById('notes-panel').classList.remove('collapsed');
 
+            // Carrega os dados da viagem
             renderTripDetails(tripId);
+
+            // --- A LÓGICA CORRETA DE NAVEGAÇÃO ---
+            // Esconde APENAS o painel da lista de viagens
             document.getElementById('trips-view').classList.add('hidden');
+            // Mostra o painel de detalhes
             document.getElementById('details-view').classList.remove('hidden');
+
+            // Mostra o botão flutuante de "voltar"
             document.getElementById('back-to-trips-btn').classList.remove('hidden');
-        }
+        };
         
         window.toggleDocumentsPanel = () => {
             document.getElementById('documents-panel').classList.toggle('collapsed');
@@ -3077,12 +3190,18 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
 
         window.openModal = (modalId) => {
             const modal = document.getElementById(modalId);
+            if (!modal) return; // Adiciona uma verificação de segurança
+            
             modal.classList.replace('hidden', 'flex');
 
+            // --- CORREÇÃO IMPORTANTE AQUI ---
             if (modalId === 'add-note-modal') {
-                populateTravelersDropdown('note-author');
+                // A linha antiga que causava o erro (populateTravelersDropdown) foi removida.
+                // A nova linha preenche o nome do usuário automaticamente no novo campo de texto.
+                document.getElementById('note-author-display').textContent = currentUserProfile.fullName || 'Usuário';
             }
 
+            // O resto da lógica para os outros modais continua a mesma
             if (currentTripId) {
                 const trip = tripsData.find(t => t.id === currentTripId);
                 if (trip && trip.startDate) {
@@ -3099,7 +3218,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
                     }
                 }
             }
-        }
+        };
 
         window.closeModal = (modalId) => {
             document.getElementById(modalId).classList.replace('flex', 'hidden');
@@ -3399,7 +3518,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
 
             // A nova forma de salvar:
             // 1. Criamos uma referência para a categoria específica (ex: .../trips/ID_VIAGEM/flights)
-            const categoryRef = ref(db, `users/${auth.currentUser.uid}/trips/${currentTripId}/${category}`);
+            const categoryRef = ref(db, `trips/${currentTripId}/${category}`);
             // 2. Usamos push() para que o Firebase crie um ID único para o novo item
             const newItemRef = push(categoryRef);
             // 3. Salvamos o novo item nesse local único
@@ -3413,7 +3532,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
         window.deleteTrip = async (event, tripId) => {
             event.stopPropagation();
             showConfirmDelete('Tem certeza que deseja excluir esta viagem?', async () => {
-                const tripToDeleteRef = ref(db, `users/${auth.currentUser.uid}/trips/${tripId}`);
+                const tripToDeleteRef = ref(db, `trips/${tripId}`);
                 await remove(tripToDeleteRef);
                 closeModal('confirm-delete-modal');
             });
@@ -3462,7 +3581,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
         window.deleteDetailItem = async (category, itemId) => {
             if (!currentTripId) return;
             showConfirmDelete(`Tem certeza que deseja excluir o item?`, async () => {
-                const itemRef = ref(db, `users/${auth.currentUser.uid}/trips/${currentTripId}/${category}/${itemId}`);
+                const itemRef = ref(db, `trips/${currentTripId}/${category}/${itemId}`);
                 await remove(itemRef);
                 closeModal('confirm-delete-modal');
             });
@@ -3489,7 +3608,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             // Salva o objeto inteiro com a nova ordem
             const updates = {};
             updates[`/${currentTripId}/${category}`] = reorderedItemsObject;
-            await update(tripsRef, updates);
+            await update(ref(db, 'trips'), updates);
         };
         
         window.openAddActivityModal = (date) => {
@@ -3509,7 +3628,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
                 const currentActivities = trip.activities ? Object.values(trip.activities) : [];
                 const updatedActivities = currentActivities.filter(a => a.id !== activityId);
                 const updates = { [`/${currentTripId}/activities`]: updatedActivities };
-                await update(tripsRef, updates);
+                await update(ref(db, 'trips'), updates);
                 closeModal('confirm-delete-modal');
             });
         };
@@ -3521,7 +3640,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
                 if (!trip || !trip.notes) return;
                 const updatedNotes = trip.notes.filter(n => n.id !== noteId);
                 const updates = { [`/${currentTripId}/notes`]: updatedNotes };
-                await update(tripsRef, updates);
+                await update(ref(db, 'trips'), updates);
                 closeModal('confirm-delete-modal');
             });
         };
@@ -3532,7 +3651,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
                 if (!trip || !trip.documents) return;
                 const updatedDocuments = trip.documents.filter(d => d.id !== docId);
                 const updates = { [`/${currentTripId}/documents`]: updatedDocuments };
-                await update(tripsRef, updates);
+                await update(ref(db, 'trips'), updates);
                 closeModal('confirm-delete-modal');
             });
         };
@@ -3552,7 +3671,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             [documents[index], documents[newIndex]] = [documents[newIndex], documents[index]];
 
             const updates = { [`/${currentTripId}/documents`]: documents };
-            await update(tripsRef, updates);
+            await update(ref(db, 'trips'), updates);
         };
 
 	
@@ -3572,7 +3691,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             [notes[index], notes[newIndex]] = [notes[newIndex], notes[index]];
 
             const updates = { [`/${currentTripId}/notes`]: notes };
-            await update(tripsRef, updates);
+            await update(ref(db, 'trips'), updates);
         };
 
         window.toggleFeatured = async (event, tripId) => {
@@ -3581,7 +3700,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             if (!trip) return;
             const newFeaturedStatus = !trip.featured;
             const updates = { [`/${tripId}/featured`]: newFeaturedStatus };
-            await update(tripsRef, updates);
+            await update(ref(db, 'trips'), updates);
         }
 
         // --- SEÇÃO ATUALIZADA: LÓGICA DE REORGANIZAÇÃO DO ROTEIRO COM DUPLO MODO ---
@@ -3610,7 +3729,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             });
 
             const updates = { [`/${currentTripId}/activities`]: updatedActivities };
-            await update(tripsRef, updates);
+            await update(ref(db, 'trips'), updates);
         }
 
         function initializeActivitySorting() {
@@ -3656,7 +3775,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
                 [`/${tripId}/endDate`]: newEndDate.toISOString().split('T')[0]
             };
             
-            await update(tripsRef, updates);
+            await update(ref(db, 'trips'), updates);
         }
         
         function getDaysArray(trip) {
@@ -3737,41 +3856,45 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             const list = document.getElementById('daily-itinerary-list');
             const startBtn = document.getElementById('reorg-start-btn');
             const actionsContainer = document.getElementById('reorg-actions-container');
-            // AQUI ESTÁ A CORREÇÃO: O ID do botão foi corrigido.
             const scrollTopBtn = document.getElementById('back-to-top-btn');
 
             isReorganizing = !list.classList.contains('is-reorganizing');
             list.classList.toggle('is-reorganizing', isReorganizing);
 
             if (isReorganizing) {
-                // Prepara a interface para o modo de reordenação
+                // Entrando no modo de reordenação
                 const trip = tripsData.find(t => t.id === currentTripId);
                 initialTripState = {
                     activities: trip.activities ? JSON.parse(JSON.stringify(trip.activities)) : {},
                     endDate: trip.endDate
                 };
-                startBtn.style.display = 'none';
-                actionsContainer.style.display = 'flex';
-                // Adicionada uma verificação para segurança
+                
+                // --- CORREÇÃO AQUI ---
+                startBtn.classList.add('hidden');
+                actionsContainer.classList.remove('hidden'); // Remove a classe 'hidden' para mostrar
+                
                 if (scrollTopBtn) {
                     scrollTopBtn.style.display = 'none';
                 }
 
-                // A sua ideia em ação: Simula um clique direto no botão "Ativid."
                 document.getElementById('reorg-mode-activities-btn').click();
 
-            } else { // Lógica para sair do modo de reordenação
+            } else { 
+                // Saindo do modo de reordenação
                 if (isCancelling && initialTripState) {
                     const updates = {
                         [`/${currentTripId}/activities`]: initialTripState.activities,
                         [`/${currentTripId}/endDate`]: initialTripState.endDate
                     };
-                    update(tripsRef, updates);
+                    // Corrigindo para a referência correta do banco de dados
+                    update(ref(db, 'trips'), updates);
                 }
                 initialTripState = null;
-                startBtn.style.display = 'block';
-                actionsContainer.style.display = 'none';
-                // Adicionada uma verificação para segurança
+                
+                // --- CORREÇÃO AQUI ---
+                startBtn.classList.remove('hidden');
+                actionsContainer.classList.add('hidden'); // Adiciona a classe 'hidden' para esconder
+                
                 if (scrollTopBtn) {
                     scrollTopBtn.style.display = '';
                 }
@@ -3819,7 +3942,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
 window.saveDivider = async function(tripId, categoryKey, value) {
             // Define o caminho no banco de dados onde o divisor será salvo
             // Ex: public_trips/-Mabc123/dividers/Hospedagens
-            const dbPath = `users/${auth.currentUser.uid}/trips/${tripId}/dividers/${categoryKey}`;
+            const dbPath = `trips/${tripId}/dividers/${categoryKey}`;
             const dividerRef = ref(db, dbPath);
 
             const divider = parseInt(value);
@@ -3917,24 +4040,22 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         // --- LISTENERS DOS FORMULÁRIOS ---
         document.getElementById('add-trip-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            // Pega o usuário logado no momento.
             const user = auth.currentUser;
-            if (!user) {
-                alert("Você precisa estar logado para criar uma viagem.");
+            if (!user) return;
+
+            const userProfileRef = ref(db, `users/${user.uid}/profile`);
+            const profileSnapshot = await get(userProfileRef);
+            const userProfile = profileSnapshot.val();
+
+            if (!userProfile || !userProfile.fullName) {
+                alert("Erro: Não foi possível encontrar seu nome no perfil. Tente novamente.");
                 return;
             }
 
             const tripName = document.getElementById('trip-name').value;
+            const newTripRef = push(ref(db, 'trips'));
+            const newTripId = newTripRef.key;
 
-            // 1. Define a referência para a coleção principal de viagens (/trips)
-            const mainTripsRef = ref(db, 'trips');
-            
-            // 2. Usa push() para gerar uma chave (ID) única para a nova viagem
-            const newTripRef = push(mainTripsRef);
-            const newTripId = newTripRef.key; // Guarda o ID da nova viagem
-
-            // 3. Monta o objeto da viagem, já incluindo a lista de "membros"
             const newTripData = {
                 name: tripName,
                 destination: document.getElementById('trip-destination').value,
@@ -3942,26 +4063,21 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 endDate: document.getElementById('trip-end-date').value,
                 imageUrl: `https://placehold.co/600x400/a3e635/1e293b?text=${encodeURIComponent(tripName)}`,
                 featured: false,
-                customLinkText: '',
-                customLinkUrl: '',
-                members: {
-                    // Adiciona o UID do usuário atual como o "owner" (dono)
-                    [user.uid]: "owner" 
-                }
+                members: { [user.uid]: "owner" },
+                travelers: [{ name: userProfile.fullName, email: user.email }]
             };
 
-            // 4. Prepara as duas operações que faremos no banco de dados
-            const updates = {};
-            // Operação A: Salva os dados completos da viagem em /trips/{novoId}
-            updates[`/trips/${newTripId}`] = newTripData;
-            // Operação B: Cria o "atalho" para o usuário em /users/{uid}/memberOf/{novoId}
-            updates[`/users/${user.uid}/memberOf/${newTripId}`] = true;
-
-            // 5. Executa as duas operações de uma só vez para garantir a consistência
-            const dbRef = ref(db);
-            await update(dbRef, updates);
-
-            closeModal('add-trip-modal');
+            try {
+                // Operação 1: Salva os dados da viagem em /trips/{idDaViagem}
+                await set(newTripRef, newTripData);
+                // Operação 2: Salva a referência no perfil do usuário
+                await set(ref(db, `users/${user.uid}/memberOf/${newTripId}`), true);
+                
+                closeModal('add-trip-modal');
+            } catch (error) {
+                console.error("Erro ao criar viagem:", error);
+                alert("Ocorreu um erro ao criar a viagem. Verifique as permissões do banco de dados.");
+            }
         });
 
         document.getElementById('add-document-form').addEventListener('submit', async function(e) {
@@ -3982,7 +4098,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             const updatedDocuments = [...currentDocuments, newDocument];
             const updates = { [`/${currentTripId}/documents`]: updatedDocuments };
-            await update(tripsRef, updates);
+            await update(ref(db, 'trips'), updates);
 
             input.value = '';
         });
@@ -4004,7 +4120,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 customLinkText: document.getElementById('edit-trip-link-text').value.trim(),
                 customLinkUrl: document.getElementById('edit-trip-link-url').value.trim(),
             };
-            const tripToUpdateRef = ref(db, `users/${auth.currentUser.uid}/trips/${currentTripId}`);
+            const tripToUpdateRef = ref(db, `trips/${currentTripId}`);
             await update(tripToUpdateRef, updates);
 
             // --- INÍCIO DAS NOVAS LINHAS ---
@@ -4031,7 +4147,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 legType: document.getElementById('edit-flight-leg-type').value, date: document.getElementById('edit-flight-date').value, departureTime: document.getElementById('edit-flight-departure-time').value, arrivalTime: document.getElementById('edit-flight-arrival-time').value, origin: document.getElementById('edit-flight-origin').value, destination: document.getElementById('edit-flight-destination').value, company: document.getElementById('edit-flight-company').value, code: document.getElementById('edit-flight-code').value, flightType: document.getElementById('edit-flight-type').value,
                 cost: document.getElementById('edit-flight-cost').value,
             };
-            const itemRef = ref(db, `users/${auth.currentUser.uid}/trips/${currentTripId}/flights/${currentEditingItemId}`);
+            const itemRef = ref(db, `trips/${currentTripId}/flights/${currentEditingItemId}`);
             await update(itemRef, updatedFlight);
             closeModal('edit-flight-modal');
             currentEditingItemId = null;
@@ -4044,7 +4160,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 type: document.getElementById('edit-transport-type').value, from: document.getElementById('edit-transport-origin').value, to: document.getElementById('edit-transport-destination').value, description: document.getElementById('edit-transport-description').value, departureDate: document.getElementById('edit-transport-departure-date').value, departureTime: document.getElementById('edit-transport-departure-time').value, arrivalDate: document.getElementById('edit-transport-arrival-date').value, arrivalTime: document.getElementById('edit-transport-arrival-time').value,
                 cost: document.getElementById('edit-transport-cost').value,
             };
-            const itemRef = ref(db, `users/${auth.currentUser.uid}/trips/${currentTripId}/transport/${currentEditingItemId}`);
+            const itemRef = ref(db, `trips/${currentTripId}/transport/${currentEditingItemId}`);
             await update(itemRef, updatedTransport);
             closeModal('edit-transport-modal');
             currentEditingItemId = null;
@@ -4058,7 +4174,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 cost: document.getElementById('edit-lodging-cost').value,
                 link: document.getElementById('edit-lodging-link').value.trim()
             };
-            const itemRef = ref(db, `users/${auth.currentUser.uid}/trips/${currentTripId}/lodging/${currentEditingItemId}`);
+            const itemRef = ref(db, `trips/${currentTripId}/lodging/${currentEditingItemId}`);
             await update(itemRef, updatedLodging);
             closeModal('edit-lodging-modal');
             currentEditingItemId = null;
@@ -4081,7 +4197,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const currentActivities = trip.activities ? [...Object.values(trip.activities)] : [];
             currentActivities.push(newActivity);
             const updates = { [`/${currentTripId}/activities`]: currentActivities };
-            await update(tripsRef, updates);
+            await update(ref(db, 'trips'), updates);
             closeModal('add-activity-modal');
         });
 
@@ -4104,7 +4220,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 cost: document.getElementById('edit-activity-cost').value,
                 };
                 const updates = { [`/${currentTripId}/activities`]: currentActivities };
-                await update(tripsRef, updates);
+                await update(ref(db, 'trips'), updates);
             }
             closeModal('edit-activity-modal');
         });
@@ -4117,7 +4233,7 @@ cost: document.getElementById('edit-activity-cost').value,
             const newNote = {
                 id: Date.now().toString(),
                 title: document.getElementById('note-title').value,
-                author: document.getElementById('note-author').value,
+                author: currentUserProfile.fullName || 'Usuário',
                 description: document.getElementById('note-description').value,
                 link: document.getElementById('note-link').value.trim(),
                 icon: document.getElementById('note-icon').value,
@@ -4125,8 +4241,14 @@ cost: document.getElementById('edit-activity-cost').value,
 
             const currentNotes = trip.notes || [];
             currentNotes.push(newNote);
-            const updates = { [`/${currentTripId}/notes`]: currentNotes };
-            await update(tripsRef, updates);
+
+            // --- CORREÇÃO AQUI ---
+            // Removemos a barra "/" do início do caminho.
+            // O caminho agora é relativo ao ref('trips'), que é o correto.
+            const updates = { [`${currentTripId}/notes`]: currentNotes };
+            
+            await update(ref(db, 'trips'), updates);
+            
             closeModal('add-note-modal');
         });
 
@@ -4147,7 +4269,7 @@ cost: document.getElementById('edit-activity-cost').value,
                     icon: document.getElementById('edit-note-icon').value,
                 };
                 const updates = { [`/${currentTripId}/notes`]: trip.notes };
-                await update(tripsRef, updates);
+                await update(ref(db, 'trips'), updates);
             }
             closeModal('edit-note-modal');
         });
@@ -4191,7 +4313,7 @@ cost: document.getElementById('edit-activity-cost').value,
             const currentExpenses = trip.sharedExpenses || [];
             currentExpenses.push(newExpense);
             const updates = { [`/${currentTripId}/sharedExpenses`]: currentExpenses };
-            await update(tripsRef, updates);
+            await update(ref(db, 'trips'), updates);
 
             e.target.reset(); // Limpa o formulário
 
@@ -4486,7 +4608,7 @@ cost: document.getElementById('edit-activity-cost').value,
             document.querySelectorAll('#expense-participants-checkboxes input[type="checkbox"]').forEach(checkbox => {
                 checkbox.checked = isChecked;
             });
-        });
+        });        
 
     </script>
 
