@@ -972,6 +972,8 @@
                             <input type="email" id="traveler-email" placeholder="email@exemplo.com" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm">
                         </div>
                         <button type="button" onclick="addTraveler()" class="flex-shrink-0 bg-green-600 text-white font-semibold px-4 h-10 rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300 self-center">Adicionar</button>
+                    <div id="traveler-suggestions" class="hidden absolute top-full left-0 right-0 z-10 bg-white border border-slate-300 rounded-md shadow-lg mt-1 max-h-40 overflow-y-auto">
+                            </div>
                     </div>
                 </div>                
                  <div class="border-t pt-4 mt-2">
@@ -1186,12 +1188,7 @@
                 <div>
                     <label for="edit-note-title" class="block text-sm font-medium text-slate-600">Nome da Anotação</label>
                     <input type="text" id="edit-note-title" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
-                </div>
-                <div>
-                    <label for="edit-note-author" class="block text-sm font-medium text-slate-600">Incluído por</label>
-                    <select id="edit-note-author" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
-                        </select>
-                </div>
+                </div>                
                 <div>
                     <label for="edit-note-description" class="block text-sm font-medium text-slate-600">Descrição</label>
                     <textarea id="edit-note-description" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm"></textarea>
@@ -2274,26 +2271,33 @@ window.addEventListener('popstate', (event) => {
         }
         
         function createTripCard(trip, isFeaturedCard) {
-            
-            console.log("-----------------------------------------");
-            console.log("VERIFICANDO CARD:", trip.name);
-            console.log("ID do usuário logado (currentUserId):", currentUserId);
-            console.log("Objeto 'members' da viagem:", trip.members);
-            
-            if (trip.members && currentUserId) {
-                console.log("Permissão deste usuário na viagem:", trip.members[currentUserId]);
-                console.log("Resultado da comparação (é 'owner'?):", trip.members[currentUserId] === 'owner');
-            } else {
-                console.log("Não foi possível checar a permissão (usuário ou 'members' não encontrado).");
-            }
-            // --- FIM DO BLOCO DE DIAGNÓSTICO ---
-            
             const tripCard = document.createElement('div');
             tripCard.className = 'trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative';
             tripCard.onclick = () => showTripDetails(trip.id);
             
-            // A verificação precisa ser estritamente igual a "owner"
             const isOwner = currentUserId && trip.members && trip.members[currentUserId] === 'owner';
+
+            // --- INÍCIO DA LÓGICA PARA ENCONTRAR O NOME DO DONO ---
+            let ownerDisplayName = 'Carregando...';
+            // Garante que a viagem tenha as informações necessárias
+            if (trip.members && trip.travelers) {
+                // 1. Encontra o ID do usuário que é o "owner"
+                const ownerUid = Object.keys(trip.members).find(uid => trip.members[uid] === 'owner');
+                
+                if (ownerUid) {
+                    // 2. Encontra o objeto do viajante que corresponde ao ID do dono
+                    const ownerTraveler = trip.travelers.find(traveler => traveler.uid === ownerUid);
+                    if (ownerTraveler && ownerTraveler.name) {
+                         // 3. Pega o primeiro nome do dono para exibir
+                        ownerDisplayName = ownerTraveler.name.split(' ')[0];
+                    } else {
+                        ownerDisplayName = "Dono não encontrado";
+                    }
+                } else {
+                    ownerDisplayName = "Sem dono definido";
+                }
+            }
+            // --- FIM DA LÓGICA ---
 
             let deleteButtonHtml = '';
             if (isOwner) {
@@ -2304,7 +2308,6 @@ window.addEventListener('popstate', (event) => {
                 `;
             }
 
-            // ... O resto da função continua igual ...
             let imageContainerClasses = 'h-48';
             let textContainerClasses = 'p-6';
             let titleClasses = 'text-2xl';
@@ -2340,7 +2343,9 @@ window.addEventListener('popstate', (event) => {
                 <div class="${imageContainerClasses} bg-cover bg-center transition-all duration-300" style="background-image: url('${trip.imageUrl}')"></div>
                 <div class="${textContainerClasses}">
                     <h3 class="${titleClasses} font-bold text-slate-900 truncate">${trip.name}</h3>
-                    <p class="text-slate-500 mt-1 text-sm truncate">${trip.destination}</p>
+                    
+                    <p class="text-slate-500 mt-1 text-sm truncate">Criado por ${ownerDisplayName}</p>
+                    
                     <div class="mt-2 text-xs font-medium text-slate-600">
                        ${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}
                     </div>
@@ -3405,7 +3410,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             currentEditingItemId = noteId;
             document.getElementById('edit-note-id').value = note.id;
             document.getElementById('edit-note-title').value = note.title;
-            populateTravelersDropdown('edit-note-author', note.author);
+            //populateTravelersDropdown('edit-note-author', note.author);
             document.getElementById('edit-note-description').value = note.description || '';
             document.getElementById('edit-note-link').value = note.link || '';
             
@@ -3741,6 +3746,33 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             await update(ref(db, 'trips'), updates);
         }
 
+        function fullLogout() {
+            console.log("Iniciando logout completo...");
+
+            // 1. Desconecta todos os listeners ativos do Firebase
+            Object.keys(activeTripListeners).forEach(tripId => {
+                const { unsubscribe } = activeTripListeners[tripId];
+                unsubscribe(); // Executa a função para parar de "ouvir" cada viagem
+            });
+            console.log("Todos os listeners de viagens foram desconectados.");
+
+            // 2. Limpa todas as variáveis de estado para seus valores iniciais
+            tripsData = [];
+            activeTripListeners = {};
+            currentTripId = null;
+            // A variável 'currentUserId' já é limpa pelo onAuthStateChanged, mas podemos garantir aqui também
+            currentUserId = null; 
+
+            // 3. Esvazia a interface gráfica para evitar mostrar dados antigos rapidamente
+            document.getElementById('upcoming-trips-list').innerHTML = '';
+            document.getElementById('past-trips-list').innerHTML = '';
+            document.getElementById('featured-trips-panel').innerHTML = '';
+
+            // 4. Finalmente, desloga o usuário do Firebase
+            signOut(auth).catch(error => console.error("Erro ao sair:", error));
+            console.log("Logout do Firebase concluído.");
+        }
+
         // --- SEÇÃO ATUALIZADA: LÓGICA DE REORGANIZAÇÃO DO ROTEIRO COM DUPLO MODO ---
         
         async function updateActivityOrderAndDate() {
@@ -4019,7 +4051,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         document.getElementById('logout-btn').addEventListener('click', (e) => {
             e.preventDefault();
             userMenuDropdown.classList.add('hidden');
-            signOut(auth).catch(error => console.error("Erro ao sair:", error));
+            fullLogout();
         });
 
         // Abre o modal e preenche com os dados atuais do usuário (VERSÃO CORRIGIDA)
@@ -4301,7 +4333,10 @@ cost: document.getElementById('edit-activity-cost').value,
                 trip.notes[noteIndex] = {
                     ...trip.notes[noteIndex],
                     title: document.getElementById('edit-note-title').value,
-                    author: document.getElementById('edit-note-author').value,
+                    
+                    // A LINHA ABAIXO FOI REMOVIDA
+                    // author: document.getElementById('edit-note-author').value,
+                    
                     description: document.getElementById('edit-note-description').value,
                     link: document.getElementById('edit-note-link').value.trim(),
                     icon: document.getElementById('edit-note-icon').value,
