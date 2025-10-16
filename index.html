@@ -1493,6 +1493,8 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getDatabase(app);
+        
 
         const loginView = document.getElementById('login-form');
         const appView = document.getElementById('app');
@@ -1501,7 +1503,8 @@
         
         // Variáveis globais
         let currentUserId = null; 
-        let db, tripsRef;
+        const db = getDatabase(app);
+        let tripsRef;
         let activeTripListeners = {};
         let currentUserProfile = {};
         let tripsData = []; 
@@ -2130,9 +2133,7 @@ window.addEventListener('popstate', (event) => {
                 
                 // 1. USUÁRIO ESTÁ LOGADO
                 //console.log("Usuário logado:", user.uid);
-
-                db = getDatabase(app);
-                
+                 
                 const userProfileRef = ref(db, `users/${user.uid}/profile`);
                     onValue(userProfileRef, (snapshot) => {
                         const profile = snapshot.val();
