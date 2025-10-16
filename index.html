@@ -332,7 +332,7 @@
                 <div id="past-trips-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.0080 | 14/10/2025, 19:02</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.0080 | 15/10/2025, 21:26</p>
             </main>
         </div>
 
@@ -1411,6 +1411,7 @@
 
         
         // Variáveis globais
+        let currentUserId = null; 
         let db, tripsRef;
         let activeTripListeners = {};
         let currentUserProfile = {};
@@ -1784,28 +1785,27 @@ window.addEventListener('popstate', (event) => {
         // "PORTEIRO": gerencia qual tela é exibida
         onAuthStateChanged(auth, (user) => {
             if (user) {
+                // --- INÍCIO DA MODIFICAÇÃO ---
+                currentUserId = user.uid; // Guarda o ID do usuário logado
+                // --- FIM DA MODIFICAÇÃO ---
+                
                 // 1. USUÁRIO ESTÁ LOGADO
                 console.log("Usuário logado:", user.uid);
 
                 db = getDatabase(app);
                 
-
-                // --- NOVO: BUSCA O PERFIL DO USUÁRIO ---
                 const userProfileRef = ref(db, `users/${user.uid}/profile`);
                     onValue(userProfileRef, (snapshot) => {
                         const profile = snapshot.val();
-
-                currentUserProfile = profile || {}; // Guarda o perfil do usuário logado
-
+                        currentUserProfile = profile || {};
                         if (profile && profile.fullName) {
                             const firstName = profile.fullName.split(' ')[0];
                             document.getElementById('user-menu-name').textContent = firstName;
                         } else {
-                            document.getElementById('user-menu-name').textContent = "Perfil"; // Mudamos para "Perfil" para ficar mais claro
+                            document.getElementById('user-menu-name').textContent = "Perfil";
                         }
                     });
 
-                // Esconde AMBAS as telas de login/cadastro e mostra o app
                 loginView.classList.add('hidden');
                 signupView.classList.add('hidden');
                 appView.classList.remove('hidden');
@@ -1814,10 +1814,13 @@ window.addEventListener('popstate', (event) => {
                 setupIconPickers();
 
             } else {
+                // --- INÍCIO DA MODIFICAÇÃO ---
+                currentUserId = null; // Limpa o ID quando o usuário sai
+                // --- FIM DA MODIFICAÇÃO ---
+
                 // 2. USUÁRIO ESTÁ DESLOGADO
                 console.log("Nenhum usuário logado.");
 
-                // Mostra a tela de login e esconde as outras
                 loginView.classList.remove('hidden');
                 signupView.classList.add('hidden');
                 appView.classList.add('hidden');
@@ -2102,7 +2105,7 @@ window.addEventListener('popstate', (event) => {
 
             const updates = {};
             updates[`/trips/${currentTripId}/travelers`] = updatedTravelers;
-            updates[`/trips/${currentTripId}/members/${newTravelerUid}`] = true;
+            updates[`/trips/${currentTripId}/members/${newTravelerUid}`] = "member";
             updates[`/users/${newTravelerUid}/memberOf/${currentTripId}`] = true;
 
             try {
@@ -2270,34 +2273,58 @@ window.addEventListener('popstate', (event) => {
             }
         }
         
-        // VERSÃO NOVA - USE ESTA
-        // VERSÃO NOVA E FINAL
         function createTripCard(trip, isFeaturedCard) {
+            
+            console.log("-----------------------------------------");
+            console.log("VERIFICANDO CARD:", trip.name);
+            console.log("ID do usuário logado (currentUserId):", currentUserId);
+            console.log("Objeto 'members' da viagem:", trip.members);
+            
+            if (trip.members && currentUserId) {
+                console.log("Permissão deste usuário na viagem:", trip.members[currentUserId]);
+                console.log("Resultado da comparação (é 'owner'?):", trip.members[currentUserId] === 'owner');
+            } else {
+                console.log("Não foi possível checar a permissão (usuário ou 'members' não encontrado).");
+            }
+            // --- FIM DO BLOCO DE DIAGNÓSTICO ---
+            
             const tripCard = document.createElement('div');
             tripCard.className = 'trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative';
             tripCard.onclick = () => showTripDetails(trip.id);
             
-            let imageContainerClasses = 'h-48'; // Altura padrão para cards grandes
-            let textContainerClasses = 'p-6'; // Padding padrão
-            let titleClasses = 'text-2xl'; // Tamanho do título padrão
+            // A verificação precisa ser estritamente igual a "owner"
+            const isOwner = currentUserId && trip.members && trip.members[currentUserId] === 'owner';
 
-            // Se NÃO for um card do painel de destaque, aplica os estilos reduzidos
+            let deleteButtonHtml = '';
+            if (isOwner) {
+                deleteButtonHtml = `
+                    <button onclick="deleteTrip(event, '${trip.id}')" title="Excluir Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    </button>
+                `;
+            }
+
+            // ... O resto da função continua igual ...
+            let imageContainerClasses = 'h-48';
+            let textContainerClasses = 'p-6';
+            let titleClasses = 'text-2xl';
+
             if (!isFeaturedCard) {
-                imageContainerClasses = 'h-24'; // Altura reduzida
-                textContainerClasses = 'p-4';  // Padding reduzido
-                titleClasses = 'text-xl';     // Título menor
+                imageContainerClasses = 'h-24';
+                textContainerClasses = 'p-4';
+                titleClasses = 'text-xl';
 
                 const today = new Date();
-                today.setUTCHours(0, 0, 0, 0); 
+                today.setUTCHours(0, 0, 0, 0);
                 const tripEndDate = new Date(trip.endDate + 'T00:00:00Z');
 
                 if (tripEndDate < today) {
-                    imageContainerClasses += ' grayscale'; // Efeito preto e branco para viagens passadas
+                    imageContainerClasses += ' grayscale';
                 }
             }
 
-            const starIcon = trip.featured ? 
-                `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` : 
+            const starIcon = trip.featured ?
+                `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` :
                 `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
 
             tripCard.innerHTML = `
@@ -2308,9 +2335,7 @@ window.addEventListener('popstate', (event) => {
                     <button onclick="duplicateTrip(event, '${trip.id}')" title="Duplicar Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
                     </button>
-                    <button onclick="deleteTrip(event, '${trip.id}')" title="Excluir Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                    </button>
+                    ${deleteButtonHtml}
                 </div>
                 <div class="${imageContainerClasses} bg-cover bg-center transition-all duration-300" style="background-image: url('${trip.imageUrl}')"></div>
                 <div class="${textContainerClasses}">
