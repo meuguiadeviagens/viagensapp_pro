@@ -11,6 +11,24 @@
     
     <style>
 
+/* --- ESTILOS PARA SUGESTÕES DE VIAJANTES --- */
+        .suggestion-item {
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .suggestion-item:hover {
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .suggestion-item .suggestion-name {
+            font-weight: 500;
+            color: #1e293b; /* slate-800 */
+        }
+        .suggestion-item .suggestion-email {
+            font-size: 0.75rem;
+            color: #64748b; /* slate-500 */
+        }
+
         #app:has(#details-view:not(.hidden)) #trips-view {
             display: none !important;
         }
@@ -309,12 +327,17 @@
                     </button>
 
                     <div class="relative" id="user-menu-container">
-                        <button id="user-menu-btn" class="flex items-center gap-2 bg-slate-200 text-slate-700 font-semibold px-4 py-3 rounded-lg hover:bg-slate-300 transition-colors">
+                        <button id="user-menu-btn" class="relative flex items-center gap-2 bg-slate-200 text-slate-700 font-semibold px-4 py-3 rounded-lg hover:bg-slate-300 transition-colors">
                             <span id="user-menu-name">Carregando...</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+                            <span id="notification-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-200"></span>
                         </button>
                         <div id="user-menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20">
                             <a href="#" id="edit-profile-btn" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Alterar meus dados</a>
+                            <a href="#" onclick="openModal('notifications-modal')" class="flex justify-between items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                                <span>Notificações</span>
+                                <span id="notification-menu-badge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span>
+                            </a>
                             <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-slate-100">Sair</a>
                         </div>
                     </div>
@@ -543,6 +566,17 @@
             </section>
         </div>
     </div>
+
+<div id="notifications-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+    <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4 flex flex-col" style="max-height: 80vh;">
+        <h3 class="text-2xl font-semibold mb-4 text-slate-800">Notificações</h3>
+        <div id="notifications-list" class="flex-grow overflow-y-auto pr-2 space-y-3">
+            </div>
+        <div class="pt-6 flex justify-end">
+            <button type="button" onclick="closeModal('notifications-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Fechar</button>
+        </div>
+    </div>
+</div>
 
 <div id="index-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
     <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-sm m-4">
@@ -963,7 +997,7 @@
                     <div id="travelers-list" class="space-y-2 mb-3 max-h-40 overflow-y-auto">
                         </div>
                     <div class="flex items-end gap-2 p-2 bg-slate-50 rounded-md">
-                        <div class="flex-grow">
+                        <div class="flex items-end gap-2 p-2 bg-slate-50 rounded-md relative"> <div class="flex-grow">
                             <label for="traveler-name" class="block text-xs font-medium text-slate-500">Nome</label>
                             <input type="text" id="traveler-name" placeholder="Nome do Viajante" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm">
                         </div>
@@ -972,8 +1006,9 @@
                             <input type="email" id="traveler-email" placeholder="email@exemplo.com" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm">
                         </div>
                         <button type="button" onclick="addTraveler()" class="flex-shrink-0 bg-green-600 text-white font-semibold px-4 h-10 rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300 self-center">Adicionar</button>
-                    <div id="traveler-suggestions" class="hidden absolute top-full left-0 right-0 z-10 bg-white border border-slate-300 rounded-md shadow-lg mt-1 max-h-40 overflow-y-auto">
+                          <div id="traveler-suggestions" class="hidden absolute top-full left-0 right-0 z-10 bg-white border border-slate-300 rounded-md shadow-lg mt-1 max-h-40 overflow-y-auto">
                             </div>
+                        </div>
                     </div>
                 </div>                
                  <div class="border-t pt-4 mt-2">
@@ -1385,7 +1420,7 @@
             createUserWithEmailAndPassword,
             signOut 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; 
-        import { getDatabase, ref, onValue, set, push, remove, update, get } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, push, remove, update, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         // Configuração do Firebase
         const firebaseConfig = {
@@ -1421,6 +1456,7 @@
         
         // Variáveis de estado para reorganização
         let isReorganizing = false;
+        let frequentTravelersCache = [];
         let initialTripState = null; // Para o botão de cancelar
         let sortableInstance = null; // Apenas uma instância ativa por vez (para dias)
         let sortableInstances = []; // Para o modo de atividades
@@ -1531,6 +1567,158 @@ window.addEventListener('popstate', (event) => {
             };
         }
 
+        // Função para mostrar as sugestões filtradas na tela
+        function renderSuggestions(filteredTravelers) {
+            const suggestionsContainer = document.getElementById('traveler-suggestions');
+            const nameInput = document.getElementById('traveler-name');
+            suggestionsContainer.innerHTML = '';
+
+            if (filteredTravelers.length === 0) {
+                suggestionsContainer.classList.add('hidden');
+                return;
+            }
+
+            filteredTravelers.forEach(traveler => {
+                const suggestionDiv = document.createElement('div');
+                suggestionDiv.className = 'suggestion-item';
+                // Guardamos os dados no próprio elemento para usar ao clicar
+                suggestionDiv.dataset.name = traveler.name;
+                suggestionDiv.dataset.email = traveler.email;
+                suggestionDiv.innerHTML = `
+                    <div class="suggestion-name">${traveler.name}</div>
+                    <div class="suggestion-email">${traveler.email}</div>
+                `;
+                suggestionDiv.addEventListener('click', () => {
+                    selectSuggestion(traveler.name, traveler.email);
+                });
+                suggestionsContainer.appendChild(suggestionDiv);
+            });
+
+            suggestionsContainer.classList.remove('hidden');
+        }
+
+        // Função para preencher os campos ao clicar em uma sugestão
+        function selectSuggestion(name, email) {
+            document.getElementById('traveler-name').value = name;
+            document.getElementById('traveler-email').value = email;
+            document.getElementById('traveler-suggestions').classList.add('hidden');
+        }
+
+        // Função principal que configura os listeners do autocomplete
+        async function setupAutocomplete() {
+            // 1. Carrega o histórico do Firebase e guarda em cache
+            const frequentTravelersRef = ref(db, `users/${currentUserId}/frequentTravelers`);
+            const snapshot = await get(frequentTravelersRef);
+            if (snapshot.exists()) {
+                frequentTravelersCache = Object.values(snapshot.val());
+            } else {
+                frequentTravelersCache = [];
+            }
+
+            const nameInput = document.getElementById('traveler-name');
+            const emailInput = document.getElementById('traveler-email');
+
+            // 2. Adiciona o listener de digitação
+            const handleInput = (e) => {
+                const query = e.target.value.toLowerCase();
+                if (query.length < 1) {
+                    document.getElementById('traveler-suggestions').classList.add('hidden');
+                    return;
+                }
+                
+                // 3. Filtra o cache local (não o banco de dados!)
+                const filtered = frequentTravelersCache.filter(t => 
+                    t.name.toLowerCase().includes(query) || 
+                    t.email.toLowerCase().includes(query)
+                );
+                
+                renderSuggestions(filtered);
+            };
+
+            nameInput.addEventListener('input', handleInput);
+            emailInput.addEventListener('input', handleInput);
+
+            // 4. Esconde as sugestões se o usuário clicar fora
+            document.body.addEventListener('click', (e) => {
+                if (!e.target.closest('#traveler-suggestions') && e.target !== nameInput && e.target !== emailInput) {
+                    document.getElementById('traveler-suggestions').classList.add('hidden');
+                }
+            }, true);
+        }
+        // --- FIM DAS FUNÇÕES DE AUTOCOMPLETE ---
+
+        // --- INÍCIO DAS FUNÇÕES PARA EDITAR NOME DO VIAJANTE (VERSÃO CORRIGIDA) ---
+
+        // Transforma a linha do viajante em um formulário de edição
+        window.editTravelerName = (index, currentName) => {
+            const travelerItem = document.getElementById(`traveler-item-${index}`);
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const traveler = trip.travelers[index];
+
+            travelerItem.innerHTML = `
+                <div class="flex-grow">
+                    <input type="text" id="edit-traveler-name-${index}" class="block w-full px-2 py-1 bg-white border border-blue-400 rounded-md shadow-sm text-sm" value="${currentName}">
+                    <p class="text-xs text-slate-500 mt-1">${traveler.email}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="saveTravelerName(${index}, '${currentName.replace(/'/g, "\\'")}')" class="text-green-600 hover:text-green-700 p-1" title="Salvar">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                    </button>
+                     <button type="button" onclick="renderTravelersList(currentTripId)" class="text-red-500 hover:text-red-700 p-1" title="Cancelar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                </div>
+            `;
+            document.getElementById(`edit-traveler-name-${index}`).focus();
+        }
+
+        // Salva o novo nome no Firebase, atualizando em toda a viagem
+        window.saveTravelerName = async (index, oldName) => {
+            const newNameInput = document.getElementById(`edit-traveler-name-${index}`);
+            const newName = newNameInput.value.trim();
+
+            if (!newName || newName === oldName) {
+                renderTravelersList(currentTripId); // Se não houver mudança, apenas cancela a edição
+                return;
+            }
+
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const updates = {};
+
+            // 1. Atualiza o nome na lista principal de viajantes
+            const updatedTravelers = [...trip.travelers];
+            updatedTravelers[index].name = newName;
+            updates[`/travelers`] = updatedTravelers;
+
+            // 2. Procura e substitui o nome nas Anotações
+            if (trip.notes) {
+                const updatedNotes = trip.notes.map(note => {
+                    if (note.author === oldName) {
+                        return { ...note, author: newName };
+                    }
+                    return note;
+                });
+                updates[`/notes`] = updatedNotes;
+            }
+            
+            // 3. Procura e substitui o nome nas Despesas Compartilhadas
+            if (trip.sharedExpenses) {
+                const updatedExpenses = trip.sharedExpenses.map(expense => {
+                    if (expense.payerName === oldName) {
+                        expense.payerName = newName;
+                    }
+                    expense.participants = expense.participants.map(p => p === oldName ? newName : p);
+                    return expense;
+                });
+                 updates[`/sharedExpenses`] = updatedExpenses;
+            }
+
+            const tripRef = ref(db, `trips/${currentTripId}`);
+            await update(tripRef, updates);
+
+            renderTravelersList(currentTripId);
+        }
+        // --- FIM DAS FUNÇÕES PARA EDITAR NOME DO VIAJANTE ---
 
         // Função Utilitária
         function formatDate(dateString, options = { day: 'numeric', month: 'short', year: 'numeric' }) {
@@ -1779,6 +1967,84 @@ window.addEventListener('popstate', (event) => {
             openModal('edit-expense-modal');
         };
 
+
+        // --- INÍCIO DAS FUNÇÕES DE NOTIFICAÇÃO ---
+
+        // Atualiza a bolinha vermelha e o indicador no menu com base nas notificações não lidas
+        function updateNotificationBadge(notifications) {
+            const mainBadge = document.getElementById('notification-badge');
+            const menuBadge = document.getElementById('notification-menu-badge');
+            const unreadCount = notifications.filter(n => !n.isRead).length;
+
+            if (unreadCount > 0) {
+                // Mostra a bolinha vermelha principal
+                mainBadge.classList.remove('hidden');
+                
+                // Mostra o indicador no menu e coloca a contagem dentro dele
+                menuBadge.classList.remove('hidden');
+                menuBadge.textContent = unreadCount;
+
+            } else {
+                // Esconde ambos os indicadores se não houver notificações não lidas
+                mainBadge.classList.add('hidden');
+                menuBadge.classList.add('hidden');
+            }
+        }
+
+        // Renderiza a lista de notificações dentro do modal
+        function renderNotificationsList(notifications) {
+            const listContainer = document.getElementById('notifications-list');
+            listContainer.innerHTML = '';
+
+            if (notifications.length === 0) {
+                listContainer.innerHTML = '<p class="text-slate-500 text-center py-4">Nenhuma notificação ainda.</p>';
+                return;
+            }
+            
+            // Ordena as notificações da mais nova para a mais antiga
+            notifications.sort((a, b) => b.timestamp - a.timestamp);
+
+            notifications.forEach(note => {
+                const noteElement = document.createElement('div');
+                const isUnread = !note.isRead;
+                noteElement.className = `p-3 rounded-lg border ${isUnread ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`;
+                
+                const date = new Date(note.timestamp);
+                const formattedDate = date.toLocaleString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                noteElement.innerHTML = `
+                    <p class="text-slate-800">${note.message}</p>
+                    <p class="text-xs text-slate-500 mt-1">${formattedDate}</p>
+                `;
+                listContainer.appendChild(noteElement);
+            });
+        }
+
+        // Configura o "ouvinte" principal para as notificações do usuário
+        function setupNotificationListener(userId) {
+            const notificationsRef = ref(db, `users/${userId}/notifications`);
+            
+            onValue(notificationsRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const notificationsData = snapshot.val();
+                    // Converte o objeto do Firebase em um array
+                    const notificationsArray = Object.keys(notificationsData).map(key => ({
+                        id: key,
+                        ...notificationsData[key]
+                    }));
+                    
+                    updateNotificationBadge(notificationsArray);
+                    renderNotificationsList(notificationsArray);
+                } else {
+                    // Se não houver notificações, garante que a interface esteja limpa
+                    updateNotificationBadge([]);
+                    renderNotificationsList([]);
+                }
+            });
+        }
+        // --- FIM DAS FUNÇÕES DE NOTIFICAÇÃO ---
+
+
         // "PORTEIRO": gerencia qual tela é exibida
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -1787,7 +2053,7 @@ window.addEventListener('popstate', (event) => {
                 // --- FIM DA MODIFICAÇÃO ---
                 
                 // 1. USUÁRIO ESTÁ LOGADO
-                console.log("Usuário logado:", user.uid);
+                //console.log("Usuário logado:", user.uid);
 
                 db = getDatabase(app);
                 
@@ -1809,6 +2075,7 @@ window.addEventListener('popstate', (event) => {
 
                 setupTripsListener(); 
                 setupIconPickers();
+                setupNotificationListener(user.uid);
 
             } else {
                 // --- INÍCIO DA MODIFICAÇÃO ---
@@ -2040,29 +2307,46 @@ window.addEventListener('popstate', (event) => {
                 return;
             }
 
-            // Encontra o UID do dono da viagem na lista de membros
             const ownerUid = Object.keys(trip.members).find(uid => trip.members[uid] === 'owner');
 
             travelers.forEach((traveler, index) => {
                 const travelerElement = document.createElement('div');
+                // Adicionamos um ID único para cada item da lista para facilitar a edição
+                travelerElement.id = `traveler-item-${index}`; 
                 travelerElement.className = 'flex items-center justify-between p-2 bg-slate-100 rounded-md';
                 
-                // Verifica se o viajante atual é o dono
                 const isOwner = traveler.uid === ownerUid;
 
-                // Cria o botão de exclusão APENAS se o viajante NÃO for o dono
-                const deleteButtonHtml = isOwner 
-                    ? `<span class="text-xs font-semibold text-blue-600 px-2">(Dono)</span>` // Mostra um texto "Dono"
-                    : `<button type="button" onclick="removeTraveler(${index})" class="text-red-500 hover:text-red-700 p-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    </button>`;
+                // Prepara os botões de ação (editar e excluir)
+                let actionButtonsHtml = '';
+                if (!isOwner) {
+                    // Se não for o dono, pode ser editado e removido
+                    actionButtonsHtml = `
+                        <button type="button" onclick="editTravelerName(${index}, '${traveler.name.replace(/'/g, "\\'")}')" class="text-slate-500 hover:text-blue-600 p-1" title="Editar nome">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                        </button>
+                        <button type="button" onclick="removeTraveler(${index})" class="text-red-500 hover:text-red-700 p-1" title="Remover viajante">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                    `;
+                } else {
+                    // O dono só pode ter o nome editado (não pode ser removido)
+                     actionButtonsHtml = `
+                        <button type="button" onclick="editTravelerName(${index}, '${traveler.name.replace(/'/g, "\\'")}')" class="text-slate-500 hover:text-blue-600 p-1" title="Editar nome">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                        </button>
+                        <span class="text-xs font-semibold text-blue-600 px-2">(Dono)</span>
+                    `;
+                }
 
                 travelerElement.innerHTML = `
                     <div>
                         <p class="font-semibold text-slate-800">${traveler.name}</p>
                         <p class="text-xs text-slate-500">${traveler.email}</p>
                     </div>
-                    ${deleteButtonHtml}
+                    <div class="flex items-center gap-2">
+                        ${actionButtonsHtml}
+                    </div>
                 `;
                 listElement.appendChild(travelerElement);
             });
@@ -2092,26 +2376,48 @@ window.addEventListener('popstate', (event) => {
             const trip = tripsData.find(t => t.id === currentTripId);
             const currentTravelers = trip.travelers || [];
 
-            if (currentTravelers.some(traveler => traveler.email.toLowerCase() === email)) {
+            if (currentTravelers.some(traveler => traveler.uid === newTravelerUid)) {
                 alert('Este viajante já foi adicionado à viagem.');
                 return;
             }
             
+            const updates = {};
+
             const newTraveler = { uid: newTravelerUid, name, email }; 
             const updatedTravelers = [...currentTravelers, newTraveler];
-
-            const updates = {};
             updates[`/trips/${currentTripId}/travelers`] = updatedTravelers;
-            updates[`/trips/${currentTripId}/members/${newTravelerUid}`] = "member";
+            updates[`/trips/${currentTripId}/members/${newTravelerUid}`] = "member"; 
             updates[`/users/${newTravelerUid}/memberOf/${currentTripId}`] = true;
 
+            if (newTravelerUid !== currentUserId) {
+                const newNotificationKey = push(ref(db, `users/${newTravelerUid}/notifications`)).key;
+                const newNotification = {
+                    message: `Você foi adicionado(a) à viagem "${trip.name}" por ${currentUserProfile.fullName}.`,
+                    tripId: currentTripId,
+                    isRead: false,
+                    timestamp: serverTimestamp()
+                };
+                updates[`/users/${newTravelerUid}/notifications/${newNotificationKey}`] = newNotification;
+            }
+
+            // --- INÍCIO DA CORREÇÃO ---
+            // O código para salvar no histórico foi movido para dentro do objeto 'updates'
+            // e a chamada 'update' separada foi removida.
+            if (currentUserId && newTravelerUid !== currentUserId) {
+                updates[`/users/${currentUserId}/frequentTravelers/${newTravelerUid}`] = { name, email };
+            }
+            // --- FIM DA CORREÇÃO ---
+
             try {
-                await update(ref(db), updates);
+                // Agora, todas as escritas no banco de dados acontecem em uma única operação.
+                await update(ref(db), updates); 
+
                 nameInput.value = '';
                 emailInput.value = '';
+                document.getElementById('traveler-suggestions').classList.add('hidden');
             } catch (error) {
-                console.error("Erro ao adicionar viajante:", error);
-                alert("Ocorreu um erro ao adicionar o viajante. Verifique as permissões do banco de dados.");
+                console.error("Erro ao adicionar viajante e criar notificação:", error);
+                alert("Ocorreu um erro ao adicionar o viajante.");
             }
 
             renderTravelersList(currentTripId); 
@@ -3233,18 +3539,34 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
 
         window.openModal = (modalId) => {
             const modal = document.getElementById(modalId);
-            if (!modal) return; // Adiciona uma verificação de segurança
+            if (!modal) return;
             
             modal.classList.replace('hidden', 'flex');
 
-            // --- CORREÇÃO IMPORTANTE AQUI ---
+            // --- INÍCIO DA LÓGICA CORRIGIDA ---
+            // Se o modal que estamos abrindo é o de notificações, marque-as como lidas.
+            if (modalId === 'notifications-modal') {
+                const notificationsRef = ref(db, `users/${currentUserId}/notifications`);
+                get(notificationsRef).then(snapshot => {
+                    if (snapshot.exists()) {
+                        const updates = {};
+                        snapshot.forEach(childSnapshot => {
+                            if (!childSnapshot.val().isRead) {
+                                updates[`${childSnapshot.key}/isRead`] = true;
+                            }
+                        });
+                        if (Object.keys(updates).length > 0) {
+                            update(notificationsRef, updates);
+                        }
+                    }
+                });
+            }
+            // --- FIM DA LÓGICA CORRIGIDA ---
+
             if (modalId === 'add-note-modal') {
-                // A linha antiga que causava o erro (populateTravelersDropdown) foi removida.
-                // A nova linha preenche o nome do usuário automaticamente no novo campo de texto.
                 document.getElementById('note-author-display').textContent = currentUserProfile.fullName || 'Usuário';
             }
 
-            // O resto da lógica para os outros modais continua a mesma
             if (currentTripId) {
                 const trip = tripsData.find(t => t.id === currentTripId);
                 if (trip && trip.startDate) {
@@ -3312,6 +3634,8 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             document.getElementById('edit-trip-link-url').value = trip.customLinkUrl || '';
 
             renderTravelersList(currentTripId); // <-- ADICIONE ESTA LINHA AQUI
+
+            setupAutocomplete(); // Ativa o sistema de sugestões
 
             openModal('edit-trip-modal');
         };
