@@ -1047,7 +1047,7 @@
                 </div>
 
                 <div class="border-t pt-4 mt-2">
-                    <label class="block text-sm font-medium text-slate-600 mb-2">Gerenciar Viajantes</label>
+                    <label for="travelers-list" class="block text-sm font-medium text-slate-600 mb-2">Gerenciar Viajantes</label>
                     <div id="travelers-list" class="space-y-2 mb-3 max-h-40 overflow-y-auto">
                         </div>
                     <div class="flex items-end gap-2 p-2 bg-slate-50 rounded-md">
@@ -1468,6 +1468,29 @@
 </div>
 
 
+    <div id="invitation-choice-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-sm m-4">
+            <h3 class="text-xl font-semibold mb-4">Convidar Viajante</h3>
+            <p class="text-slate-600 mb-6">
+                O e-mail "<strong id="invite-recipient-email" class="text-slate-800"></strong>" não está cadastrado. Escolha como deseja enviar um convite:
+            </p>
+            <div class="space-y-3">
+                <button id="send-email-invite-btn" class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                    <span>Enviar por E-mail</span>
+                </button>
+                <button id="send-whatsapp-invite-btn" class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+                    <span>Compartilhar no WhatsApp</span>
+                </button>
+            </div>
+            <div class="pt-6 flex justify-end">
+                <button type="button" onclick="closeModal('invitation-choice-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+
     <script type="module">
         // Importações do Firebase
         // Importações do Firebase - Agora com tudo que precisamos
@@ -1651,6 +1674,32 @@ window.addEventListener('popstate', (event) => {
             };
         }
 
+       
+        let tempInviteEmail = '';
+        let tempInviteName = '';
+        // --- LÓGICA PARA OS BOTÕES DE CONVITE ---
+        document.getElementById('send-email-invite-btn').addEventListener('click', () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const tripName = trip ? trip.name : "uma viagem incrível";
+            const subject = `Convite para participar da viagem "${tripName}"`;
+            const body = `Olá, ${tempInviteName}!\n\nVocê foi convidado(a) por ${currentUserProfile.fullName} para participar da viagem "${tripName}" no app Meu Guia de Viagens.\n\nPara participar, primeiro crie sua conta gratuita acessando o link abaixo e depois peça para ser adicionado(a) à viagem novamente.\n\nLink do site: https://meuguiadeviagens.github.io/viagensapp_pro\n\nAté mais!`;
+
+            window.location.href = `mailto:${tempInviteEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            closeModal('invitation-choice-modal');
+        });
+
+        document.getElementById('send-whatsapp-invite-btn').addEventListener('click', () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const tripName = trip ? trip.name : "uma viagem incrível";
+            // Mensagem otimizada para WhatsApp
+            const body = `Olá, ${tempInviteName}! Estou te convidando para participar da *viagem "${tripName}"*.\n\nPara participar, crie sua conta no site Meu Guia de Viagens e depois peça para ser adicionado(a) *me informando seu e-mail de cadastro*:\n\nhttps://meuguiadeviagens.github.io/viagensapp_pro`;
+
+            const whatsappLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(body)}`;
+            window.open(whatsappLink, '_blank');
+            closeModal('invitation-choice-modal');
+        });
+
+       
         // Função para mostrar as sugestões filtradas na tela
         function renderSuggestions(filteredTravelers) {
             const suggestionsContainer = document.getElementById('traveler-suggestions');
@@ -2449,10 +2498,20 @@ window.addEventListener('popstate', (event) => {
             const emailToUidRef = ref(db, `emailToUid/${encodedEmail}`);
             const snapshot = await get(emailToUidRef);
 
+            // --- INÍCIO DA ALTERAÇÃO ---
             if (!snapshot.exists()) {
-                alert('Usuário não encontrado. Peça para que ele crie uma conta primeiro.');
-                return;
+                // Guarda os dados do convidado nas variáveis temporárias
+                tempInviteEmail = email;
+                tempInviteName = name;
+
+                // Atualiza o texto do modal com o e-mail digitado
+                document.getElementById('invite-recipient-email').textContent = email;
+
+                // Abre o novo modal de escolha
+                openModal('invitation-choice-modal');
+                return; // Para a execução da função aqui
             }
+            // --- FIM DA ALTERAÇÃO ---
 
             const newTravelerUid = snapshot.val();
             const trip = tripsData.find(t => t.id === currentTripId);
@@ -2462,9 +2521,8 @@ window.addEventListener('popstate', (event) => {
                 alert('Este viajante já foi adicionado à viagem.');
                 return;
             }
-            
-            const updates = {};
 
+            const updates = {};
             const newTraveler = { uid: newTravelerUid, name, email }; 
             const updatedTravelers = [...currentTravelers, newTraveler];
             updates[`/trips/${currentTripId}/travelers`] = updatedTravelers;
@@ -2482,16 +2540,11 @@ window.addEventListener('popstate', (event) => {
                 updates[`/users/${newTravelerUid}/notifications/${newNotificationKey}`] = newNotification;
             }
 
-            // --- INÍCIO DA CORREÇÃO ---
-            // O código para salvar no histórico foi movido para dentro do objeto 'updates'
-            // e a chamada 'update' separada foi removida.
             if (currentUserId && newTravelerUid !== currentUserId) {
                 updates[`/users/${currentUserId}/frequentTravelers/${newTravelerUid}`] = { name, email };
             }
-            // --- FIM DA CORREÇÃO ---
 
             try {
-                // Agora, todas as escritas no banco de dados acontecem em uma única operação.
                 await update(ref(db), updates); 
 
                 nameInput.value = '';
@@ -2501,8 +2554,6 @@ window.addEventListener('popstate', (event) => {
                 console.error("Erro ao adicionar viajante e criar notificação:", error);
                 alert("Ocorreu um erro ao adicionar o viajante.");
             }
-
-            renderTravelersList(currentTripId); 
         };
 
         window.removeTraveler = async (index) => {
@@ -3764,6 +3815,13 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             document.getElementById('edit-trip-image-url').value = trip.imageUrl || '';
             document.getElementById('edit-trip-link-text').value = trip.customLinkText || '';
             document.getElementById('edit-trip-link-url').value = trip.customLinkUrl || '';
+
+            // Encontra a label pelo seletor de classes e ID do modal
+            const travelersLabel = document.querySelector('#edit-trip-modal label[for="travelers-list"]');
+            const travelerCount = trip.travelers ? trip.travelers.length : 0;
+            if (travelersLabel) {
+                travelersLabel.textContent = `Gerenciar Viajantes (${travelerCount})`;
+            }
 
             renderTravelersList(currentTripId); // <-- ADICIONE ESTA LINHA AQUI
 
