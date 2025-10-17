@@ -1471,8 +1471,11 @@
     <div id="invitation-choice-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
         <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-sm m-4">
             <h3 class="text-xl font-semibold mb-4">Convidar Viajante</h3>
-            <p class="text-slate-600 mb-6">
+            <p id="invite-specific-user-text" class="hidden text-slate-600 mb-6">
                 O e-mail "<strong id="invite-recipient-email" class="text-slate-800"></strong>" não está cadastrado. Escolha como deseja enviar um convite:
+            </p>
+            <p id="invite-generic-user-text" class="hidden text-slate-600 mb-6">
+                Use os botões abaixo para enviar um convite genérico para alguém se cadastrar e participar da viagem.
             </p>
             <div class="space-y-3">
                 <button id="send-email-invite-btn" class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
@@ -1621,6 +1624,28 @@ window.addEventListener('popstate', (event) => {
             }
         };
 
+        // NOVA FUNÇÃO AUXILIAR
+        function openInvitationModal(name = '', email = '') {
+            const specificText = document.getElementById('invite-specific-user-text');
+            const genericText = document.getElementById('invite-generic-user-text');
+
+            if (name && email) {
+                // Cenário 1: E-mail não encontrado
+                tempInviteEmail = email;
+                tempInviteName = name;
+                document.getElementById('invite-recipient-email').textContent = email;
+                specificText.classList.remove('hidden');
+                genericText.classList.add('hidden');
+            } else {
+                // Cenário 2: Campos em branco
+                tempInviteEmail = '';
+                tempInviteName = '';
+                specificText.classList.add('hidden');
+                genericText.classList.remove('hidden');
+            }
+            openModal('invitation-choice-modal');
+        }
+        
         // --- FUNÇÃO PARA REDEFINIÇÃO DE SENHA ---
         window.promptForPasswordReset = () => {
             const email = prompt("Por favor, digite seu e-mail para receber o link de redefinição de senha:");
@@ -1677,13 +1702,19 @@ window.addEventListener('popstate', (event) => {
        
         let tempInviteEmail = '';
         let tempInviteName = '';
-        // --- LÓGICA PARA OS BOTÕES DE CONVITE ---
+        // --- LÓGICA ATUALIZADA PARA OS BOTÕES DE CONVITE ---
         document.getElementById('send-email-invite-btn').addEventListener('click', () => {
             const trip = tripsData.find(t => t.id === currentTripId);
             const tripName = trip ? trip.name : "uma viagem incrível";
-            const subject = `Convite para participar da viagem "${tripName}"`;
-            const body = `Olá, ${tempInviteName}!\n\nVocê foi convidado(a) por ${currentUserProfile.fullName} para participar da viagem "${tripName}" no app Meu Guia de Viagens.\n\nPara participar, primeiro crie sua conta gratuita acessando o link abaixo e depois peça para ser adicionado(a) à viagem novamente.\n\nLink do site: https://meuguiadeviagens.github.io/viagensapp_pro\n\nAté mais!`;
 
+            // Define um nome genérico se nenhum foi fornecido
+            const recipientName = tempInviteName || 'amigo(a)';
+            const greeting = tempInviteName ? `Olá, ${tempInviteName}!` : 'Olá!';
+
+            const subject = `Convite para participar da viagem "${tripName}"`;
+            const body = `${greeting}\n\nVocê foi convidado(a) por ${currentUserProfile.fullName} para participar da viagem "${tripName}" no app Meu Guia de Viagens.\n\nPara participar, primeiro crie sua conta gratuita acessando o link abaixo e depois peça para ser adicionado(a) à viagem novamente.\n\nLink do site: https://meuguiadeviagens.github.io/viagensapp_pro\n\nAté mais!`;
+
+            // O tempInviteEmail será vazio no caso genérico, abrindo o cliente de e-mail com o campo "Para:" em branco
             window.location.href = `mailto:${tempInviteEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             closeModal('invitation-choice-modal');
         });
@@ -1691,15 +1722,18 @@ window.addEventListener('popstate', (event) => {
         document.getElementById('send-whatsapp-invite-btn').addEventListener('click', () => {
             const trip = tripsData.find(t => t.id === currentTripId);
             const tripName = trip ? trip.name : "uma viagem incrível";
-            // Mensagem otimizada para WhatsApp
-            const body = `Olá, ${tempInviteName}! Estou te convidando para participar da *viagem "${tripName}"*.\n\nPara participar, crie sua conta no site Meu Guia de Viagens e depois peça para ser adicionado(a) *me informando seu e-mail de cadastro*:\n\nhttps://meuguiadeviagens.github.io/viagensapp_pro`;
+
+            const recipientName = tempInviteName || 'alguém';
+            const greeting = tempInviteName ? `Olá, ${tempInviteName}!` : 'Olá!';
+
+            const body = `${greeting} Olá, ${tempInviteName}! Estou te convidando para participar da *viagem "${tripName}"*.\n\nPara participar, crie sua conta no site Meu Guia de Viagens e depois peça para ser adicionado(a) *me informando seu e-mail de cadastro*:\n\nhttps://meuguiadeviagens.github.io/viagensapp_pro`;
 
             const whatsappLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(body)}`;
             window.open(whatsappLink, '_blank');
             closeModal('invitation-choice-modal');
         });
+        
 
-       
         // Função para mostrar as sugestões filtradas na tela
         function renderSuggestions(filteredTravelers) {
             const suggestionsContainer = document.getElementById('traveler-suggestions');
@@ -2489,30 +2523,25 @@ window.addEventListener('popstate', (event) => {
             const name = nameInput.value.trim();
             const email = emailInput.value.trim().toLowerCase();
 
-            if (!name || !email) {
-                alert('Por favor, preencha o nome e o e-mail do viajante.');
+            // --- INÍCIO DA ALTERAÇÃO ---
+            // Se o campo de e-mail estiver vazio, abre o modal de convite genérico
+            if (!email) {
+                openInvitationModal(); // Chama a nova função sem argumentos
                 return;
             }
+            // --- FIM DA ALTERAÇÃO ---
 
             const encodedEmail = btoa(email);
             const emailToUidRef = ref(db, `emailToUid/${encodedEmail}`);
             const snapshot = await get(emailToUidRef);
 
-            // --- INÍCIO DA ALTERAÇÃO ---
             if (!snapshot.exists()) {
-                // Guarda os dados do convidado nas variáveis temporárias
-                tempInviteEmail = email;
-                tempInviteName = name;
-
-                // Atualiza o texto do modal com o e-mail digitado
-                document.getElementById('invite-recipient-email').textContent = email;
-
-                // Abre o novo modal de escolha
-                openModal('invitation-choice-modal');
-                return; // Para a execução da função aqui
+                // Se o e-mail preenchido não for encontrado, abre o modal específico
+                openInvitationModal(name, email); // Chama a nova função com argumentos
+                return;
             }
-            // --- FIM DA ALTERAÇÃO ---
 
+            // O resto da função continua exatamente igual...
             const newTravelerUid = snapshot.val();
             const trip = tripsData.find(t => t.id === currentTripId);
             const currentTravelers = trip.travelers || [];
