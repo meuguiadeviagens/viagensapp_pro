@@ -1726,7 +1726,7 @@ window.addEventListener('popstate', (event) => {
             const recipientName = tempInviteName || 'alguém';
             const greeting = tempInviteName ? `Olá, ${tempInviteName}!` : 'Olá!';
 
-            const body = `${greeting} Olá, ${tempInviteName}! Estou te convidando para participar da *viagem "${tripName}"*.\n\nPara participar, crie sua conta no site Meu Guia de Viagens e depois peça para ser adicionado(a) *me informando seu e-mail de cadastro*:\n\nhttps://meuguiadeviagens.github.io/viagensapp_pro`;
+            const body = `Olá! Queria te convidar para participar da *viagem "${tripName}"*.\n\nPara participar, crie gratuitamente sua conta no site Meu Guia de Viagens e depois peça para ser adicionado(a) *me informando seu e-mail de cadastro*:\n\nhttps://meuguiadeviagens.github.io/viagensapp_pro`;
 
             const whatsappLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(body)}`;
             window.open(whatsappLink, '_blank');
