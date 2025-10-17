@@ -407,7 +407,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.0082 | 16/10/2025, 21:11</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.0082 | 17/10/2025, 08:11</p>
             </main>
         </div>
 
@@ -1645,6 +1645,15 @@ window.addEventListener('popstate', (event) => {
             }
             openModal('invitation-choice-modal');
         }
+
+        // --- INÍCIO: REPLICAR DATA DE INÍCIO NA DATA DE FIM ---
+        document.getElementById('trip-start-date').addEventListener('change', function() {
+            const startDate = this.value;
+            if (startDate) {
+                document.getElementById('trip-end-date').value = startDate;
+            }
+        });
+        // --- FIM: REPLICAR DATA DE INÍCIO NA DATA DE FIM ---
         
         // --- FUNÇÃO PARA REDEFINIÇÃO DE SENHA ---
         window.promptForPasswordReset = () => {
@@ -2736,7 +2745,7 @@ window.addEventListener('popstate', (event) => {
                     // Cria o título do ano
                     const yearHeader = document.createElement('h3');
                     yearHeader.className = 'text-xl font-bold text-blue-900 mt-8 mb-4 border-b pb-2';
-                    yearHeader.textContent = `Ano de ${year}`;
+                    yearHeader.textContent = `${year}`;
                     upcomingContent.appendChild(yearHeader);
 
                     // Cria o container do grid para as viagens daquele ano
@@ -2771,7 +2780,7 @@ window.addEventListener('popstate', (event) => {
                 sortedPastYears.forEach(year => {
                     const yearHeader = document.createElement('h3');
                     yearHeader.className = 'text-xl font-bold text-slate-700 mt-8 mb-4 border-b pb-2';
-                    yearHeader.textContent = `Ano de ${year}`;
+                    yearHeader.textContent = `${year}`;
                     pastContent.appendChild(yearHeader);
 
                     const yearGrid = document.createElement('div');
@@ -4307,9 +4316,15 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             currentUserId = null; 
 
             // 3. Esvazia a interface gráfica para evitar mostrar dados antigos rapidamente
-            document.getElementById('upcoming-trips-list').innerHTML = '';
-            document.getElementById('past-trips-list').innerHTML = '';
-            document.getElementById('featured-trips-panel').innerHTML = '';
+            // --- CORREÇÃO AQUI ---
+            const upcomingContent = document.getElementById('upcoming-trips-content');
+            const pastContent = document.getElementById('past-trips-content');
+            const featuredPanel = document.getElementById('featured-trips-panel');
+
+            if (upcomingContent) upcomingContent.innerHTML = '';
+            if (pastContent) pastContent.innerHTML = '';
+            if (featuredPanel) featuredPanel.innerHTML = '';
+            // --- FIM DA CORREÇÃO ---
 
             // 4. Finalmente, desloga o usuário do Firebase
             signOut(auth).catch(error => console.error("Erro ao sair:", error));
