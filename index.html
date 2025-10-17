@@ -1544,6 +1544,7 @@
         let currentEditingItemId = null; // Para anotações e outros itens com ID único
         let onConfirmAction = () => {};
         let confirmDeleteTimer = null; // <<< ADICIONE ESTA LINHA
+        let userFavoriteTrips = new Set();
         
         // Variáveis de estado para reorganização
         let isReorganizing = false;
@@ -1644,6 +1645,22 @@ window.addEventListener('popstate', (event) => {
                 genericText.classList.remove('hidden');
             }
             openModal('invitation-choice-modal');
+        }
+
+        // Nova função para escutar os favoritos do usuário
+        function setupFavoritesListener(userId) {
+            const favoritesRef = ref(db, `users/${userId}/favoriteTrips`);
+            onValue(favoritesRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    // Se existem favoritos, cria um Set com os IDs (chaves)
+                    userFavoriteTrips = new Set(Object.keys(snapshot.val()));
+                } else {
+                    // Se não, limpa o Set
+                    userFavoriteTrips = new Set();
+                }
+                // Redesenha a lista de viagens para refletir o status correto dos favoritos
+                renderTripLists();
+            });
         }
 
         // --- INÍCIO: REPLICAR DATA DE INÍCIO NA DATA DE FIM ---
@@ -2250,6 +2267,7 @@ window.addEventListener('popstate', (event) => {
                 setupTripsListener(); 
                 setupIconPickers();
                 setupNotificationListener(user.uid);
+                setupFavoritesListener(user.uid);
 
             } else {
                 // --- INÍCIO DA MODIFICAÇÃO ---
@@ -2691,7 +2709,7 @@ window.addEventListener('popstate', (event) => {
             pastContent.innerHTML = '';
 
             // Lógica para viagens destacadas (continua a mesma)
-            const featuredTrips = tripsData.filter(trip => trip.featured);
+            const featuredTrips = tripsData.filter(trip => userFavoriteTrips.has(trip.id));
             if(featuredTrips.length > 0) {
                 featuredTripsPanel.innerHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-4">Viagens Destacadas</h2>`;
                 featuredTrips.forEach(trip => {
@@ -2853,7 +2871,8 @@ window.addEventListener('popstate', (event) => {
                 }
             }
 
-            const starIcon = trip.featured ?
+            const isFavorite = userFavoriteTrips.has(trip.id);
+            const starIcon = isFavorite ?
                 `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` :
                 `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
 
@@ -4290,13 +4309,21 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
         };
 
         window.toggleFeatured = async (event, tripId) => {
-            event.stopPropagation();
-            const trip = tripsData.find(t => t.id === tripId);
-            if (!trip) return;
-            const newFeaturedStatus = !trip.featured;
-            const updates = { [`/${tripId}/featured`]: newFeaturedStatus };
-            await update(ref(db, 'trips'), updates);
-        }
+    event.stopPropagation();
+    if (!currentUserId) return; // Garante que o usuário está logado
+
+    const favoriteRef = ref(db, `users/${currentUserId}/favoriteTrips/${tripId}`);
+    
+    // Verifica se a viagem já está nos favoritos
+    if (userFavoriteTrips.has(tripId)) {
+        // Se sim, remove (setando como null)
+        await set(favoriteRef, null);
+    } else {
+        // Se não, adiciona (setando como true)
+        await set(favoriteRef, true);
+    }
+    // O listener que criamos (setupFavoritesListener) vai cuidar de atualizar a tela automaticamente.
+}
 
         function fullLogout() {
             console.log("Iniciando logout completo...");
