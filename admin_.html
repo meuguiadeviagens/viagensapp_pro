@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - Meu Guia de Viagens</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .hidden { display: none !important; }
+        .modal-backdrop { background-color: rgba(0, 0, 0, 0.5); }
+    </style>
+</head>
+<body class="bg-slate-200">
+
+    <form id="login-form" class="max-w-sm mx-auto mt-20 p-8 bg-white rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold mb-6 text-center">Painel Admin - Login</h2>
+        <div class="space-y-4">
+            <div>
+                <label for="email" class="block text-sm font-medium text-slate-600">Email</label>
+                <input type="email" id="email" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-slate-600">Senha</label>
+                <input type="password" id="password" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
+            </div>
+            <button id="login-btn" type="submit" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Entrar</button>
+        </div>
+    </form>
+
+    <div id="admin-panel" class="hidden max-w-7xl mx-auto p-8">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-4xl font-bold text-slate-900">Painel de Administração</h1>
+            <div class="flex items-center gap-4">
+                <span id="admin-email" class="text-slate-600"></span>
+                <button id="logout-btn" class="px-4 py-2 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700">Sair</button>
+            </div>
+        </header>
+
+        <main class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-2xl font-semibold text-slate-800 mb-4">Gerenciamento de Usuários</h2>
+            <div class="mb-4">
+                <label for="search-user" class="block text-sm font-medium text-slate-600">Filtrar por nome ou e-mail</label>
+                <input type="text" id="search-user" class="mt-1 block w-full md:w-1/2 px-3 py-2 bg-white border border-slate-300 rounded-md" placeholder="Digite para buscar...">
+            </div>
+            <div class="border rounded-lg overflow-hidden">
+                <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Nome</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Email</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Plano</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Expira em</th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body" class="bg-white divide-y divide-slate-200">
+                        </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <div id="edit-license-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4">
+            <h3 class="text-2xl font-semibold mb-2">Editar Licença</h3>
+            <p class="mb-6 text-slate-600">Usuário: <strong id="edit-user-name"></strong></p>
+            
+            <form id="edit-license-form" class="space-y-4">
+                <input type="hidden" id="edit-user-id">
+                
+                <div>
+                    <label for="edit-license-type" class="block text-sm font-medium text-slate-600">Tipo de Plano</label>
+                    <select id="edit-license-type" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
+                        <option value="gratuito">Gratuito</option>
+                        <option value="anual">Anual</option>
+                        <option value="cortesia">Cortesia</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <div id="expires-field" class="hidden">
+                    <label for="edit-license-expires" class="block text-sm font-medium text-slate-600">Data de Expiração (para Plano Anual)</label>
+                    <input type="date" id="edit-license-expires" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md">
+                    <p class="text-xs text-slate-500 mt-1">Deixe em branco para não definir. O plano "Anual" precisa de uma data futura.</p>
+                </div>
+
+                <div>
+                    <label for="edit-purchased-trips" class="block text-sm font-medium text-slate-600">Viagens Avulsas Compradas (Opcional)</label>
+                    <input type="text" id="edit-purchased-trips" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" placeholder="Cole o ID da Viagem aqui">
+                    <button type="button" id="add-purchased-trip-btn" class="mt-2 px-3 py-1 bg-green-600 text-white text-sm font-semibold rounded hover:bg-green-700">Adicionar Viagem</button>
+                    <div id="purchased-trips-list" class="mt-2 space-y-1 text-sm"></div>
+                </div>
+
+                <div class="pt-6 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('edit-license-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Salvar Licença</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged, 
+            signInWithEmailAndPassword,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; 
+        import { getDatabase, ref, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+        // !!! IMPORTANTE: Cole sua configuração do Firebase aqui !!!
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1IYYMSYXBqfgvUQrp8DaX4Z5n7-4Wryw",
+            authDomain: "viagensappoficial.firebaseapp.com",
+            databaseURL: "https://viagensappoficial-default-rtdb.firebaseio.com",
+            projectId: "viagensappoficial",
+            storageBucket: "viagensappoficial.firebasestorage.app",
+            messagingSenderId: "344833861467",
+            appId: "1:344833861467:web:4fcd794a653fefcb68dc7e",
+            measurementId: "G-TN6TN0X5WR"
+        };
+
+        // Inicialização
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // Elementos da UI
+        const loginView = document.getElementById('login-form');
+        const adminView = document.getElementById('admin-panel');
+        const usersTableBody = document.getElementById('users-table-body');
+        const searchInput = document.getElementById('search-user');
+        
+        let allUsersData = []; // Cache local de usuários
+
+        // --- 1. CONTROLE DE AUTENTICAÇÃO ---
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuário está logado. Ele é admin?
+                checkAdminStatus(user);
+            } else {
+                // Usuário está deslogado. Mostrar login.
+                loginView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+            }
+        });
+
+        async function checkAdminStatus(user) {
+            const licenseRef = ref(db, `users/${user.uid}/license`);
+            try {
+                const snapshot = await get(licenseRef);
+                if (snapshot.exists() && snapshot.val().type === 'admin') {
+                    // SIM, É ADMIN!
+                    loginView.classList.add('hidden');
+                    adminView.classList.remove('hidden');
+                    document.getElementById('admin-email').textContent = user.email;
+                    loadAllUsers(); // Carrega os dados do painel
+                } else {
+                    // NÃO É ADMIN.
+                    alert("Acesso negado. Esta conta não tem privilégios de administrador.");
+                    signOut(auth);
+                }
+            } catch (error) {
+                console.error("Erro ao verificar status de admin:", error);
+                alert("Erro ao verificar permissões.");
+                signOut(auth);
+            }
+        }
+
+        // --- 2. LÓGICA DE LOGIN/LOGOUT ---
+
+        loginView.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            signInWithEmailAndPassword(auth, email, password)
+                .catch((error) => {
+                    console.error("Erro no login:", error.code);
+                    alert("Falha no login. Verifique seu e-mail e senha.");
+                });
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        // --- 3. LÓGICA DO PAINEL ADMIN ---
+
+        async function loadAllUsers() {
+            const usersRef = ref(db, 'users');
+            // Usamos onValue para que o painel atualize em tempo real
+            onValue(usersRef, (snapshot) => {
+                if (!snapshot.exists()) {
+                    usersTableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-slate-500">Nenhum usuário encontrado.</td></tr>';
+                    return;
+                }
+                
+                allUsersData = []; // Limpa o cache
+                snapshot.forEach(userSnapshot => {
+                    const uid = userSnapshot.key;
+                    const profile = userSnapshot.child('profile').val() || {};
+                    const license = userSnapshot.child('license').val() || { type: 'gratuito' };
+                    
+                    allUsersData.push({
+                        uid,
+                        name: profile.fullName || "Sem nome",
+                        email: profile.email || "Sem email", // Idealmente, pegar do profile
+                        licenseType: license.type,
+                        expires: license.expires ? new Date(license.expires).toLocaleDateString('pt-BR') : 'N/A',
+                        licenseData: license // Guarda os dados completos para edição
+                    });
+                });
+                renderUsersTable(allUsersData);
+            });
+        }
+
+        function renderUsersTable(users) {
+            usersTableBody.innerHTML = ''; // Limpa a tabela
+            if (users.length === 0) {
+                 usersTableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-slate-500">Nenhum usuário corresponde ao filtro.</td></tr>';
+                 return;
+            }
+
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${user.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${user.email}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${user.licenseType}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${user.expires}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="text-blue-600 hover:text-blue-900" data-uid="${user.uid}">Editar</button>
+                    </td>
+                `;
+                // Adiciona o listener no botão de editar
+                tr.querySelector('button').addEventListener('click', () => openEditModal(user.uid));
+                usersTableBody.appendChild(tr);
+            });
+        }
+        
+        // Filtro de busca
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filteredUsers = allUsersData.filter(user => 
+                user.name.toLowerCase().includes(query) || 
+                user.email.toLowerCase().includes(query)
+            );
+            renderUsersTable(filteredUsers);
+        });
+
+        // --- 4. LÓGICA DO MODAL DE EDIÇÃO ---
+
+        // Variável temporária para gerenciar as viagens avulsas
+        let tempPurchasedTrips = {};
+
+        function openEditModal(uid) {
+            const user = allUsersData.find(u => u.uid === uid);
+            if (!user) return;
+
+            // Preenche os campos do formulário
+            document.getElementById('edit-user-id').value = uid;
+            document.getElementById('edit-user-name').textContent = `${user.name} (${user.email})`;
+            document.getElementById('edit-license-type').value = user.licenseData.type || 'gratuito';
+            
+            // Lida com a data de expiração
+            const expiresInput = document.getElementById('edit-license-expires');
+            if (user.licenseData.expires) {
+                // Converte timestamp para o formato "YYYY-MM-DD" do input
+                const date = new Date(user.licenseData.expires);
+                expiresInput.value = date.toISOString().split('T')[0];
+            } else {
+                expiresInput.value = '';
+            }
+
+            // Mostra/oculta o campo de data de expiração
+            toggleExpiresField();
+
+            // Lida com as viagens avulsas
+            tempPurchasedTrips = user.licenseData.purchasedTrips || {};
+            renderPurchasedTripsList();
+
+            openModal('edit-license-modal');
+        }
+
+        // Mostra o campo de data apenas se o plano for "anual"
+        document.getElementById('edit-license-type').addEventListener('change', toggleExpiresField);
+        function toggleExpiresField() {
+            const type = document.getElementById('edit-license-type').value;
+            const field = document.getElementById('expires-field');
+            field.classList.toggle('hidden', type !== 'anual');
+        }
+
+        // Funções para gerenciar a lista de viagens avulsas
+        function renderPurchasedTripsList() {
+            const listContainer = document.getElementById('purchased-trips-list');
+            listContainer.innerHTML = '';
+            const tripIds = Object.keys(tempPurchasedTrips);
+
+            if (tripIds.length === 0) {
+                listContainer.innerHTML = '<p class="text-slate-400">Nenhuma viagem avulsa.</p>';
+                return;
+            }
+            tripIds.forEach(tripId => {
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center bg-slate-100 p-2 rounded';
+                item.innerHTML = `
+                    <span>${tripId}</span>
+                    <button type="button" class="text-red-500 font-bold" data-tripid="${tripId}">&times;</button>
+                `;
+                item.querySelector('button').addEventListener('click', () => removePurchasedTrip(tripId));
+                listContainer.appendChild(item);
+            });
+        }
+
+        document.getElementById('add-purchased-trip-btn').addEventListener('click', () => {
+            const input = document.getElementById('edit-purchased-trips');
+            const tripId = input.value.trim();
+            if (tripId) {
+                tempPurchasedTrips[tripId] = true;
+                input.value = '';
+                renderPurchasedTripsList();
+            }
+        });
+
+        function removePurchasedTrip(tripId) {
+            delete tempPurchasedTrips[tripId];
+            renderPurchasedTripsList();
+        }
+
+        // Salvar a licença
+        document.getElementById('edit-license-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const uid = document.getElementById('edit-user-id').value;
+            const type = document.getElementById('edit-license-type').value;
+            const expiresDate = document.getElementById('edit-license-expires').value;
+
+            let expiresTimestamp = null;
+            if (type === 'anual' && expiresDate) {
+                // Converte "YYYY-MM-DD" para timestamp (no final do dia)
+                expiresTimestamp = new Date(expiresDate + 'T23:59:59Z').getTime();
+            } else if (type === 'anual' && !expiresDate) {
+                alert("Plano Anual selecionado, mas nenhuma data de expiração foi definida. Por favor, defina uma data.");
+                return;
+            }
+
+            const newLicenseData = {
+                type: type,
+                expires: expiresTimestamp,
+                purchasedTrips: tempPurchasedTrips
+            };
+
+            try {
+                // A REGRA DE SEGURANÇA PERMITE ISSO (admin escrevendo)
+                const licenseRef = ref(db, `users/${uid}/license`);
+                await set(licenseRef, newLicenseData);
+                
+                alert("Licença atualizada com sucesso!");
+                closeModal('edit-license-modal');
+            } catch (error) {
+                console.error("Erro ao salvar licença:", error);
+                alert("Falha ao salvar a licença.");
+            }
+        });
+
+
+        // --- 5. FUNÇÕES UTILITÁRIAS DE MODAL ---
+
+        window.openModal = (modalId) => {
+            document.getElementById(modalId).classList.replace('hidden', 'flex');
+        }
+
+        window.closeModal = (modalId) => {
+            document.getElementById(modalId).classList.replace('flex', 'hidden');
+            const form = document.getElementById(modalId).querySelector('form');
+            if (form) form.reset();
+            // Limpa os dados temporários do modal
+            tempPurchasedTrips = {};
+            document.getElementById('purchased-trips-list').innerHTML = '';
+        }
+
+    </script>
+
+</body>
+</html>
