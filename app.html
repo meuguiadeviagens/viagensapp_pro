@@ -2402,6 +2402,7 @@ window.addEventListener('popstate', (event) => {
 
                     try {
                         // Operação 1: Salva o perfil
+                        console.log("Tentando salvar perfil de cadastro:", JSON.stringify(profileData, null, 2)); // <-- ADICIONE ESTA LINHA
                         await set(ref(db, `users/${userId}/profile`), profileData);
                         // Operação 2: Salva o índice de e-mail
                         await set(ref(db, `emailToUid/${encodedEmail}`), userId);
@@ -4781,6 +4782,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             const userProfileRef = ref(db, `users/${user.uid}/profile`);
             try {
+                console.log("Tentando salvar perfil editado:", JSON.stringify(updatedProfileData, null, 2)); // <-- ADICIONE ESTA LINHA
                 await set(userProfileRef, updatedProfileData);
                 alert('Dados atualizados com sucesso!');
                 closeModal('edit-profile-modal');
