@@ -74,7 +74,7 @@
                 <p class="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto mb-8 hero-text-shadow-white">
                     Planeje cada detalhe da sua próxima aventura, do roteiro aos gastos, de forma simples e colaborativa. Chega de planilhas e preocupações!
                 </p>
-                <a href="#planos" class="bg-orange-500 text-white font-bold px-8 py-4 rounded-lg cta-button hover:bg-orange-600 text-lg">
+                <a href="#planos" class="bg-green-500 text-white font-bold px-8 py-4 rounded-lg cta-button hover:bg-green-600 text-lg">
                     Comece a planejar grátis
                 </a>
             </div>
@@ -121,19 +121,38 @@
             </div>
         </section>
 
-        <section id="planos" class="py-20 bg-white">
+        <section id="video-demo" class="py-20 bg-white">
             <div class="container mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-900">Veja como é fácil planejar</h2>
+                    <p class="text-gray-600 mt-2 text-lg">Descubra em 1 minuto como o Meu Guia de Viagens funciona.</p>
+                </div>
+                
+                <div class="max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-xl aspect-video">
+                    <iframe 
+                        class="w-full h-full"
+                        src="https://www.youtube.com/embed/Ug2yE-9-BWg?si=fIK9axbiuGA6NHTV" 
+                        title="YouTube video player" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        referrerpolicy="strict-origin-when-cross-origin" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+            </div>
+        </section>
+        <section id="planos" class="py-20 bg-gray-50"> <div class="container mx-auto px-6">
                 <div class="text-center mb-16">
                     <h2 class="text-3xl md:text-4xl font-bold text-gray-900">Conheça nossos planos</h2>
                     <p class="text-gray-600 mt-2 text-lg">Escolha o plano perfeito para o seu perfil de viajante.</p>
                 </div>
 
                 <div class="flex flex-col lg:flex-row justify-center items-center lg:items-end gap-8">
-                    <div class="w-full max-w-sm border border-gray-200 rounded-2xl p-8 order-2 lg:order-1">
-                        <h3 class="text-2xl font-bold mb-2">Gratuito</h3>
+                    
+                    <div class="w-full max-w-sm border border-gray-200 rounded-2xl p-8 order-3 lg:order-1 bg-white shadow-sm"> <h3 class="text-2xl font-bold mb-2">Gratuito</h3>
                         <p class="text-gray-500 mb-6">Para viagens curtas e experimentação.</p>
                         <div class="mb-6">
-                            <span class="text-5xl font-extrabold">R$ 0</span>
+                            <span class="text-5xl font-extrabold text-green-600">R$ 0</span>
                         </div>
                         <ul class="space-y-4 text-gray-600 mb-8">
                             <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Viagens de até 7 dias</li>
@@ -143,8 +162,7 @@
                         <a href="app.html" class="w-full block text-center bg-gray-200 text-gray-800 font-semibold py-3 rounded-lg hover:bg-gray-300 transition-colors">Começar agora</a>
                     </div>
 
-                    <div class="w-full max-w-md border-2 border-blue-600 rounded-2xl p-8 order-1 lg:order-2 relative">
-                        <div class="absolute top-0 -translate-y-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">MAIS POPULAR</div>
+                    <div class="w-full max-w-md border-2 border-blue-600 rounded-2xl p-8 order-1 lg:order-2 relative bg-white shadow-lg"> <div class="absolute top-0 -translate-y-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">MAIS POPULAR</div>
                         <h3 class="text-2xl font-bold mb-2 text-blue-600">Plano Anual</h3>
                         <p class="text-gray-500 mb-6">Para viajantes frequentes e sem limites.</p>
                         <div class="mb-6">
@@ -153,15 +171,29 @@
                         </div>
                         <ul class="space-y-4 text-gray-600 mb-8">
                             <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Viagens com duração ilimitada</li>
-                            <li class="flex items-center font-bold"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Criação de viagens ilimitadas e com duração ilimitada</li>
+                            <li class="flex items-center font-bold"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Criação de viagens ilimitadas</li>
                             <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Compartilhamento com amigos</li>
                             <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Divisor de despesas</li>
                         </ul>
                          <a href="app.html" class="w-full block text-center bg-blue-600 text-white font-semibold py-3 rounded-lg cta-button hover:bg-blue-700">Escolher plano</a>
                     </div>
                     
-                    <div class="w-full max-w-sm border border-gray-200 rounded-2xl p-8 order-3 lg:order-3">
-                        <h3 class="text-2xl font-bold mb-2">Viagem Avulsa</h3>
+                    <div class="w-full max-w-sm border border-gray-200 rounded-2xl p-8 order-2 lg:order-3 bg-white shadow-sm"> <h3 class="text-2xl font-bold mb-2">Plano Bianual</h3>
+                        <p class="text-gray-500 mb-6">Para economizar ainda mais a longo prazo.</p>
+                        <div class="mb-6">
+                            <span class="text-5xl font-extrabold">R$ 179</span>
+                            <span class="text-gray-500 text-xl">,90 / 2 anos</span>
+                        </div>
+                        <ul class="space-y-4 text-gray-600 mb-8">
+                            <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Viagens com duração ilimitada</li>
+                            <li class="flex items-center font-bold"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Criação de viagens ilimitadas</li>
+                            <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Compartilhamento com amigos</li>
+                            <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Divisor de despesas</li>
+                        </ul>
+                         <a href="app.html" class="w-full block text-center bg-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-gray-900 transition-colors">Escolher plano</a>
+                    </div>
+                    
+                    <div class="w-full max-w-sm border border-gray-200 rounded-2xl p-8 order-4 lg:order-4 bg-white shadow-sm"> <h3 class="text-2xl font-bold mb-2">Viagem Avulsa</h3>
                         <p class="text-gray-500 mb-6">Para aquela viagem especial mais longa.</p>
                         <div class="mb-6">
                             <span class="text-5xl font-extrabold">R$ 29</span>
@@ -178,7 +210,7 @@
                 </div>
             </div>
         </section>
-    </main>
+        </main>
     
     <footer class="bg-gray-900 text-white">
         <div class="container mx-auto px-6 py-8 text-center">
@@ -190,7 +222,3 @@
     </footer>
 </body>
 </html>
-
-
-
-
