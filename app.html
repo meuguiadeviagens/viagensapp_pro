@@ -386,6 +386,9 @@
                                 <span>Notificações</span>
                                 <span id="notification-menu-badge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span>
                             </a>
+                            <a href="#" id="upgrade-plan-btn" class="hidden block px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-100" onclick="event.preventDefault(); openModal('upgrade-plan-modal'); userMenuDropdown.classList.add('hidden');">
+                                Adquirir um Plano
+                            </a>
                             <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-slate-100">Sair</a>
                         </div>
                     </div>
@@ -407,7 +410,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.0082 | 17/10/2025, 08:11</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1000 | 18/10/2025, 08:11</p>
             </main>
         </div>
 
@@ -1493,6 +1496,42 @@
         </div>
     </div>
 
+    <!--Adquira um plano-->
+    <div id="upgrade-plan-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+    <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4">
+        <h3 class="text-2xl font-semibold mb-4">Adquirir Acesso Premium</h3>
+        <p class="text-slate-600 mb-6">Desbloqueie viagens com duração ilimitada e planeje sem restrições.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-slate-50 p-4 rounded-lg border border-blue-200">
+                <h4 class="font-semibold text-blue-700 text-lg">Plano Anual</h4>
+                <p class="text-3xl font-bold text-blue-600 my-2">R$ 99,90<span class="text-sm font-normal">/ano</span></p>
+                <p class="text-sm text-slate-600">Acesso ilimitado a todas as funcionalidades por 1 ano.</p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <h4 class="font-semibold text-slate-700 text-lg">Viagem Avulsa</h4>
+                <p class="text-3xl font-bold text-slate-600 my-2">R$ 29,90<span class="text-sm font-normal">/viagem</span></p>
+                <p class="text-sm text-slate-600">Desbloqueia uma única viagem (pré-pago) para ter duração ilimitada.</p>
+            </div>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-6">
+            <h4 class="font-semibold text-blue-800">Como Pagar:</h4>
+            <p class="mt-2 text-sm text-blue-700">1. Mercado Pago</p>
+            <p class="font-mono bg-white p-2 rounded text-blue-900 shadow-sm">Aguarde</p>
+
+            <p class="mt-4 text-sm text-blue-700">2. Aguarde</p>
+            <p class="font-mono bg-white p-2 rounded text-blue-900 shadow-sm">Por favor, aguarde</p>
+        </div>
+
+        <p class="text-xs text-slate-500 mt-4 text-center">Sua licença será ativada em poucas horas.</p>
+
+        <div class="pt-6 flex justify-end">
+            <button type="button" onclick="closeModal('upgrade-plan-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Fechar</button>
+        </div>
+    </div>
+</div>
+
 
     <script type="module">
         // Importações do Firebase
@@ -1538,6 +1577,7 @@
         let tripsRef;
         let activeTripListeners = {};
         let currentUserProfile = {};
+        let currentUserLicense = { type: 'gratuito', purchasedTrips: {} }; // Padrão
         let tripsData = []; 
         let currentTripId = null;
         let currentEditingItemIndex = null;
@@ -1545,6 +1585,7 @@
         let onConfirmAction = () => {};
         let confirmDeleteTimer = null; // <<< ADICIONE ESTA LINHA
         let userFavoriteTrips = new Set();
+
         
         // Variáveis de estado para reorganização
         let isReorganizing = false;
@@ -1981,17 +2022,7 @@ window.addEventListener('popstate', (event) => {
 
 		default: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`
         };
-  
-
-        // Inicializa o Firebase com a configuração definida acima
-        try {
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
-            // As variáveis 'db' e 'tripsRef' serão definidas após o login do usuário
-        } catch (error) {
-            console.error("Falha na inicialização do Firebase:", error);
-            alert("Não foi possível conectar ao serviço. Tente recarregar a página.");
-        }
+        
 
         // --- FUNÇÕES DE DIVISÃO DE DESPESAS ---
 
@@ -2260,6 +2291,33 @@ window.addEventListener('popstate', (event) => {
                         }
                     });
 
+                // NOVO: Carregar a licença do usuário
+                const licenseRef = ref(db, `users/${user.uid}/license`);
+                onValue(licenseRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        currentUserLicense = snapshot.val();
+                        // Garante que purchasedTrips exista para evitar erros
+                        if (!currentUserLicense.purchasedTrips) {
+                            currentUserLicense.purchasedTrips = {};
+                        }
+
+                        // Lógica para verificar se o plano anual expirou
+                        if (currentUserLicense.type === 'anual' && new Date().getTime() > currentUserLicense.expires) {
+                            currentUserLicense.type = 'gratuito';
+                            // Opcional: Você pode escrever de volta no DB para rebaixar o usuário
+                            set(licenseRef, { type: 'gratuito', expires: null, purchasedTrips: null });
+                        }
+                    } else {
+                        // Se não tiver licença, cria uma gratuita (para novos usuários ou migrações)
+                        currentUserLicense = { type: 'gratuito', expires: null, purchasedTrips: {} };
+                        set(licenseRef, currentUserLicense);
+                    }
+
+                    // Mostra ou esconde o botão de "Adquirir Plano"
+                    updateUIAfterLicenseLoad();
+                });
+                // FIM DO NOVO BLOCO DE LICENÇA
+
                 loginView.classList.add('hidden');
                 signupView.classList.add('hidden');
                 appView.classList.remove('hidden');
@@ -2270,10 +2328,9 @@ window.addEventListener('popstate', (event) => {
                 setupFavoritesListener(user.uid);
 
             } else {
-                // --- INÍCIO DA MODIFICAÇÃO ---
                 currentUserId = null; // Limpa o ID quando o usuário sai
-                // --- FIM DA MODIFICAÇÃO ---
-
+                currentUserLicense = { type: 'gratuito', purchasedTrips: {} }; // NOVO: Reseta no logout
+  
                 // 2. USUÁRIO ESTÁ DESLOGADO
                 console.log("Nenhum usuário logado.");
 
@@ -2321,6 +2378,7 @@ window.addEventListener('popstate', (event) => {
             const email = document.getElementById('signup-email').value.trim();
             const password = document.getElementById('signup-password').value;
             const profileData = {
+                email: email,
                 fullName: document.getElementById('signup-fullname').value,
                 birthDate: document.getElementById('signup-birthdate').value,
                 cpf: document.getElementById('signup-cpf').value,
@@ -3366,6 +3424,16 @@ window.addEventListener('popstate', (event) => {
             });
         }
         
+        // NOVO: Mostra o botão de upgrade se o usuário for 'gratuito'
+        function updateUIAfterLicenseLoad() {
+            const upgradeBtn = document.getElementById('upgrade-plan-btn');
+            if (currentUserLicense.type === 'gratuito') {
+                upgradeBtn.classList.remove('hidden');
+            } else {
+                upgradeBtn.classList.add('hidden');
+            }
+        }
+        
         function setupTripsListener() {
             const user = auth.currentUser;
             if (!user) return;
@@ -3865,11 +3933,44 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             const trip = tripsData.find(t => t.id === currentTripId);
             if (!trip) return;
 
-            document.getElementById('edit-trip-name').value = trip.name;
+            // --- INÍCIO DA NOVA LÓGICA DE BLOQUEIO DE CAMPO ---
+            const isPurchasedTrip = currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[currentTripId];
+            let isLocked = false; // Por padrão, está destravado
+
+            // Checa se é uma Viagem Avulsa E se ela já começou
+            if (isPurchasedTrip) {
+                const startDate = new Date(trip.startDate + 'T00:00:00Z');
+                const today = new Date();
+                today.setUTCHours(0, 0, 0, 0); // Zera a hora para comparar só a data
+
+                if (today >= startDate) {
+                    isLocked = true; // Trava os campos
+                }
+            }
+
+            // Pega os elementos do formulário
+            const nameInput = document.getElementById('edit-trip-name');
+            const startDateInput = document.getElementById('edit-trip-start-date');
+            const imageInput = document.getElementById('edit-trip-image-url');
+
+            // Habilita ou desabilita os campos com base na trava
+            // O usuário NÃO PODE editar estes 3 campos se a viagem avulsa começou
+            nameInput.disabled = isLocked;
+            startDateInput.disabled = isLocked;
+            imageInput.disabled = isLocked;
+
+            // Adiciona/Remove classes visuais para o usuário saber que está travado
+            nameInput.classList.toggle('bg-slate-100', isLocked);
+            startDateInput.classList.toggle('bg-slate-100', isLocked);
+            imageInput.classList.toggle('bg-slate-100', isLocked);
+            // --- FIM DA NOVA LÓGICA ---
+
+            // Preenche os valores (como antes)
+            nameInput.value = trip.name;
             document.getElementById('edit-trip-destination').value = trip.destination;
-            document.getElementById('edit-trip-start-date').value = trip.startDate;
-            document.getElementById('edit-trip-end-date').value = trip.endDate;
-            document.getElementById('edit-trip-image-url').value = trip.imageUrl || '';
+            startDateInput.value = trip.startDate;
+            document.getElementById('edit-trip-end-date').value = trip.endDate; // Este campo NUNCA é travado
+            imageInput.value = trip.imageUrl || '';
             document.getElementById('edit-trip-link-text').value = trip.customLinkText || '';
             document.getElementById('edit-trip-link-url').value = trip.customLinkUrl || '';
 
@@ -3881,9 +3982,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             }
 
             renderTravelersList(currentTripId); // <-- ADICIONE ESTA LINHA AQUI
-
             setupAutocomplete(); // Ativa o sistema de sugestões
-
             openModal('edit-trip-modal');
         };
 
@@ -4670,6 +4769,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             if (!user) return;
 
             const updatedProfileData = {
+                email: user.email,
                 fullName: document.getElementById('profile-fullname').value,
                 birthDate: document.getElementById('profile-birthdate').value,
                 cpf: document.getElementById('profile-cpf').value,
@@ -4698,6 +4798,31 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const user = auth.currentUser;
             if (!user) return;
 
+            // INÍCIO - VALIDAÇÃO DE PLANO (VERSÃO CORRIGIDA 2.0)
+            if (currentUserLicense.type === 'gratuito') {
+                const startDateStr = document.getElementById('trip-start-date').value;
+                const endDateStr = document.getElementById('trip-end-date').value;
+
+                // Lógica de data robusta (ignora fuso e horário de verão)
+                const date1 = new Date(startDateStr);
+                const date2 = new Date(endDateStr);
+                const utc1 = Date.UTC(date1.getFullYear(), date1.getMonth(), date1.getDate());
+                const utc2 = Date.UTC(date2.getFullYear(), date2.getMonth(), date2.getDate());
+                const MS_PER_DAY = 1000 * 60 * 60 * 24;
+                
+                // Calcula a diferença exata de dias e soma 1
+                const diffDays = Math.floor((utc2 - utc1) / MS_PER_DAY) + 1;
+
+                // O limite é 7. Se for 8 ou mais (diffDays > 7), bloqueia.
+                if (diffDays > 7) {
+                    alert("Plano Gratuito: A duração máxima da viagem é de 7 dias. Por favor, adquira um plano ou compre esta viagem avulsa para criar viagens mais longas.");
+                    openModal('upgrade-plan-modal'); // Abre o modal de planos
+                    return; // Impede o envio do formulário
+                }
+            }
+            // FIM - VALIDAÇÃO DE PLANO
+
+            // O resto do seu código para salvar a viagem (não precisa mudar)
             const userProfileRef = ref(db, `users/${user.uid}/profile`);
             const profileSnapshot = await get(userProfileRef);
             const userProfile = profileSnapshot.val();
@@ -4723,9 +4848,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             };
 
             try {
-                // Operação 1: Salva os dados da viagem em /trips/{idDaViagem}
                 await set(newTripRef, newTripData);
-                // Operação 2: Salva a referência no perfil do usuário
                 await set(ref(db, `users/${user.uid}/memberOf/${newTripId}`), true);
                 
                 closeModal('add-trip-modal');
@@ -4734,6 +4857,8 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 alert("Ocorreu um erro ao criar a viagem. Verifique as permissões do banco de dados.");
             }
         });
+
+        
 
         document.getElementById('add-document-form').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -4762,35 +4887,81 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         document.getElementById('add-transport-form').addEventListener('submit', (e) => { e.preventDefault(); addDetail('transport'); });
         document.getElementById('add-lodging-form').addEventListener('submit', (e) => { e.preventDefault(); addDetail('lodging'); });
 
-        // VERSÃO NOVA - USE ESTA
         document.getElementById('edit-trip-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             if (!currentTripId) return;
+
+            // --- INÍCIO DA NOVA LÓGICA DE SAVE ---
+            
+            // 1. Checa as condições de bloqueio
+            const isPurchasedTrip = currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[currentTripId];
+            let isLocked = false;
+            
+            if (isPurchasedTrip) {
+                const trip = tripsData.find(t => t.id === currentTripId); // Pega a viagem da memória
+                const startDate = new Date(trip.startDate + 'T00:00:00Z');
+                const today = new Date();
+                today.setUTCHours(0, 0, 0, 0);
+                if (today >= startDate) {
+                    isLocked = true;
+                }
+            }
+
+            // 2. Define o objeto 'updates' apenas com os campos SEMPRE permitidos
             const updates = {
-                name: document.getElementById('edit-trip-name').value,
                 destination: document.getElementById('edit-trip-destination').value,
-                startDate: document.getElementById('edit-trip-start-date').value,
                 endDate: document.getElementById('edit-trip-end-date').value,
-                imageUrl: document.getElementById('edit-trip-image-url').value,
                 customLinkText: document.getElementById('edit-trip-link-text').value.trim(),
                 customLinkUrl: document.getElementById('edit-trip-link-url').value.trim(),
             };
+
+            // 3. Só adiciona os campos "sensíveis" ao 'updates' se NÃO estiverem travados
+            if (!isLocked) {
+                
+                // VALIDAÇÃO DE 7 DIAS (VERSÃO CORRIGIDA 2.0)
+                if (currentUserLicense.type === 'gratuito' && !isPurchasedTrip) {
+                    const startDateStr = document.getElementById('edit-trip-start-date').value;
+                    const endDateStr = document.getElementById('edit-trip-end-date').value;
+                    
+                    // Lógica de data robusta (ignora fuso e horário de verão)
+                    const date1 = new Date(startDateStr);
+                    const date2 = new Date(endDateStr);
+                    const utc1 = Date.UTC(date1.getFullYear(), date1.getMonth(), date1.getDate());
+                    const utc2 = Date.UTC(date2.getFullYear(), date2.getMonth(), date2.getDate());
+                    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+                    
+                    const diffDays = Math.floor((utc2 - utc1) / MS_PER_DAY) + 1;
+
+                    if (diffDays > 7) {
+                        alert("Plano Gratuito: A duração máxima da viagem é de 7 dias. Por favor, adquira um plano ou compre esta viagem avulsa para poder salvar.");
+                        openModal('upgrade-plan-modal');
+                        return; // Impede o save
+                    }
+                }
+                
+                // Se não estiver travado, pode atualizar os 3 campos
+                updates.name = document.getElementById('edit-trip-name').value;
+                updates.startDate = document.getElementById('edit-trip-start-date').value;
+                updates.imageUrl = document.getElementById('edit-trip-image-url').value;
+
+            } else if (isLocked) {
+                // Se estiver travado, avisa o usuário que salvou parcialmente
+                alert("Alterações salvas! Lembre-se que o Nome, Data de Início e Imagem da viagem não podem ser alterados após o início da viagem.");
+            }
+            // --- FIM DA NOVA LÓGICA DE SAVE ---
+
             const tripToUpdateRef = ref(db, `trips/${currentTripId}`);
             await update(tripToUpdateRef, updates);
 
-            // --- INÍCIO DAS NOVAS LINHAS ---
-
-            // 1. Atualiza os dados na variável local para refletir a mudança instantaneamente.
+            // 1. Atualiza os dados na variável local...
             const tripIndex = tripsData.findIndex(t => t.id === currentTripId);
             if (tripIndex > -1) tripsData[tripIndex] = { ...tripsData[tripIndex], ...updates };
 
-            // 2. Força o redesenho da tela de detalhes (que está visível).
+            // 2. Força o redesenho da tela de detalhes...
             renderTripDetails(currentTripId);
 
-            // 3. Força o redesenho da lista de viagens (que está escondida) para que o card esteja atualizado quando você voltar.
+            // 3. Força o redesenho da lista de viagens...
             renderTripLists();
-
-            // --- FIM DAS NOVAS LINHAS ---
 
             closeModal('edit-trip-modal');
         });
