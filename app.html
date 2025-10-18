@@ -239,7 +239,9 @@
 <body class="bg-slate-100 text-slate-800">
 
     <form id="login-form" class="max-w-sm mx-auto mt-20 p-8 bg-white rounded-lg shadow-lg">
-        <h2 class="text-2xl font-bold mb-6 text-center">Meu Guia de Viagens</h2>
+        <div class="flex justify-center mb-6">
+            <a href="index.html"><img src="logo_meuguiadeviagens.png" alt="Logo Meu Guia de Viagens" class="h-10"></a>
+        </div>
         <div class="space-y-4">
             <div>
                 <label for="email" class="block text-sm font-medium text-slate-600">Email</label>
@@ -365,7 +367,7 @@
         <div id="trips-view">
             <header class="flex flex-col sm:flex-row justify-between sm:items-center mb-8">
                 <div>
-                    <h1 class="text-4xl font-bold text-slate-900"><img src="logo_meuguiadeviagens.png"></h1>
+                    <h1 class="text-4xl font-bold text-slate-900"><a href="index.html"><img src="logo_meuguiadeviagens.png"></a></h1>
                     <p class="text-slate-500 mt-1"></p>
                 </div>
                 <div class="flex items-center gap-4 mt-4 sm:mt-0">
@@ -386,6 +388,7 @@
                                 <span>Notificações</span>
                                 <span id="notification-menu-badge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span>
                             </a>
+                            <a href="#" onclick="openLicenseModal()" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Minha licença</a>
                             <a href="#" id="upgrade-plan-btn" class="hidden block px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-100" onclick="event.preventDefault(); openModal('upgrade-plan-modal'); userMenuDropdown.classList.add('hidden');">
                                 Adquirir um Plano
                             </a>
@@ -410,8 +413,45 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1000 | 18/10/2025, 08:11</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1002 | 18/10/2025, 14:32</p>
             </main>
+        </div>
+
+        <!-- Modal Minha Licença -->
+        <div id="license-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+            <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md m-4">
+                <h3 class="text-2xl font-semibold mb-6 text-slate-800">Detalhes da Licença</h3>
+                <div class="space-y-4 text-slate-700">
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Nome Completo</p>
+                        <p id="license-fullname" class="text-lg font-semibold"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">E-mail</p>
+                        <p id="license-email" class="text-lg"></p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-slate-500">Tipo de Licença</p>
+                        <p id="license-type" class="text-lg font-bold"></p>
+                    </div>
+                    <div id="license-dates-container" class="hidden border-t pt-4 space-y-4">
+                        <div id="acquisition-date-block" class="hidden">
+                            <p class="text-sm font-medium text-slate-500">Data de Aquisição</p>
+                            <p id="license-acquisition-date"></p>
+                        </div>
+                        <div id="expiration-date-block" class="hidden">
+                            <p class="text-sm font-medium text-slate-500">Data de Expiração</p>
+                            <div>
+                                <p id="license-expiration-date" class="inline-block"></p>
+                                <span id="license-status-badge" class="ml-2 text-xs font-bold px-2 py-1 rounded-full"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-8 flex justify-end">
+                    <button type="button" onclick="closeModal('license-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Fechar</button>
+                </div>
+            </div>
         </div>
 
         <div id="details-view" class="hidden">
@@ -2749,6 +2789,78 @@ window.addEventListener('popstate', (event) => {
         window.toggleGenericPanel = (panelId) => {
             document.getElementById(panelId).classList.toggle('collapsed');
         }
+
+        // --- FUNÇÃO PARA ABRIR O MODAL DE LICENÇA (ATUALIZADA) ---
+        window.openLicenseModal = () => {
+            if (!currentUserProfile || !currentUserLicense) {
+                alert("Dados do usuário ou licença não carregados.");
+                return;
+            }
+            userMenuDropdown.classList.add('hidden');
+
+            document.getElementById('license-fullname').textContent = currentUserProfile.fullName || 'Não informado';
+            document.getElementById('license-email').textContent = currentUserProfile.email || 'Não informado';
+
+            let licenseTypeText = 'Gratuito';
+            if (currentUserLicense.type === 'anual') {
+                licenseTypeText = 'Plano Anual Premium';
+            } else if (currentUserLicense.type === 'vitalicia') {
+                licenseTypeText = 'Plano Vitalício Premium';
+            } else if (currentUserLicense.type === 'admin') {
+                licenseTypeText = 'Administrador do Sistema';
+            } else if (currentUserLicense.type === 'cortesia') {
+                licenseTypeText = 'Licença Cortesia';
+            }
+            document.getElementById('license-type').textContent = licenseTypeText;
+
+            const datesContainer = document.getElementById('license-dates-container');
+            const acquisitionBlock = document.getElementById('acquisition-date-block');
+            const expirationBlock = document.getElementById('expiration-date-block');
+
+            // Reset visibility
+            acquisitionBlock.classList.add('hidden');
+            expirationBlock.classList.add('hidden');
+            
+            let shouldShowDatesContainer = false;
+
+            // Lógica para Data de Aquisição
+            if (currentUserLicense.dataAquisicao && currentUserLicense.type !== 'gratuito') {
+                const acquisitionDate = new Date(currentUserLicense.dataAquisicao);
+                document.getElementById('license-acquisition-date').textContent = acquisitionDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+                acquisitionBlock.classList.remove('hidden');
+                shouldShowDatesContainer = true;
+            }
+            
+            // Lógica para Data de Expiração e Status
+            if (currentUserLicense.type === 'anual' && currentUserLicense.expires) {
+                const expirationDate = new Date(currentUserLicense.expires);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Zera a hora para comparar apenas as datas
+
+                document.getElementById('license-expiration-date').textContent = expirationDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+                
+                const statusBadge = document.getElementById('license-status-badge');
+                
+                if (today > expirationDate) {
+                    statusBadge.textContent = 'Vencida';
+                    statusBadge.className = 'ml-2 text-xs font-bold px-2 py-1 rounded-full bg-red-100 text-red-800';
+                } else {
+                    statusBadge.textContent = 'Ativa';
+                    statusBadge.className = 'ml-2 text-xs font-bold px-2 py-1 rounded-full bg-green-100 text-green-800';
+                }
+
+                expirationBlock.classList.remove('hidden');
+                shouldShowDatesContainer = true;
+            }
+
+            if (shouldShowDatesContainer) {
+                datesContainer.classList.remove('hidden');
+            } else {
+                datesContainer.classList.add('hidden');
+            }
+
+            openModal('license-modal');
+        };
         
         // --- FUNÇÕES DE RENDERIZAÇÃO ---
         // VERSÃO NOVA
@@ -4246,9 +4358,37 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
         window.deleteTrip = async (event, tripId) => {
             event.stopPropagation();
             showConfirmDelete('Tem certeza que deseja excluir esta viagem?', async () => {
-                const tripToDeleteRef = ref(db, `trips/${tripId}`);
-                await remove(tripToDeleteRef);
-                closeModal('confirm-delete-modal');
+                // 1. Encontra a viagem que será excluída para obter a lista de membros.
+                const tripToDelete = tripsData.find(t => t.id === tripId);
+                if (!tripToDelete) {
+                    console.error("Não foi possível encontrar a viagem para exclusão.");
+                    alert("Ocorreu um erro ao tentar excluir a viagem.");
+                    closeModal('confirm-delete-modal');
+                    return;
+                }
+
+                const updates = {};
+                
+                // 2. Prepara a exclusão da viagem principal.
+                updates[`/trips/${tripId}`] = null;
+
+                // 3. Prepara a exclusão da referência "memberOf" para todos os membros.
+                if (tripToDelete.members) {
+                    const memberUids = Object.keys(tripToDelete.members);
+                    memberUids.forEach(uid => {
+                        updates[`/users/${uid}/memberOf/${tripId}`] = null;
+                    });
+                }
+
+                // 4. Executa todas as exclusões de uma vez (atomicamente).
+                try {
+                    await update(ref(db), updates);
+                } catch (error) {
+                    console.error("Erro ao excluir a viagem e suas referências:", error);
+                    alert("Ocorreu um erro ao excluir a viagem.");
+                } finally {
+                    closeModal('confirm-delete-modal');
+                }
             });
         }
         
