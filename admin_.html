@@ -458,6 +458,8 @@
 
         // --- 4.1 LÓGICA PARA LISTAR VIAGENS DO USUÁRIO (ATUALIZADA COM ORDENAÇÃO) ---
 
+        // --- 4.1 LÓGICA PARA LISTAR VIAGENS DO USUÁRIO (ATUALIZADA COM ORDENAÇÃO E DATA) ---
+
         async function listUserTrips() {
             if (!currentEditingUid) {
                 console.warn("Nenhum UID de usuário selecionado para buscar viagens.");
@@ -465,11 +467,11 @@
             }
 
             const listContainer = document.getElementById('user-trips-list-container');
-            listContainer.innerHTML = '<p class="text-xs text-slate-400 text-center animate-pulse">Buscando viagens...</p>'; // Feedback visual
-            listContainer.classList.remove('hidden'); // Mostra o container
+            listContainer.innerHTML = '<p class="text-xs text-slate-400 text-center animate-pulse">Buscando viagens...</p>';
+            listContainer.classList.remove('hidden');
 
             try {
-                // --- Passo 1: Obter os IDs das Viagens (sem alteração) ---
+                // --- Passo 1: Obter os IDs das Viagens ---
                 const memberOfRef = ref(db, `users/${currentEditingUid}/memberOf`);
                 const memberOfSnapshot = await get(memberOfRef);
 
@@ -487,46 +489,39 @@
                     }
                 }
 
-                listContainer.innerHTML = ''; // Limpa "Buscando..."
+                listContainer.innerHTML = ''; 
 
                 if (tripIds.length === 0) {
                     listContainer.innerHTML = '<p class="text-xs text-slate-500 text-center">Nenhuma viagem encontrada para este usuário.</p>';
                     return;
                 }
 
-                // --- Passo 2: Buscar Detalhes Completos da Viagem (Modificado) ---
-                // Busca o snapshot completo da viagem para ter acesso ao nome E à data
+                // --- Passo 2: Buscar Detalhes Completos da Viagem ---
                 const tripPromises = tripIds.map(tripId => get(ref(db, `trips/${tripId}`)));
                 const tripSnapshots = await Promise.all(tripPromises);
 
-                // --- Passo 3: Processar, Filtrar e Criar Lista para Ordenar (Modificado) ---
+                // --- Passo 3: Processar, Filtrar e Criar Lista para Ordenar ---
                 const tripsWithDetails = [];
                 tripSnapshots.forEach(tripSnap => {
                     if (tripSnap.exists()) {
                         const tripData = tripSnap.val();
                         const tripId = tripSnap.key;
 
-                        // Filtra viagens sem nome (pedido anterior)
                         if (tripData.name) {
                             tripsWithDetails.push({
                                 id: tripId,
                                 name: tripData.name,
-                                // *** ATENÇÃO AQUI ***
-                                // Assumindo que o campo de data se chama 'createdAt'.
-                                // Se for outro nome (ex: 'timestamp'), troque 'tripData.createdAt'
-                                // Usamos 0 como fallback caso o campo não exista
-                                createdAt: tripData.createdAt || 0
+                                // Assumindo que o campo de data se chama 'createdAt'
+                                createdAt: tripData.timestamp || 0 
                             });
                         }
                     }
                 });
                 
-                // --- Passo 4: Ordenar a Lista (Novo) ---
-                // Ordena pelo 'createdAt' em ordem decrescente (mais novo primeiro)
+                // --- Passo 4: Ordenar a Lista ---
                 tripsWithDetails.sort((a, b) => b.createdAt - a.createdAt);
 
                 // --- Passo 5: Renderizar a Lista Ordenada (Modificado) ---
-                // Verifica se, após filtrar, sobrou alguma viagem
                 if (tripsWithDetails.length === 0) {
                     listContainer.innerHTML = '<p class="text-xs text-slate-500 text-center">Nenhuma viagem (com nome) encontrada.</p>';
                     return;
@@ -534,15 +529,24 @@
 
                 // Itera sobre a lista JÁ ORDENADA e cria os elementos
                 tripsWithDetails.forEach(trip => {
+                    // *** INÍCIO DA MODIFICAÇÃO ***
+                    // Formata a data de criação, se ela existir (não for 0)
+                    const createdAtDate = trip.createdAt 
+                        ? new Date(trip.createdAt).toLocaleDateString('pt-BR') 
+                        : 'Data N/A'; // Texto para caso a data seja 0
+
                     const tripElement = document.createElement('div');
                     tripElement.className = 'user-trip-item flex justify-between items-center p-2 rounded';
+                    // Adicionamos a linha com a data formatada
                     tripElement.innerHTML = `
                         <div>
                             <p class="text-sm font-medium text-slate-700 truncate" title="${trip.name}">${trip.name}</p>
                             <p class="text-xs text-slate-500 font-mono">${trip.id}</p>
+                            <p class="text-xs text-slate-400">${createdAtDate}</p>
                         </div>
                         <button type="button" onclick="copyTripId('${trip.id}', this)" class="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded hover:bg-slate-300">Copiar ID</button>
                     `;
+                    // *** FIM DA MODIFICAÇÃO ***
                     listContainer.appendChild(tripElement);
                 });
 
