@@ -15,6 +15,8 @@
         .action-cell { width: 1%; white-space: nowrap; }
         .user-trip-item { transition: background-color 0.2s; }
         .user-trip-item:hover { background-color: #f1f5f9; } /* slate-100 */
+        /* NOVO: Para formatar o JSON no modal de histórico */
+        pre { white-space: pre-wrap; word-wrap: break-word; }
     </style>
 </head>
 <body class="bg-slate-200">
@@ -53,7 +55,7 @@
                 <table class="min-w-full min-w-table divide-y divide-slate-200">
                     <thead class="bg-slate-50">
                         <tr>
-                            <th scope="col" class="action-cell px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Editar</th>
+                            <th scope="col" class="action-cell px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ações</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Nome</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Email</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">UID</th>
@@ -87,6 +89,12 @@
                     </select>
                 </div>
 
+                <div>
+                    <label for="edit-license-aquisicao" class="block text-sm font-medium text-slate-600">Data de Aquisição (Plano)</label>
+                    <input type="date" id="edit-license-aquisicao" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
+                    <p class="text-xs text-slate-500 mt-1">Sugestão: data de hoje.</p>
+                </div>
+
                 <div id="expires-field" class="hidden">
                     <label for="edit-license-expires" class="block text-sm font-medium text-slate-600">Data de Expiração (Plano Anual)</label>
                     <input type="date" id="edit-license-expires" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
@@ -103,7 +111,6 @@
                         {/* Lista de viagens avulsas adicionadas */}
                     </div>
 
-                    <!--* Botão e container para listar viagens do usuário -->
                     <button type="button" id="list-user-trips-btn" class="mt-3 w-full sm:w-auto px-4 py-2 bg-indigo-100 text-indigo-700 text-sm font-semibold rounded hover:bg-indigo-200 transition-colors">
                         Listar Viagens do Usuário (para copiar ID)
                     </button>
@@ -127,7 +134,7 @@
             <p class="mb-1"><strong id="delete-user-name" class="text-slate-800 break-words"></strong></p>
             <p class="mb-6 text-xs sm:text-sm text-slate-500 break-words" id="delete-user-email"></p>
             <p class="text-xs sm:text-sm text-red-600 bg-red-50 p-3 rounded border border-red-200">
-                <strong>Atenção:</strong> Ação irreversível. Apagará todos os dados no banco de dados. Exclua a conta no Firebase Authentication manualmente depois.
+                <strong>Atenção:</strong> Ação irreversível. Apagará todos os dados no banco de dados. Exclua a conta no Firebase Authentication manually depois.
             </p>
             <input type="hidden" id="delete-user-uid">
             <div class="pt-6 flex flex-col sm:flex-row justify-end gap-3">
@@ -137,10 +144,23 @@
         </div>
     </div>
 
+    <div id="admin-history-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-2xl m-4 max-h-[90vh] flex flex-col">
+            <h3 class="text-xl sm:text-2xl font-semibold mb-2">Histórico de Alterações</h3>
+            <p class="mb-6 text-sm sm:text-base text-slate-600">Usuário: <strong id="history-user-name"></strong></p>
+
+            <div id="history-content-list" class="flex-grow space-y-4 overflow-y-auto border p-4 rounded-lg bg-slate-50 min-h-[200px]">
+                </div>
+
+            <div class="pt-6 flex justify-end border-t mt-6">
+                <button type="button" onclick="closeModal('admin-history-modal')" class="w-full sm:w-auto px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Fechar</button>
+            </div>
+        </div>
+    </div>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getDatabase, ref, onValue, set, get, update, remove, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, get, update, remove, query, orderByChild, equalTo, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         const firebaseConfig = {
              apiKey: "AIzaSyD1IYYMSYXBqfgvUQrp8DaX4Z5n7-4Wryw",
@@ -164,14 +184,13 @@
         let allUsersData = [];
         let currentEditingUid = null;
         let tempPurchasedTrips = {};
+        let currentEditingOldLicenseData = null; 
 
         // --- 1. CONTROLE DE AUTENTICAÇÃO ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Usuário logado - verifica se é admin
                 checkAdminStatus(user);
             } else {
-                // Usuário deslogado - mostra tela de login
                 loginView.classList.remove('hidden');
                 adminView.classList.add('hidden');
             }
@@ -181,50 +200,41 @@
             const licenseRef = ref(db, `users/${user.uid}/license`);
             try {
                 const snapshot = await get(licenseRef);
-                // Verifica se o nó 'license' existe e se 'type' é 'admin'
                 if (snapshot.exists() && snapshot.val().type === 'admin') {
-                    // É admin: esconde login, mostra painel, carrega dados
                     loginView.classList.add('hidden');
                     adminView.classList.remove('hidden');
-                    document.getElementById('admin-email').textContent = user.email; // Mostra email do admin logado
-                    loadAllUsers(); // Carrega a lista de usuários
+                    document.getElementById('admin-email').textContent = user.email; 
+                    loadAllUsers(); 
                 } else {
-                    // Não é admin: Acesso negado e desloga
                     alert("Acesso negado. Privilégios de administrador necessários.");
                     signOut(auth);
                 }
             } catch (error) {
-                // Erro ao verificar permissões
                 console.error("Erro ao verificar status de admin:", error);
                 alert("Erro ao verificar permissões. Tente novamente.");
-                signOut(auth); // Desloga por segurança
+                signOut(auth); 
             }
         }
 
         // --- 2. LÓGICA DE LOGIN/LOGOUT ---
         loginView.addEventListener('submit', (e) => {
-            e.preventDefault(); // Impede recarregamento da página
+            e.preventDefault(); 
             const emailInput = document.getElementById('email');
             const passwordInput = document.getElementById('password');
             const email = emailInput.value.trim();
             const password = passwordInput.value;
 
-            // Validação simples
             if (!email || !password) {
                 alert("Por favor, preencha e-mail e senha.");
                 return;
             }
 
-            // Tenta fazer login com Firebase Auth
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
-                    // Login bem-sucedido é tratado pelo onAuthStateChanged
                     console.log("Login successful for:", userCredential.user.email);
                 })
                 .catch((error) => {
-                    // Erro no login
                     console.error("Erro no login:", error.code, error.message);
-                    // Fornece feedback mais específico se possível
                     if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                          alert("E-mail ou senha inválidos.");
                     } else if (error.code === 'auth/invalid-email') {
@@ -239,227 +249,270 @@
              signOut(auth).catch(error => console.error("Erro ao deslogar:", error));
         });
 
+        // NOVO: Helper para formatar um timestamp para YYYY-MM-DD (Local)
+        function formatTimestampToInputDate(timestamp) {
+            const date = new Date(timestamp); // Cria data local a partir do timestamp
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
         // --- 3. LÓGICA DO PAINEL ADMIN ---
         async function loadAllUsers() {
             const usersRef = ref(db, 'users');
-            // Usa onValue para manter a lista atualizada em tempo real
             onValue(usersRef, (snapshot) => {
-                const colspanValue = 7; // Número total de colunas na tabela
+                const colspanValue = 7; 
                 if (!snapshot.exists()) {
-                    // Se não houver usuários no DB
                     usersTableBody.innerHTML = `<tr><td colspan="${colspanValue}" class="px-6 py-4 text-center text-slate-500">Nenhum usuário cadastrado.</td></tr>`;
-                    allUsersData = []; // Limpa o cache local
+                    allUsersData = []; 
                     return;
                 }
 
-                // Processa os dados dos usuários
                 allUsersData = [];
                 snapshot.forEach(userSnapshot => {
                     const uid = userSnapshot.key;
-                    const profile = userSnapshot.child('profile').val() || {}; // Pega o perfil ou objeto vazio
-                    const license = userSnapshot.child('license').val() || { type: 'gratuito' }; // Pega licença ou default
+                    const profile = userSnapshot.child('profile').val() || {}; 
+                    const license = userSnapshot.child('license').val() || { type: 'gratuito' }; 
                     allUsersData.push({
                         uid,
-                        name: profile.fullName || "Sem nome", // Nome do perfil ou default
-                        email: profile.email || "Sem email", // Email do perfil ou default
-                        licenseType: license.type || 'gratuito', // Tipo de licença ou default
-                        expires: license.expires ? new Date(license.expires).toLocaleDateString('pt-BR') : 'N/A', // Data formatada ou N/A
-                        licenseData: license // Guarda dados completos da licença
+                        name: profile.fullName || "Sem nome", 
+                        email: profile.email || "Sem email", 
+                        licenseType: license.type || 'gratuito', 
+                        expires: license.expires ? new Date(license.expires).toLocaleDateString('pt-BR') : 'N/A', 
+                        licenseData: license 
                     });
                 });
-                // Ordena alfabeticamente pelo nome para consistência
                 allUsersData.sort((a, b) => a.name.localeCompare(b.name));
-                renderUsersTable(allUsersData); // Desenha a tabela com os dados
+                renderUsersTable(allUsersData); 
             }, (error) => {
-                // Trata erro ao carregar usuários
                 console.error("Erro ao carregar lista de usuários:", error);
                 usersTableBody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Erro ao carregar usuários.</td></tr>`;
             });
         }
 
         function renderUsersTable(users) {
-            usersTableBody.innerHTML = ''; // Limpa tabela antes de redesenhar
+            usersTableBody.innerHTML = ''; 
             const colspanValue = 7;
             if (users.length === 0) {
-                // Mensagem se a lista (ou filtro) estiver vazia
                 usersTableBody.innerHTML = `<tr><td colspan="${colspanValue}" class="px-6 py-4 text-center text-slate-500">Nenhum usuário encontrado.</td></tr>`;
                 return;
             }
 
-            // Cria uma linha (tr) para cada usuário
             users.forEach(user => {
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50'; // Efeito visual ao passar o mouse
-                // Define o HTML interno da linha com os dados do usuário e botões
+                tr.className = 'hover:bg-slate-50'; 
+                
+                // --- // MODIFICADO: Adicionado botão de histórico ---
                 tr.innerHTML = `
                     <td class="action-cell px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
-                        <button onclick="openEditModal('${user.uid}')" class="text-blue-600 hover:text-blue-900" title="Editar Licença">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                        </button>
+                        <div class="flex gap-3">
+                            <button onclick="openEditModal('${user.uid}')" class="text-blue-600 hover:text-blue-900" title="Editar Licença">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                            <button onclick="openHistoryModal('${user.uid}')" class="text-slate-500 hover:text-slate-800" title="Ver Histórico">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-history"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                            </button>
+                        </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${user.name}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${user.email}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-400 font-mono" title="${user.uid}">${user.uid.substring(0, 10)}...</td> <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${user.licenseType}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-400 font-mono" title="${user.uid}">${user.uid.substring(0, 10)}...</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${user.licenseType}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${user.expires}</td>
                     <td class="action-cell px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button onclick="confirmUserDeletion('${user.uid}', '${user.name.replace(/'/g, "\\'")}', '${user.email.replace(/'/g, "\\'")}')" class="text-red-600 hover:text-red-900" title="Excluir Dados">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                     </td>`;
-                usersTableBody.appendChild(tr); // Adiciona a linha à tabela
+                // --- FIM DA MODIFICAÇÃO ---
+                
+                usersTableBody.appendChild(tr); 
             });
         }
 
-        // Filtro de busca na tabela
         searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase().trim(); // Pega o termo de busca
-            // Filtra o cache local de usuários
+            const query = e.target.value.toLowerCase().trim(); 
             const filteredUsers = allUsersData.filter(user =>
                 user.name.toLowerCase().includes(query) ||
                 user.email.toLowerCase().includes(query) ||
-                user.uid.toLowerCase().includes(query) // Adicionado filtro por UID
+                user.uid.toLowerCase().includes(query) 
             );
-            renderUsersTable(filteredUsers); // Redesenha a tabela com os resultados filtrados
+            renderUsersTable(filteredUsers); 
         });
 
         // --- 4. LÓGICA DO MODAL DE EDIÇÃO ---
 
-        // Abre o modal para editar a licença de um usuário
-        window.openEditModal = (uid) => {
-            currentEditingUid = uid; // Guarda o UID do usuário que está sendo editado
-            const user = allUsersData.find(u => u.uid === uid); // Encontra os dados do usuário no cache
-            if (!user) { console.error("Usuário não encontrado no cache:", uid); return; } // Segurança
+        // MODIFICADO: Helper para pegar data de hoje LOCAL como YYYY-MM-DD
+        function getTodayDateString() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            // getMonth() é 0-indexed (0=Jan), então +1
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); 
+            // getDate() é 1-indexed
+            const dd = String(today.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
 
-            // Preenche os campos do modal com os dados atuais
+        window.openEditModal = (uid) => {
+            currentEditingUid = uid; 
+            const user = allUsersData.find(u => u.uid === uid); 
+            if (!user) { console.error("Usuário não encontrado no cache:", uid); return; } 
+
+            currentEditingOldLicenseData = user.licenseData;
+
             document.getElementById('edit-user-id').value = uid;
             document.getElementById('edit-user-name').textContent = `${user.name} (${user.email})`;
-            document.getElementById('edit-license-type').value = user.licenseData.type || 'gratuito'; // Usa 'gratuito' se não houver tipo definido
+            document.getElementById('edit-license-type').value = user.licenseData.type || 'gratuito'; 
+            
+            const aquisicaoInput = document.getElementById('edit-license-aquisicao');
+            if (user.licenseData.dataAquisicao) {
+                // MODIFICADO: Usa a nova função local para carregar
+                aquisicaoInput.value = formatTimestampToInputDate(user.licenseData.dataAquisicao);
+            } else {
+                aquisicaoInput.value = getTodayDateString();
+            }
+
             const expiresInput = document.getElementById('edit-license-expires');
-            // Formata a data de expiração para o input type="date" (YYYY-MM-DD)
-            expiresInput.value = user.licenseData.expires ? new Date(user.licenseData.expires).toISOString().split('T')[0] : '';
+            // MODIFICADO: Usa a nova função local para carregar
+            expiresInput.value = user.licenseData.expires ? formatTimestampToInputDate(user.licenseData.expires) : '';
 
-            toggleExpiresField(); // Mostra/esconde campo de data e sugere data se necessário
+            toggleExpiresField(); 
 
-            // Prepara a lista de viagens avulsas
-            tempPurchasedTrips = user.licenseData.purchasedTrips || {}; // Pega viagens ou objeto vazio
-            renderPurchasedTripsList(); // Desenha a lista de viagens avulsas
+            tempPurchasedTrips = user.licenseData.purchasedTrips || {}; 
+            renderPurchasedTripsList(); 
 
-            // Limpa e esconde a lista de viagens do usuário antes de abrir
             const userTripsContainer = document.getElementById('user-trips-list-container');
             userTripsContainer.innerHTML = '<p class="text-xs text-slate-400 text-center">Clique em "Listar Viagens" para buscar.</p>';
             userTripsContainer.classList.add('hidden');
 
-            openModal('edit-license-modal'); // Abre o modal
+            openModal('edit-license-modal'); 
         }
 
-        // Calcula a data daqui a um ano no formato YYYY-MM-DD
         function getOneYearFromNowDateString() {
             const today = new Date();
-            today.setFullYear(today.getFullYear() + 1); // Adiciona 1 ano
-            return today.toISOString().split('T')[0]; // Formata
+            today.setFullYear(today.getFullYear() + 1); 
+            // MODIFICADO: Usa a mesma lógica local para consistência
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); 
+            const dd = String(today.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
         }
 
-        // Controla a visibilidade do campo de data de expiração e sugere data
         document.getElementById('edit-license-type').addEventListener('change', toggleExpiresField);
         function toggleExpiresField() {
             const typeSelect = document.getElementById('edit-license-type');
             const expiresField = document.getElementById('expires-field');
             const expiresInput = document.getElementById('edit-license-expires');
-            const isAnual = typeSelect.value === 'anual'; // Verifica se o plano é anual
+            const isAnual = typeSelect.value === 'anual'; 
 
-            expiresField.classList.toggle('hidden', !isAnual); // Mostra/esconde o campo
+            expiresField.classList.toggle('hidden', !isAnual); 
 
-            // Se for anual E o campo de data estiver vazio, preenche com a sugestão
             if (isAnual && !expiresInput.value) {
                 expiresInput.value = getOneYearFromNowDateString();
             }
         }
 
-        // Desenha a lista de IDs de viagens avulsas já adicionadas
         function renderPurchasedTripsList() {
             const listContainer = document.getElementById('purchased-trips-list');
-            listContainer.innerHTML = ''; // Limpa a lista
-            const tripIds = Object.keys(tempPurchasedTrips); // Pega os IDs
+            listContainer.innerHTML = ''; 
+            const tripIds = Object.keys(tempPurchasedTrips); 
 
             if (tripIds.length === 0) {
                 listContainer.innerHTML = '<p class="text-slate-400 text-xs">Nenhuma viagem avulsa adicionada.</p>';
                 return;
             }
 
-            // Cria um item para cada ID de viagem avulsa
             tripIds.forEach(tripId => {
                 const item = document.createElement('div');
                 item.className = 'flex justify-between items-center bg-slate-100 p-2 rounded text-xs';
                 item.innerHTML = `
                     <span class="truncate" title="${tripId}">${tripId}</span>
                     <button type="button" class="text-red-500 font-bold ml-2 flex-shrink-0" data-tripid="${tripId}">&times;</button>`;
-                // Adiciona evento para o botão de remover
                 item.querySelector('button').addEventListener('click', () => removePurchasedTrip(tripId));
                 listContainer.appendChild(item);
             });
         }
 
-        // Adiciona um ID de viagem avulsa à lista temporária
         document.getElementById('add-purchased-trip-btn').addEventListener('click', () => {
             const input = document.getElementById('edit-purchased-trips');
-            const tripId = input.value.trim(); // Pega e limpa o ID do input
+            const tripId = input.value.trim(); 
             if (tripId) {
-                tempPurchasedTrips[tripId] = true; // Adiciona ao objeto temporário
-                input.value = ''; // Limpa o input
-                renderPurchasedTripsList(); // Redesenha a lista
+                tempPurchasedTrips[tripId] = true; 
+                input.value = ''; 
+                renderPurchasedTripsList(); 
             }
         });
 
-        // Remove um ID de viagem avulsa da lista temporária
         function removePurchasedTrip(tripId) {
-            delete tempPurchasedTrips[tripId]; // Remove do objeto temporário
-            renderPurchasedTripsList(); // Redesenha a lista
+            delete tempPurchasedTrips[tripId]; 
+            renderPurchasedTripsList(); 
         }
 
-        // Salva as alterações da licença no Firebase
         document.getElementById('edit-license-form').addEventListener('submit', async (e) => {
-            e.preventDefault(); // Impede envio padrão do formulário
+            e.preventDefault(); 
             const uid = document.getElementById('edit-user-id').value;
             const type = document.getElementById('edit-license-type').value;
             const expiresDateStr = document.getElementById('edit-license-expires').value;
-            let expiresTimestamp = null; // Timestamp de expiração (null se não aplicável)
+            let expiresTimestamp = null; 
 
-            // Converte a data para timestamp se for plano anual e houver data
+            const aquisicaoDateStr = document.getElementById('edit-license-aquisicao').value;
+            let aquisicaoTimestamp = null;
+            if (aquisicaoDateStr) {
+            // MODIFICADO: Salva como timestamp (início do dia, LOCAL, para consistência)
+            aquisicaoTimestamp = new Date(aquisicaoDateStr + 'T00:00:00').getTime(); // Remove o 'Z'
+              }
+
+            // Converte a data de expiração para timestamp se for plano anual e houver data
             if (type === 'anual' && expiresDateStr) {
-                // Pega a data no final do dia em UTC para evitar problemas de fuso
-                expiresTimestamp = new Date(expiresDateStr + 'T23:59:59Z').getTime();
+                // MODIFICADO: Pega a data no final do dia em LOCAL
+                expiresTimestamp = new Date(expiresDateStr + 'T23:59:59').getTime(); // Remove o 'Z'
             } else if (type === 'anual' && !expiresDateStr) {
-                // Validação: Plano anual precisa de data
                 alert("Plano Anual exige uma data de expiração.");
                 return;
             }
 
-            // Monta o objeto com os dados da licença a serem salvos
             const newLicenseData = {
                 type: type,
                 expires: expiresTimestamp,
-                purchasedTrips: tempPurchasedTrips // Usa a lista temporária atualizada
+                purchasedTrips: tempPurchasedTrips, 
+                dataAquisicao: aquisicaoTimestamp 
             };
 
-            // Tenta salvar no Firebase
             try {
-                const licenseRef = ref(db, `users/${uid}/license`); // Referência do nó da licença
-                await set(licenseRef, newLicenseData); // Salva os dados
+                const licenseRef = ref(db, `users/${uid}/license`); 
+                await set(licenseRef, newLicenseData); 
+
+                const adminEmail = auth.currentUser ? auth.currentUser.email : 'unknown_admin';
+                await logAdminAction(uid, adminEmail, newLicenseData, currentEditingOldLicenseData);
+
                 alert("Licença atualizada com sucesso!");
-                closeModal('edit-license-modal'); // Fecha o modal
+                closeModal('edit-license-modal'); 
             } catch (error) {
-                // Trata erro ao salvar
                 console.error("Erro ao salvar licença:", error);
                 alert("Falha ao salvar a licença. Verifique o console para detalhes.");
             }
         });
 
-        // --- 4.1 LÓGICA PARA LISTAR VIAGENS DO USUÁRIO (ATUALIZADA) ---
+        async function logAdminAction(uid, adminEmail, newData, oldData) {
+            try {
+                const historyRef = ref(db, `users/${uid}/adminHistory`);
+                const logEntry = {
+                    timestamp: serverTimestamp(), 
+                    admin: adminEmail,
+                    action: "Atualização de Licença",
+                    oldValue: oldData || null, 
+                    newValue: newData        
+                };
+                await push(historyRef, logEntry); 
+                console.log("Histórico de admin salvo.");
+            } catch (logError) {
+                console.warn("Aviso: Falha ao salvar histórico de admin:", logError);
+            }
+        }
 
-        // --- 4.1 LÓGICA PARA LISTAR VIAGENS DO USUÁRIO (ATUALIZADA COM ORDENAÇÃO) ---
 
-        // --- 4.1 LÓGICA PARA LISTAR VIAGENS DO USUÁRIO (ATUALIZADA COM ORDENAÇÃO E DATA) ---
-
+        // --- 4.1 LÓGICA PARA LISTAR VIAGENS DO USUÁRIO ---
         async function listUserTrips() {
             if (!currentEditingUid) {
                 console.warn("Nenhum UID de usuário selecionado para buscar viagens.");
@@ -471,7 +524,6 @@
             listContainer.classList.remove('hidden');
 
             try {
-                // --- Passo 1: Obter os IDs das Viagens ---
                 const memberOfRef = ref(db, `users/${currentEditingUid}/memberOf`);
                 const memberOfSnapshot = await get(memberOfRef);
 
@@ -479,7 +531,6 @@
                 if (memberOfSnapshot.exists()) {
                     tripIds = Object.keys(memberOfSnapshot.val());
                 } else {
-                    // Plano B: Query mais lenta
                     console.log("Nó 'memberOf' não encontrado, tentando query em /trips...");
                     const tripsRef = ref(db, 'trips');
                     const userTripsQuery = query(tripsRef, orderByChild(`members/${currentEditingUid}`), equalTo(true));
@@ -496,11 +547,9 @@
                     return;
                 }
 
-                // --- Passo 2: Buscar Detalhes Completos da Viagem ---
                 const tripPromises = tripIds.map(tripId => get(ref(db, `trips/${tripId}`)));
                 const tripSnapshots = await Promise.all(tripPromises);
 
-                // --- Passo 3: Processar, Filtrar e Criar Lista para Ordenar ---
                 const tripsWithDetails = [];
                 tripSnapshots.forEach(tripSnap => {
                     if (tripSnap.exists()) {
@@ -511,33 +560,26 @@
                             tripsWithDetails.push({
                                 id: tripId,
                                 name: tripData.name,
-                                // Assumindo que o campo de data se chama 'createdAt'
                                 createdAt: tripData.timestamp || 0 
                             });
                         }
                     }
                 });
                 
-                // --- Passo 4: Ordenar a Lista ---
                 tripsWithDetails.sort((a, b) => b.createdAt - a.createdAt);
 
-                // --- Passo 5: Renderizar a Lista Ordenada (Modificado) ---
                 if (tripsWithDetails.length === 0) {
                     listContainer.innerHTML = '<p class="text-xs text-slate-500 text-center">Nenhuma viagem (com nome) encontrada.</p>';
                     return;
                 }
 
-                // Itera sobre a lista JÁ ORDENADA e cria os elementos
                 tripsWithDetails.forEach(trip => {
-                    // *** INÍCIO DA MODIFICAÇÃO ***
-                    // Formata a data de criação, se ela existir (não for 0)
                     const createdAtDate = trip.createdAt 
                         ? new Date(trip.createdAt).toLocaleDateString('pt-BR') 
-                        : 'Data N/A'; // Texto para caso a data seja 0
+                        : 'Data N/A'; 
 
                     const tripElement = document.createElement('div');
                     tripElement.className = 'user-trip-item flex justify-between items-center p-2 rounded';
-                    // Adicionamos a linha com a data formatada
                     tripElement.innerHTML = `
                         <div>
                             <p class="text-sm font-medium text-slate-700 truncate" title="${trip.name}">${trip.name}</p>
@@ -546,7 +588,6 @@
                         </div>
                         <button type="button" onclick="copyTripId('${trip.id}', this)" class="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded hover:bg-slate-300">Copiar ID</button>
                     `;
-                    // *** FIM DA MODIFICAÇÃO ***
                     listContainer.appendChild(tripElement);
                 });
 
@@ -556,30 +597,90 @@
             }
         }
 
-        // Adiciona o listener ao botão "Listar Viagens"
         document.getElementById('list-user-trips-btn').addEventListener('click', listUserTrips);
 
-        // Função para copiar ID para a área de transferência
         window.copyTripId = (tripId, buttonElement) => {
             navigator.clipboard.writeText(tripId).then(() => {
-                // Feedback visual de sucesso
                 const originalText = buttonElement.textContent;
                 buttonElement.textContent = 'Copiado!';
                 buttonElement.classList.add('bg-green-200', 'text-green-800');
-                // Volta ao normal após um tempo
                 setTimeout(() => {
                     buttonElement.textContent = originalText;
                     buttonElement.classList.remove('bg-green-200', 'text-green-800');
                 }, 1500);
             }).catch(err => {
-                // Tratamento de erro ao copiar
                 console.error('Erro ao copiar ID:', err);
                 alert('Falha ao copiar ID. Verifique permissões do navegador.');
             });
         }
 
+        // --- 5. LÓGICA DO HISTÓRICO ---
+        // NOVO: Função para abrir e popular o modal de histórico
+        window.openHistoryModal = async (uid) => {
+            const user = allUsersData.find(u => u.uid === uid);
+            if (!user) { console.error("Usuário não encontrado:", uid); return; }
 
-        // --- 5. FUNÇÕES DE EXCLUSÃO DE USUÁRIO (DATABASE ONLY) ---
+            // Preenche o header do modal
+            document.getElementById('history-user-name').textContent = `${user.name} (${user.email})`;
+            const listContainer = document.getElementById('history-content-list');
+            listContainer.innerHTML = '<p class="text-slate-500 text-center animate-pulse">Buscando histórico...</p>';
+            openModal('admin-history-modal'); // Abre o modal
+
+            try {
+                const historyRef = ref(db, `users/${uid}/adminHistory`);
+                const snapshot = await get(historyRef);
+
+                if (!snapshot.exists()) {
+                    listContainer.innerHTML = '<p class="text-slate-500 text-center">Nenhum histórico de alteração encontrado.</p>';
+                    return;
+                }
+
+                // Coleta os dados e inverte para mostrar o mais novo primeiro
+                const historyEntries = [];
+                snapshot.forEach(childSnapshot => {
+                    historyEntries.push(childSnapshot.val());
+                });
+                historyEntries.reverse(); 
+
+                listContainer.innerHTML = ''; // Limpa o loading
+
+                // Renderiza cada entrada do histórico
+                historyEntries.forEach(log => {
+                    const logElement = document.createElement('div');
+                    logElement.className = 'border rounded-lg p-3 bg-white shadow-sm';
+                    
+                    const date = new Date(log.timestamp).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                    
+                    // Formata os objetos JSON para exibição
+                    const oldJson = log.oldValue ? JSON.stringify(log.oldValue, null, 2) : 'N/A';
+                    const newJson = log.newValue ? JSON.stringify(log.newValue, null, 2) : 'N/A';
+
+                    logElement.innerHTML = `
+                        <div class="flex justify-between items-center mb-2 pb-2 border-b">
+                            <p class="text-sm font-semibold text-blue-700">${log.action || 'Alteração'}</p>
+                            <p class="text-xs text-slate-500 font-medium">${date}</p>
+                        </div>
+                        <p class="text-xs text-slate-600 mb-2"><strong>Admin:</strong> ${log.admin || 'N/A'}</p>
+                        <div>
+                            <p class="text-xs font-medium text-red-600">DE:</p>
+                            <pre class="text-xs font-mono bg-red-50 p-2 rounded overflow-auto">${oldJson}</pre>
+                        </div>
+                        <div class="mt-2">
+                            <p class="text-xs font-medium text-green-700">PARA:</p>
+                            <pre class="text-xs font-mono bg-green-50 p-2 rounded overflow-auto">${newJson}</pre>
+                        </div>
+                    `;
+                    listContainer.appendChild(logElement);
+                });
+
+            } catch (error) {
+                console.error("Erro ao buscar histórico:", error);
+                listContainer.innerHTML = '<p class="text-red-500 text-center">Falha ao carregar o histórico. Tente novamente.</p>';
+            }
+        }
+
+        // --- 6. FUNÇÕES DE EXCLUSÃO DE USUÁRIO (DATABASE ONLY) ---
+        // (Era a seção 5, agora é 6)
         window.confirmUserDeletion = (uid, name, email) => {
             document.getElementById('delete-user-uid').value = uid;
             document.getElementById('delete-user-name').textContent = name;
@@ -589,37 +690,31 @@
 
         window.executeUserDeletion = async () => {
             const uidToDelete = document.getElementById('delete-user-uid').value;
-            if (!uidToDelete) return; // Segurança
+            if (!uidToDelete) return; 
 
-            const userDbRef = ref(db, `users/${uidToDelete}`); // Referência do nó do usuário no DB
+            const userDbRef = ref(db, `users/${uidToDelete}`); 
 
             try {
                 console.log(`Excluindo dados de ${uidToDelete} do Realtime Database...`);
-                await remove(userDbRef); // Executa a exclusão
+                await remove(userDbRef); 
 
-                // Tenta limpar o índice emailToUid (melhor esforço)
                 try {
                     const emailToUidRef = ref(db, "emailToUid");
-                    // Busca pela chave (email codificado) que tem o UID como valor
                     const snapshot = await get(query(emailToUidRef, orderByValue(), equalTo(uidToDelete)));
                     if (snapshot.exists()) {
                        const updates = {};
-                       // Marca as chaves encontradas para exclusão
                        snapshot.forEach(childSnapshot => { updates[childSnapshot.key] = null; });
-                       await update(emailToUidRef, updates); // Executa a exclusão no índice
+                       await update(emailToUidRef, updates); 
                        console.log(`Índice emailToUid limpo para ${uidToDelete}.`);
                     }
                 } catch (emailError) {
-                    // Apenas avisa se a limpeza do índice falhar
                     console.warn("Aviso: Falha ao tentar limpar o índice emailToUid automaticamente.", emailError);
                 }
 
                 alert('Dados do usuário excluídos com sucesso do Realtime Database!\n\nLembre-se de excluir a conta manualmente no Firebase Authentication.');
-                closeModal('confirm-user-delete-modal'); // Fecha o modal de confirmação
-                // O onValue em loadAllUsers atualizará a tabela automaticamente.
+                closeModal('confirm-user-delete-modal'); 
 
             } catch (error) {
-                // Trata erro na exclusão principal do DB
                 console.error("Erro ao excluir dados do usuário no Realtime Database:", error);
                 alert(`Falha ao excluir os dados do usuário: ${error.message}\nVerifique as regras de segurança e o console.`);
                 closeModal('confirm-user-delete-modal');
@@ -627,38 +722,49 @@
         }
 
 
-        // --- 6. FUNÇÕES UTILITÁRIAS DE MODAL ---
+        // --- 7. FUNÇÕES UTILITÁRIAS DE MODAL ---
+        // (Era a seção 6, agora é 7)
         window.openModal = (id) => {
              const modal = document.getElementById(id);
-             if(modal) modal.classList.replace('hidden', 'flex'); // Mostra o modal
+             if(modal) modal.classList.replace('hidden', 'flex'); 
         }
 
         window.closeModal = (id) => {
              const modalElement = document.getElementById(id);
              if (modalElement) {
-                 modalElement.classList.replace('flex', 'hidden'); // Esconde o modal
+                 modalElement.classList.replace('flex', 'hidden'); 
                  const form = modalElement.querySelector('form');
-                 if (form) form.reset(); // Reseta o formulário se houver um
+                 if (form) form.reset(); 
 
-                 // Limpezas específicas ao fechar cada modal
                  if (id === 'edit-license-modal') {
-                     tempPurchasedTrips = {}; // Limpa viagens avulsas temporárias
+                     tempPurchasedTrips = {}; 
                      const purchasedList = document.getElementById('purchased-trips-list');
-                     if(purchasedList) purchasedList.innerHTML = ''; // Limpa lista visual
+                     if(purchasedList) purchasedList.innerHTML = ''; 
+                     
                      const expiresInput = document.getElementById('edit-license-expires');
-                     if(expiresInput) expiresInput.value = ''; // Limpa data
-                     // Limpa e esconde a lista de viagens do usuário
+                     if(expiresInput) expiresInput.value = ''; 
+                     
+                     const aquisicaoInput = document.getElementById('edit-license-aquisicao');
+                     if(aquisicaoInput) aquisicaoInput.value = '';
+
                      const userTripsContainer = document.getElementById('user-trips-list-container');
                      if (userTripsContainer) {
                          userTripsContainer.innerHTML = '';
                          userTripsContainer.classList.add('hidden');
                      }
-                     currentEditingUid = null; // Limpa UID em edição
+                     currentEditingUid = null; 
+                     currentEditingOldLicenseData = null; 
                  }
-                 // Limpa o UID no modal de exclusão
+                 
                  const deleteUidInput = document.getElementById('delete-user-uid');
                  if (id === 'confirm-user-delete-modal' && deleteUidInput) {
                       deleteUidInput.value = '';
+                 }
+
+                 // NOVO: Limpa o modal de histórico ao fechar
+                 if (id === 'admin-history-modal') {
+                    document.getElementById('history-content-list').innerHTML = '';
+                    document.getElementById('history-user-name').textContent = '';
                  }
              }
         }
