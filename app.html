@@ -2415,78 +2415,57 @@ window.addEventListener('popstate', (event) => {
             loginView.classList.remove('hidden');
         });
 
-        // Ação do formulário de CADASTRO DETALHADO (COM VERIFICAÇÃO DE CPF)
-        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+        // Ação do formulário de CADASTRO DETALHADO
+        document.getElementById('signup-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('signup-email').value.trim();
             const password = document.getElementById('signup-password').value;
-            const cpfInput = document.getElementById('signup-cpf').value;
-
             const profileData = {
                 email: email,
                 fullName: document.getElementById('signup-fullname').value,
                 birthDate: document.getElementById('signup-birthdate').value,
-                cpf: cpfInput,
+                cpf: document.getElementById('signup-cpf').value,
                 passport: document.getElementById('signup-passport').value,
                 country: document.getElementById('signup-country').value,
                 city: document.getElementById('signup-city').value,
                 phone: document.getElementById('signup-phone').value,
             };
-            
             if (!email || !password || !profileData.fullName || !profileData.birthDate || !profileData.cpf) {
                 alert('Por favor, preencha todos os campos obrigatórios.');
                 return;
             }
-
-            // 1. VERIFICAÇÃO DO CPF
-            try {
-                // Codifica o CPF para usar como chave no banco (igual fazemos com o e-mail)
-                const encodedCpf = btoa(cpfInput);
-                const cpfToUidRef = ref(db, `cpfToUid/${encodedCpf}`);
-                const cpfSnapshot = await get(cpfToUidRef);
-
-                if (cpfSnapshot.exists()) {
-                    // Se o CPF já existe, avisa o usuário e para a execução.
-                    alert('Este CPF já está sendo utilizado em outra conta. Por favor, verifique os dados.');
-                    return; 
-                }
-            } catch (error) {
-                console.error("Erro ao verificar CPF:", error);
-                alert("Ocorreu um erro ao verificar os dados. Tente novamente.");
-                return;
-            }
-
-            // 2. SE O CPF ESTIVER OK, PROSSEGUE COM A CRIAÇÃO DA CONTA
             let userId;
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-                userId = user.uid;
-                
-                const encodedEmail = btoa(email.toLowerCase());
-                const encodedCpf = btoa(cpfInput); // Codifica novamente para garantir
 
-                // Prepara todas as operações de escrita no banco
-                const updates = {};
-                updates[`/users/${userId}/profile`] = profileData;
-                updates[`/emailToUid/${encodedEmail}`] = userId;
-                updates[`/cpfToUid/${encodedCpf}`] = userId; // <-- SALVA O NOVO ÍNDICE DE CPF
+            createUserWithEmailAndPassword(auth, email, password)
+                .then(async (userCredential) => {
+                    const user = userCredential.user;
+                    userId = user.uid;
+                    
+                    const encodedEmail = btoa(email.toLowerCase());
 
-                // Executa todas as atualizações de uma vez
-                await update(ref(db), updates);
-                
-                alert('Conta criada com sucesso! Você já está logado.');
-
-            } catch (error) {
-                console.error("Erro no cadastro:", error.code, error.message);
-                if (error.code === 'auth/weak-password') {
-                    alert('Senha muito fraca. A senha deve ter pelo menos 6 caracteres.');
-                } else if (error.code === 'auth/email-already-in-use') {
-                    alert('Este e-mail já está em uso. Tente fazer login.');
-                } else {
-                    alert('Ocorreu um erro ao criar a conta.');
-                }
-            }
+                    try {
+                        // Operação 1: Salva o perfil
+                        console.log("Tentando salvar perfil de cadastro:", JSON.stringify(profileData, null, 2)); // <-- ADICIONE ESTA LINHA
+                        await set(ref(db, `users/${userId}/profile`), profileData);
+                        // Operação 2: Salva o índice de e-mail
+                        await set(ref(db, `emailToUid/${encodedEmail}`), userId);
+                        
+                        alert('Conta criada com sucesso! Você já está logado.');
+                    } catch (error) {
+                        console.error("Erro ao salvar dados do novo usuário:", error);
+                        alert("A conta foi criada, mas houve um erro ao salvar os dados do perfil.");
+                    }
+                })
+                .catch((error) => {
+                    console.error("Erro no cadastro:", error.code);
+                    if (error.code === 'auth/weak-password') {
+                        alert('Senha muito fraca. A senha deve ter pelo menos 6 caracteres.');
+                    } else if (error.code === 'auth/email-already-in-use') {
+                        alert('Este e-mail já está em uso. Tente fazer login.');
+                    } else {
+                        alert('Ocorreu um erro ao criar a conta.');
+                    }
+                });
         });
 
        
