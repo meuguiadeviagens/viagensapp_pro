@@ -1064,6 +1064,9 @@
     <div id="edit-trip-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
         <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md m-4 overflow-y-auto max-h-screen">
             <h3 class="text-2xl font-semibold mb-6">Editar Informações da Viagem</h3>
+            <div id="purchased-trip-notice" class="hidden bg-green-100 text-green-800 text-sm font-semibold p-3 rounded-md mb-4">
+                    Esta viagem foi adquirida por você em um plano avulso.
+                </div>
             <form id="edit-trip-form" class="space-y-4">
                 <div>
                     <label for="edit-trip-name" class="block text-sm font-medium text-slate-600">Nome da Viagem</label>
@@ -4086,6 +4089,15 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             imageInput.value = trip.imageUrl || '';
             document.getElementById('edit-trip-link-text').value = trip.customLinkText || '';
             document.getElementById('edit-trip-link-url').value = trip.customLinkUrl || '';
+
+            // --- INÍCIO DA NOVA LÓGICA DO AVISO ---
+            const noticeElement = document.getElementById('purchased-trip-notice');
+            if (isPurchasedTrip) {
+                noticeElement.classList.remove('hidden');
+            } else {
+                noticeElement.classList.add('hidden');
+            }
+            // --- FIM DA NOVA LÓGICA DO AVISO ---
 
             // Encontra a label pelo seletor de classes e ID do modal
             const travelersLabel = document.querySelector('#edit-trip-modal label[for="travelers-list"]');
