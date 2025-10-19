@@ -413,7 +413,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1002 | 18/10/2025, 14:32</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1002 | 19/10/2025, 19:06</p>
             </main>
         </div>
 
@@ -1540,43 +1540,47 @@
     </div>
 
     <!--Adquira um plano-->
-    <div id="upgrade-plan-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-    <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4">
-        <h3 class="text-2xl font-semibold mb-4">Adquirir Acesso Premium</h3>
-        <p class="text-slate-600 mb-6">Desbloqueie viagens com duração ilimitada e planeje sem restrições.</p>
+        <div id="upgrade-plan-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+          <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-3xl m-4">
+            <h3 class="text-2xl font-semibold mb-4">Adquirir Acesso Premium</h3>
+            <p class="text-slate-600 mb-6">Desbloqueie viagens com duração ilimitada e planeje sem restrições.</p>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="bg-slate-50 p-4 rounded-lg border border-blue-200">
-                <h4 class="font-semibold text-blue-700 text-lg">Plano Anual</h4>
-                <p class="text-3xl font-bold text-blue-600 my-2">R$ 99,90<span class="text-sm font-normal">/ano</span></p>
-                <p class="text-sm text-slate-600">Acesso ilimitado a todas as funcionalidades por 1 ano.</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-slate-50 p-4 rounded-lg border border-blue-200">
+                    <h4 class="font-semibold text-slate-500 text-lg">Plano Anual</h4>
+                    <p class="text-3xl font-bold text-slate-700 my-2">R$ 99,90<span class="text-sm font-normal"> / ano</span></p>
+                    <p class="text-sm text-slate-600">Acesso ilimitado a todas as funcionalidades por 1 ano.</p>
+                    <br><center> <script src="https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js"
+data-preference-id="40505311-84c15864-6650-4f5e-a63f-64672f2a28aa" data-source="button">
+</script></center> 
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-lg border border-blue-200">
+                    <h4 class="font-semibold text-slate-500 text-lg">Plano Bianual</h4>
+                    <p class="text-3xl font-bold text-slate-700 my-2">R$ 179,90<span class="text-sm font-normal"> / 2 anos</span></p>
+                    <p class="text-sm text-slate-600">Acesso ilimitado a todas as funcionalidades por 2 anos.</p>
+                    <br> <center><script src="https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js"
+data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="button">
+</script></center>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <h4 class="font-semibold text-slate-500 text-lg">Viagem Avulsa</h4>
+                    <p class="text-3xl font-bold text-slate-700 my-2">R$ 29,90<span class="text-sm font-normal"> / viagem</span></p>
+                    <p class="text-sm text-slate-600">Desbloqueia uma única viagem (pré-pago) para ter duração ilimitada.</p>
+                    <br><center><script src="https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js"
+    data-preference-id="40505311-b0998900-abe7-457b-a60c-3055922ad66c" data-source="button">
+    </script></center>
+                </div>
             </div>
-            <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <h4 class="font-semibold text-slate-700 text-lg">Viagem Avulsa</h4>
-                <p class="text-3xl font-bold text-slate-600 my-2">R$ 29,90<span class="text-sm font-normal">/viagem</span></p>
-                <p class="text-sm text-slate-600">Desbloqueia uma única viagem (pré-pago) para ter duração ilimitada.</p>
+
+           <p class="text-xs text-slate-500 mt-4 text-center">Sua licença será ativada em poucas horas.</p>
+
+            <div class="pt-6 flex justify-end">
+                <button type="button" onclick="closeModal('upgrade-plan-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Fechar</button>
             </div>
+
+          </div>
         </div>
-
-        <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-6">
-            <h4 class="font-semibold text-blue-800">Como Pagar:</h4>
-            <p class="mt-2 text-sm text-blue-700">1. Mercado Pago</p>
-            <p class="font-mono bg-white p-2 rounded text-blue-900 shadow-sm"><center><script src="https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js"
-data-preference-id="40505311-b0998900-abe7-457b-a60c-3055922ad66c" data-source="button">
-</script></center></p>
-
-            <p class="mt-4 text-sm text-blue-700">2. Após o pagamento</p>
-            <p class="font-mono bg-white p-2 rounded text-blue-900 shadow-sm">Por favor, envie os dados solicitados no formulário após o pagamento, indicando o nome desta viagem para libereração. Em poucas horas você terá controle ilimitado sobre a viagem.</p>
-        </div>
-
-        <p class="text-xs text-slate-500 mt-4 text-center">Sua licença será ativada em poucas horas.</p>
-
-        <div class="pt-6 flex justify-end">
-            <button type="button" onclick="closeModal('upgrade-plan-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Fechar</button>
-        </div>
-
-    </div>
-</div>
 
 
     <script type="module">
