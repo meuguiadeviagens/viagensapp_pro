@@ -1561,10 +1561,12 @@
         <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg mt-6">
             <h4 class="font-semibold text-blue-800">Como Pagar:</h4>
             <p class="mt-2 text-sm text-blue-700">1. Mercado Pago</p>
-            <p class="font-mono bg-white p-2 rounded text-blue-900 shadow-sm">Aguarde</p>
+            <p class="font-mono bg-white p-2 rounded text-blue-900 shadow-sm"><center><script src="https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js"
+data-preference-id="40505311-b0998900-abe7-457b-a60c-3055922ad66c" data-source="button">
+</script></center></p>
 
-            <p class="mt-4 text-sm text-blue-700">2. Aguarde</p>
-            <p class="font-mono bg-white p-2 rounded text-blue-900 shadow-sm">Por favor, aguarde</p>
+            <p class="mt-4 text-sm text-blue-700">2. Após o pagamento</p>
+            <p class="font-mono bg-white p-2 rounded text-blue-900 shadow-sm">Por favor, envie os dados solicitados no formulário após o pagamento, indicando o nome desta viagem para libereração. Em poucas horas você terá controle ilimitado sobre a viagem.</p>
         </div>
 
         <p class="text-xs text-slate-500 mt-4 text-center">Sua licença será ativada em poucas horas.</p>
@@ -1572,6 +1574,7 @@
         <div class="pt-6 flex justify-end">
             <button type="button" onclick="closeModal('upgrade-plan-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Fechar</button>
         </div>
+
     </div>
 </div>
 
@@ -2704,6 +2707,8 @@ window.addEventListener('popstate', (event) => {
 
             try {
                 await update(ref(db), updates); 
+
+                renderTravelersList(currentTripId);
 
                 nameInput.value = '';
                 emailInput.value = '';
