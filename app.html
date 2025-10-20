@@ -240,7 +240,7 @@
 
     <form id="login-form" class="max-w-sm mx-auto mt-20 p-8 bg-white rounded-lg shadow-lg">
         <div class="flex justify-center mb-6">
-            <a href="index.html"><img src="logo_meuguiadeviagens.png" alt="Logo Meu Guia de Viagens" class="h-10"></a>
+            <a href="index.html"><img src="logo_meuguiadeviagens.png" class="h-10"></a>
         </div>
         <div class="space-y-4">
             <div>
@@ -413,7 +413,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1005 | 20/10/2025, 11:32</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1006 | 20/10/2025, 16:02</p>
             </main>
         </div>
 
@@ -4421,6 +4421,13 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
         
         window.duplicateTrip = async (event, tripId) => {
             event.stopPropagation();
+            
+            // 1. Pega o usuário atual
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Você precisa estar logado para duplicar uma viagem.");
+                return;
+            }
 
             const originalTrip = tripsData.find(t => t.id === tripId);
             if (!originalTrip) {
@@ -4433,8 +4440,24 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             delete newTrip.id;
 
             newTrip.name = `${originalTrip.name} (Cópia)`;
-            newTrip.featured = false;
+            newTrip.featured = false; // Cópias não devem vir destacadas
 
+            // 2. Define o usuário atual como o novo dono da cópia
+            const profileSnapshot = await get(ref(db, `users/${user.uid}/profile`));
+            const userProfile = profileSnapshot.val();
+
+            if (!userProfile) {
+                alert("Não foi possível encontrar seu perfil para definir a posse da cópia.");
+                return;
+            }
+            
+            newTrip.members = { [user.uid]: "owner" };
+            newTrip.travelers = [{ uid: user.uid, name: userProfile.fullName, email: user.email }];
+            // Limpa despesas compartilhadas e pagamentos, pois os viajantes são novos
+            newTrip.sharedExpenses = []; 
+            newTrip.paidSettlements = [];
+
+            // Recria os IDs únicos para as atividades da nova viagem
             if (newTrip.activities) {
                 const activitiesArray = Array.isArray(newTrip.activities) 
                     ? newTrip.activities 
@@ -4445,6 +4468,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
                 newTrip.activities = activitiesArray;
             }
 
+            // Recria os IDs únicos para os documentos
             if (newTrip.documents) {
                  newTrip.documents.forEach((doc, index) => {
                     doc.id = `${Date.now()}-${index}`;
@@ -4452,8 +4476,15 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             }
 
             try {
-                const newTripRef = push(tripsRef);
+                // 3. CORREÇÃO: Usamos ref(db, 'trips') diretamente, igual você faz ao criar uma nova viagem
+                const newTripRef = push(ref(db, 'trips'));
+                const newTripId = newTripRef.key; // Pega o ID da nova viagem
+                
                 await set(newTripRef, newTrip);
+
+                // 4. ADICIONADO: Associa a nova viagem ao usuário atual para que ela apareça na lista
+                await set(ref(db, `users/${user.uid}/memberOf/${newTripId}`), true);
+
             } catch (error) {
                 console.error("Falha ao duplicar a viagem:", error);
             }
