@@ -413,7 +413,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1003 | 20/10/2025, 08:32</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1005 | 20/10/2025, 11:32</p>
             </main>
         </div>
 
@@ -2322,14 +2322,19 @@ window.addEventListener('popstate', (event) => {
         // "PORTEIRO": gerencia qual tela é exibida
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // --- INÍCIO DA MODIFICAÇÃO ---
+
                 currentUserId = user.uid; // Guarda o ID do usuário logado
-                // --- FIM DA MODIFICAÇÃO ---
-                
+
+              
                 // 1. USUÁRIO ESTÁ LOGADO
                 //console.log("Usuário logado:", user.uid);
                  
                 const userProfileRef = ref(db, `users/${user.uid}/profile`);
+                    
+                update(userProfileRef, {
+                    LastLogin: serverTimestamp()
+                }).catch(error => console.error("Erro ao atualizar LastLogin:", error));
+
                     onValue(userProfileRef, (snapshot) => {
                         const profile = snapshot.val();
                         currentUserProfile = profile || {};
@@ -2436,6 +2441,7 @@ window.addEventListener('popstate', (event) => {
                 country: document.getElementById('signup-country').value,
                 city: document.getElementById('signup-city').value,
                 phone: document.getElementById('signup-phone').value,
+                AccountDateAdded: serverTimestamp()
             };
             if (!email || !password || !profileData.fullName || !profileData.birthDate || !profileData.cpf) {
                 alert('Por favor, preencha todos os campos obrigatórios.');
@@ -5007,7 +5013,8 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 imageUrl: `https://placehold.co/600x400/a3e635/1e293b?text=${encodeURIComponent(tripName)}`,
                 featured: false,
                 members: { [user.uid]: "owner" },
-                travelers: [{ uid: user.uid, name: userProfile.fullName, email: user.email }]
+                travelers: [{ uid: user.uid, name: userProfile.fullName, email: user.email }],
+                DateAdded: serverTimestamp()
             };
 
             try {
