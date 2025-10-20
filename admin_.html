@@ -8,9 +8,9 @@
     <style>
         .hidden { display: none !important; }
         .modal-backdrop { background-color: rgba(0, 0, 0, 0.5); }
+        .table-responsive-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .min-w-table { min-width: 800px; }
         @media (max-width: 768px) {
-            .table-responsive-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            .min-w-table { min-width: 800px; }
         }
         .action-cell { width: 1%; white-space: nowrap; }
         .user-trip-item { transition: background-color 0.2s; }
@@ -54,7 +54,7 @@
                 <label for="search-user" class="block text-sm font-medium text-slate-600">Filtrar por nome ou e-mail</label>
                 <input type="text" id="search-user" class="mt-1 block w-full md:w-1/2 px-3 py-2 bg-white border border-slate-300 rounded-md text-base" placeholder="Digite para buscar...">
             </div>
-            <div class="table-responsive-wrapper border rounded-lg overflow-hidden">
+            <div class="table-responsive-wrapper border rounded-lg">
                 <table class="min-w-full min-w-table divide-y divide-slate-200">
                     <thead class="bg-slate-50">
                         <tr>
@@ -787,6 +787,7 @@
         }
 
     </script>
+<br><center><p>V. 1.001 - 20/10/2025 10:54</p></center><br>
 
 </body>
 </html>
