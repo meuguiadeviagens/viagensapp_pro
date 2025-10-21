@@ -413,7 +413,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1006 | 20/10/2025, 16:02</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1008 | 21/10/2025, 11:25</p>
             </main>
         </div>
 
@@ -1096,8 +1096,9 @@
                     <label for="travelers-list" class="block text-sm font-medium text-slate-600 mb-2">Gerenciar Viajantes</label>
                     <div id="travelers-list" class="space-y-2 mb-3 max-h-40 overflow-y-auto">
                         </div>
-                    <div class="flex items-end gap-2 p-2 bg-slate-50 rounded-md">
-                        <div class="flex items-end gap-2 p-2 bg-slate-50 rounded-md relative"> <div class="flex-grow">
+                    <div class="p-2 bg-slate-50 rounded-md relative">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
+                        <div class="flex-grow">
                             <label for="traveler-name" class="block text-xs font-medium text-slate-500">Nome</label>
                             <input type="text" id="traveler-name" placeholder="Nome do Viajante" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm">
                         </div>
@@ -1105,13 +1106,23 @@
                             <label for="traveler-email" class="block text-xs font-medium text-slate-500">E-mail</label>
                             <input type="email" id="traveler-email" placeholder="email@exemplo.com" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm">
                         </div>
-                        <button type="button" onclick="addTraveler()" class="flex-shrink-0 bg-green-600 text-white font-semibold px-4 h-10 rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300 self-center">Adicionar</button>
-                          <div id="traveler-suggestions" class="hidden absolute top-full left-0 right-0 z-10 bg-white border border-slate-300 rounded-md shadow-lg mt-1 max-h-40 overflow-y-auto">
-                            </div>
+                        <div class="flex-grow">
+                            <label for="traveler-role" class="block text-xs font-medium text-slate-500">Permissão</label>
+                            <select id="traveler-role" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm h-10">
+                                <option value="editor">Pode editar (Viajante)</option>
+                                <option value="viewer">Pode visualizar (Convidado)</option>
+                            </select>
                         </div>
                     </div>
+                    <div class="text-right mt-2">
+                        <button type="button" onclick="addTraveler()" class="bg-green-600 text-white font-semibold px-4 h-10 rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300">Adicionar</button>
+                    </div>
+                    
+                    <div id="traveler-suggestions" class="hidden absolute top-full left-0 right-0 z-10 bg-white border border-slate-300 rounded-md shadow-lg mt-1 max-h-40 overflow-y-auto">
+                    </div>
+                </div>
                 </div>                
-                 <div class="border-t pt-4 mt-2">
+             <div class="border-t pt-4 mt-2">
                     <label class="block text-sm font-medium text-slate-600 mb-1">Link Personalizado (Opcional)</label>
                     <div>
                         <label for="edit-trip-link-text" class="block text-xs font-medium text-slate-500">Texto do Botão</label>
@@ -1931,78 +1942,158 @@ window.addEventListener('popstate', (event) => {
         }
         // --- FIM DAS FUNÇÕES DE AUTOCOMPLETE ---
 
-        // --- INÍCIO DAS FUNÇÕES PARA EDITAR NOME DO VIAJANTE (VERSÃO CORRIGIDA) ---
+        /**
+         * Renderiza a lista de viajantes, buscando o "papel" (role) de cada um no objeto "members".
+         */
+        function renderTravelersList(tripId) {
+            const listElement = document.getElementById('travelers-list');
+            listElement.innerHTML = '';
+            const trip = tripsData.find(t => t.id === tripId);
+            const travelers = trip?.travelers || [];
+            const members = trip?.members || {};
 
-        // Transforma a linha do viajante em um formulário de edição
-        window.editTravelerName = (index, currentName) => {
-            const travelerItem = document.getElementById(`traveler-item-${index}`);
-            const trip = tripsData.find(t => t.id === currentTripId);
-            const traveler = trip.travelers[index];
-
-            travelerItem.innerHTML = `
-                <div class="flex-grow">
-                    <input type="text" id="edit-traveler-name-${index}" class="block w-full px-2 py-1 bg-white border border-blue-400 rounded-md shadow-sm text-sm" value="${currentName}">
-                    <p class="text-xs text-slate-500 mt-1">${traveler.email}</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="saveTravelerName(${index}, '${currentName.replace(/'/g, "\\'")}')" class="text-green-600 hover:text-green-700 p-1" title="Salvar">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
-                    </button>
-                     <button type="button" onclick="renderTravelersList(currentTripId)" class="text-red-500 hover:text-red-700 p-1" title="Cancelar">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                    </button>
-                </div>
-            `;
-            document.getElementById(`edit-traveler-name-${index}`).focus();
-        }
-
-        // Salva o novo nome no Firebase, atualizando em toda a viagem
-        window.saveTravelerName = async (index, oldName) => {
-            const newNameInput = document.getElementById(`edit-traveler-name-${index}`);
-            const newName = newNameInput.value.trim();
-
-            if (!newName || newName === oldName) {
-                renderTravelersList(currentTripId); // Se não houver mudança, apenas cancela a edição
+            if (travelers.length === 0) {
+                listElement.innerHTML = `<p class="text-sm text-slate-400 text-center py-2">Nenhum viajante adicionado.</p>`;
                 return;
             }
 
-            const trip = tripsData.find(t => t.id === currentTripId);
-            const updates = {};
+            travelers.forEach((traveler) => {
+                const travelerRole = members[traveler.uid] || 'editor'; // 'editor' como padrão se algo falhar
+                const isOwner = (travelerRole === 'owner');
 
-            // 1. Atualiza o nome na lista principal de viajantes
-            const updatedTravelers = [...trip.travelers];
-            updatedTravelers[index].name = newName;
-            updates[`/travelers`] = updatedTravelers;
+                const travelerElement = document.createElement('div');
+                travelerElement.id = `traveler-item-${traveler.uid}`; 
+                travelerElement.className = 'flex items-center justify-between p-2 bg-slate-100 rounded-md';
+                
+                let roleDisplayHtml = '';
+                if (isOwner) {
+                    // O Dono não pode ter seu papel alterado ou ser removido
+                    roleDisplayHtml = `
+                        <span class="text-sm font-semibold text-blue-600 px-2">Dono</span>
+                    `;
+                } else {
+                    // Outros usuários (editores/visualizadores) podem ser alterados ou removidos
+                    roleDisplayHtml = `
+                        <select onchange="changeTravelerRole('${traveler.uid}', this.value)" class="text-sm bg-white border-slate-300 rounded-md shadow-sm">
+                            <option value="editor" ${travelerRole === 'editor' ? 'selected' : ''}>Editor</option>
+                            <option value="viewer" ${travelerRole === 'viewer' ? 'selected' : ''}>Visualizador</option>
+                        </select>
+                        <button type="button" onclick="removeTraveler('${traveler.uid}')" class="text-red-500 hover:text-red-700 p-1" title="Remover viajante">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                    `;
+                }
 
-            // 2. Procura e substitui o nome nas Anotações
-            if (trip.notes) {
-                const updatedNotes = trip.notes.map(note => {
-                    if (note.author === oldName) {
-                        return { ...note, author: newName };
-                    }
-                    return note;
-                });
-                updates[`/notes`] = updatedNotes;
-            }
-            
-            // 3. Procura e substitui o nome nas Despesas Compartilhadas
-            if (trip.sharedExpenses) {
-                const updatedExpenses = trip.sharedExpenses.map(expense => {
-                    if (expense.payerName === oldName) {
-                        expense.payerName = newName;
-                    }
-                    expense.participants = expense.participants.map(p => p === oldName ? newName : p);
-                    return expense;
-                });
-                 updates[`/sharedExpenses`] = updatedExpenses;
-            }
-
-            const tripRef = ref(db, `trips/${currentTripId}`);
-            await update(tripRef, updates);
-
-            renderTravelersList(currentTripId);
+                travelerElement.innerHTML = `
+                    <div>
+                        <p class="font-semibold text-slate-800">${traveler.name}</p>
+                        <p class="text-xs text-slate-500">${traveler.email}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        ${roleDisplayHtml}
+                    </div>
+                `;
+                listElement.appendChild(travelerElement);
+            });
         }
-        // --- FIM DAS FUNÇÕES PARA EDITAR NOME DO VIAJANTE ---
+
+        /**
+         * Altera o "papel" (role) de um usuário entre 'editor' e 'viewer'.
+         */
+        window.changeTravelerRole = async (travelerUid, newRole) => {
+            if (!currentTripId || !travelerUid || !newRole) return;
+            
+            const trip = tripsData.find(t => t.id === currentTripId);
+
+            // Prepara a atualização no objeto 'members'
+            const updates = {};
+            updates[`/trips/${currentTripId}/members/${travelerUid}`] = newRole;
+
+            // Envia uma notificação sobre a mudança de permissão
+            const roleText = newRole === 'editor' ? 'editar' : 'visualizar';
+            const newNotificationKey = push(ref(db, `users/${travelerUid}/notifications`)).key;
+            const newNotification = {
+                message: `Sua permissão na viagem "${trip.name}" foi alterada. Agora você pode ${roleText} a viagem.`,
+                tripId: currentTripId,
+                isRead: false,
+                timestamp: serverTimestamp()
+            };
+            updates[`/users/${travelerUid}/notifications/${newNotificationKey}`] = newNotification;
+
+            try {
+                await update(ref(db), updates);
+                // A lista será atualizada automaticamente pelo listener, mas podemos forçar
+                renderTravelersList(currentTripId);
+            } catch (error) {
+                console.error("Erro ao alterar permissão:", error);
+                alert("Não foi possível alterar a permissão deste usuário.");
+            }
+        };
+        
+        // As funções 'editTravelerName' e 'saveTravelerName' não são mais necessárias
+        // pois a lista é recarregada pelo 'renderTravelersList'
+        // (Você pode removê-las se quiser, ou deixar para o caso de querer
+        // implementar a edição de nome em cima desta nova estrutura)
+
+        // --- FIM: FUNÇÕES DE GERENCIAMENTO DE VIAJANTES (LÓGICA DE PAPÉIS) ---
+
+        /**
+         * Aplica o modo "Somente Leitura" escondendo botões PRINCIPAIS
+         * se o usuário atual for apenas um "visualizador".
+         */
+        function applyReadOnlyMode(tripId) {
+            const trip = tripsData.find(t => t.id === tripId);
+            if (!trip || !currentUserId || !trip.members) return;
+
+            const userRole = trip.members[currentUserId];
+            const isReadOnly = (userRole === 'viewer');
+
+            // Este array agora contém APENAS os seletores dos botões principais/formulários.
+            // Os ícones de lápis/lixeira serão tratados nos próprios templates.
+            const editControlsSelectors = [
+                // Botões do Cabeçalho
+                'header#details-header button[onclick="openEditTripModal()"]',
+                
+                // Botões de "Adicionar" (+)...
+                '#flights-section button[onclick*="add-flight-modal"]',
+                '#transport-section button[onclick*="add-transport-modal"]',
+                '#lodging-section button[onclick*="add-lodging-modal"]',
+                
+                // Formulário de Documentos
+                '#add-document-form',
+                
+                // Botão "Reordenar" e "Adicionar Atividade" do Roteiro
+                '#reorg-start-btn',
+                '.add-activity-btn',
+                
+                // Botão "Adicionar Anotação"
+                '#notes-content button[onclick*="add-note-modal"]',
+                
+                // Painel de Divisão de Despesas
+                '#add-expense-panel',
+                '#shared-expenses-panel button[onclick*="calculateExpenseSummary"]',
+                '#shared-expenses-panel button[onclick*="showExpenseExplanation"]',
+                '#shared-expenses-panel button[onclick*="showSpendingPerPerson"]',
+            ];
+            
+            editControlsSelectors.forEach(selectorString => {
+                const elements = document.querySelectorAll(selectorString);
+                elements.forEach(el => {
+                    el.classList.toggle('hidden', isReadOnly);
+                });
+            });
+            
+            // Lógica do painel de documentos
+            const docPanel = document.getElementById('documents-panel');
+            if (docPanel) {
+                if (isReadOnly) {
+                    docPanel.classList.add('collapsed');
+                    docPanel.querySelector('.flex.justify-between').onclick = null;
+                } else {
+                    docPanel.querySelector('.flex.justify-between').onclick = () => toggleGenericPanel('documents-panel');
+                }
+            }
+        }
 
         // Função Utilitária
         function formatDate(dateString, options = { day: 'numeric', month: 'short', year: 'numeric' }) {
@@ -2599,111 +2690,67 @@ window.addEventListener('popstate', (event) => {
             });
 
             openModal('spending-per-person-modal');
-        };
+        };       
         
-        // --- FUNÇÕES DE GERENCIAMENTO DE VIAJANTES ---
-
-        function renderTravelersList(tripId) {
-            const listElement = document.getElementById('travelers-list');
-            listElement.innerHTML = '';
-            const trip = tripsData.find(t => t.id === tripId);
-            const travelers = trip?.travelers || [];
-
-            if (travelers.length === 0) {
-                listElement.innerHTML = `<p class="text-sm text-slate-400 text-center py-2">Nenhum viajante adicionado.</p>`;
-                return;
-            }
-
-            const ownerUid = Object.keys(trip.members).find(uid => trip.members[uid] === 'owner');
-
-            travelers.forEach((traveler, index) => {
-                const travelerElement = document.createElement('div');
-                // Adicionamos um ID único para cada item da lista para facilitar a edição
-                travelerElement.id = `traveler-item-${index}`; 
-                travelerElement.className = 'flex items-center justify-between p-2 bg-slate-100 rounded-md';
-                
-                const isOwner = traveler.uid === ownerUid;
-
-                // Prepara os botões de ação (editar e excluir)
-                let actionButtonsHtml = '';
-                if (!isOwner) {
-                    // Se não for o dono, pode ser editado e removido
-                    actionButtonsHtml = `
-                        <button type="button" onclick="editTravelerName(${index}, '${traveler.name.replace(/'/g, "\\'")}')" class="text-slate-500 hover:text-blue-600 p-1" title="Editar nome">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                        </button>
-                        <button type="button" onclick="removeTraveler(${index})" class="text-red-500 hover:text-red-700 p-1" title="Remover viajante">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        </button>
-                    `;
-                } else {
-                    // O dono só pode ter o nome editado (não pode ser removido)
-                     actionButtonsHtml = `
-                        <button type="button" onclick="editTravelerName(${index}, '${traveler.name.replace(/'/g, "\\'")}')" class="text-slate-500 hover:text-blue-600 p-1" title="Editar nome">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                        </button>
-                        <span class="text-xs font-semibold text-blue-600 px-2">(Dono)</span>
-                    `;
-                }
-
-                travelerElement.innerHTML = `
-                    <div>
-                        <p class="font-semibold text-slate-800">${traveler.name}</p>
-                        <p class="text-xs text-slate-500">${traveler.email}</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        ${actionButtonsHtml}
-                    </div>
-                `;
-                listElement.appendChild(travelerElement);
-            });
-        }
 
         window.addTraveler = async () => {
             const nameInput = document.getElementById('traveler-name');
             const emailInput = document.getElementById('traveler-email');
+            const roleSelect = document.getElementById('traveler-role');
+            
             const name = nameInput.value.trim();
             const email = emailInput.value.trim().toLowerCase();
+            const role = roleSelect.value; // Pega o papel: "editor" ou "viewer"
 
-            // --- INÍCIO DA ALTERAÇÃO ---
-            // Se o campo de e-mail estiver vazio, abre o modal de convite genérico
             if (!email) {
-                openInvitationModal(); // Chama a nova função sem argumentos
+                // Se o e-mail estiver vazio, abre o modal de convite genérico
+                openInvitationModal(); 
                 return;
             }
-            // --- FIM DA ALTERAÇÃO ---
+            if (!name) {
+                alert("Por favor, preencha o nome do viajante.");
+                return;
+            }
 
             const encodedEmail = btoa(email);
             const emailToUidRef = ref(db, `emailToUid/${encodedEmail}`);
             const snapshot = await get(emailToUidRef);
 
             if (!snapshot.exists()) {
-                // Se o e-mail preenchido não for encontrado, abre o modal específico
-                openInvitationModal(name, email); // Chama a nova função com argumentos
+                // E-mail não encontrado, abre modal de convite
+                openInvitationModal(name, email); 
                 return;
             }
 
-            // O resto da função continua exatamente igual...
             const newTravelerUid = snapshot.val();
             const trip = tripsData.find(t => t.id === currentTripId);
+            
+            // Verifica se o usuário já está na viagem (seja em 'members' ou 'travelers')
             const currentTravelers = trip.travelers || [];
-
-            if (currentTravelers.some(traveler => traveler.uid === newTravelerUid)) {
-                alert('Este viajante já foi adicionado à viagem.');
+            if (trip.members && trip.members[newTravelerUid]) {
+                alert('Este usuário já foi adicionado à viagem.');
                 return;
             }
 
             const updates = {};
+            
+            // 1. Adiciona ao array 'travelers' (para a lista de exibição)
             const newTraveler = { uid: newTravelerUid, name, email }; 
             const updatedTravelers = [...currentTravelers, newTraveler];
             updates[`/trips/${currentTripId}/travelers`] = updatedTravelers;
-            updates[`/trips/${currentTripId}/members/${newTravelerUid}`] = "member"; 
+
+            // 2. Adiciona ao objeto 'members' com o "papel" correto
+            updates[`/trips/${currentTripId}/members/${newTravelerUid}`] = role; 
+            
+            // 3. Adiciona à lista 'memberOf' do usuário
             updates[`/users/${newTravelerUid}/memberOf/${currentTripId}`] = true;
 
+            // 4. Envia a notificação
             if (newTravelerUid !== currentUserId) {
+                const roleText = role === 'editor' ? 'editar' : 'visualizar';
                 const newNotificationKey = push(ref(db, `users/${newTravelerUid}/notifications`)).key;
                 const newNotification = {
-                    message: `Você foi adicionado(a) à viagem "${trip.name}" por ${currentUserProfile.fullName}.`,
+                    message: `${currentUserProfile.fullName} convidou você para ${roleText} a viagem "${trip.name}".`,
                     tripId: currentTripId,
                     isRead: false,
                     timestamp: serverTimestamp()
@@ -2711,73 +2758,48 @@ window.addEventListener('popstate', (event) => {
                 updates[`/users/${newTravelerUid}/notifications/${newNotificationKey}`] = newNotification;
             }
 
+            // 5. Salva no histórico de viajantes frequentes
             if (currentUserId && newTravelerUid !== currentUserId) {
                 updates[`/users/${currentUserId}/frequentTravelers/${newTravelerUid}`] = { name, email };
             }
 
             try {
                 await update(ref(db), updates); 
-
-                renderTravelersList(currentTripId);
-
+                renderTravelersList(currentTripId); // Recarrega a lista
                 nameInput.value = '';
                 emailInput.value = '';
                 document.getElementById('traveler-suggestions').classList.add('hidden');
             } catch (error) {
-                console.error("Erro ao adicionar viajante e criar notificação:", error);
+                console.error("Erro ao adicionar viajante:", error);
                 alert("Ocorreu um erro ao adicionar o viajante.");
             }
         };
 
-        window.removeTraveler = async (index) => {
+        window.removeTraveler = async (travelerUidToRemove) => {
             const trip = tripsData.find(t => t.id === currentTripId);
-            if (!trip || !trip.travelers) return;
+            if (!trip || !travelerUidToRemove) return;
 
-            // 1. Identifica o viajante a ser removido com base no índice
-            const travelerToRemove = trip.travelers[index];
-            if (!travelerToRemove) {
-                console.error("Viajante não encontrado no índice fornecido.");
+            // Pega o viajante para mostrar o nome na confirmação
+            const travelerToRemove = trip.travelers.find(t => t.uid === travelerUidToRemove);
+            if (!travelerToRemove) return;
+            
+            if (!confirm(`Tem certeza que deseja remover ${travelerToRemove.name} da viagem? Esta ação removerá todo o acesso dele(a) à viagem.`)) {
                 return;
             }
 
-            const emailToRemove = travelerToRemove.email.toLowerCase();
-
-            // 2. Pede confirmação ao usuário, pois é uma ação destrutiva
-            if (!confirm(`Tem certeza que deseja remover ${travelerToRemove.name} da viagem? Esta ação também removerá o acesso dele(a) à viagem.`)) {
-                return;
-            }
-
-            // 3. Encontra o UID (ID de usuário) do viajante a ser removido
-            const encodedEmail = btoa(emailToRemove);
-            const emailToUidRef = ref(db, `emailToUid/${encodedEmail}`);
-            const snapshot = await get(emailToUidRef);
-
-            let uidToRemove = null;
-            if (snapshot.exists()) {
-                uidToRemove = snapshot.val();
-            } else {
-                console.warn(`UID para o e-mail ${emailToRemove} não encontrado. O viajante será removido da lista, mas o acesso pode não ser totalmente revogado se o UID não for encontrado.`);
-            }
-
-            // 4. Prepara a atualização de "mão dupla" para a remoção
-            // Cria um novo array de viajantes sem a pessoa que foi removida
-            const updatedTravelers = trip.travelers.filter((_, i) => i !== index);
+            // 1. Cria um NOVO array 'travelers' sem a pessoa removida
+            const updatedTravelers = trip.travelers.filter(t => t.uid !== travelerUidToRemove);
 
             const updates = {};
-            // Lado 1: Atualiza a lista de 'travelers' da viagem
+            // Lado 1: Atualiza a lista de 'travelers'
             updates[`/trips/${currentTripId}/travelers`] = updatedTravelers;
+            // Lado 2: Remove o viajante da lista de 'members' (revoga a permissão)
+            updates[`/trips/${currentTripId}/members/${travelerUidToRemove}`] = null; // null para deletar
+            // Lado 3: Remove a viagem da lista 'memberOf' do viajante
+            updates[`/users/${travelerUidToRemove}/memberOf/${currentTripId}`] = null; 
 
-            if (uidToRemove) {
-                // Lado 2: Remove o viajante da lista de 'members' da viagem (revoga a permissão)
-                updates[`/trips/${currentTripId}/members/${uidToRemove}`] = null; // null para deletar
-                // Lado 3: Remove a viagem da lista 'memberOf' do viajante (remove da lista dele)
-                updates[`/users/${uidToRemove}/memberOf/${currentTripId}`] = null; // null para deletar
-            }
-
-            // 5. Executa a atualização atômica
             await update(ref(db), updates);
             
-            // O listener em tempo real cuidará de atualizar a interface do usuário
             renderTravelersList(currentTripId); 
         };
                  
@@ -3033,6 +3055,25 @@ window.addEventListener('popstate', (event) => {
             }
             // --- FIM DA LÓGICA ---
 
+            // --- INÍCIO: LÓGICA DO ÍCONE DE VISUALIZAÇÃO ---
+            let viewOnlyIconHtml = '';
+            // Verifica se o usuário atual tem um papel definido nesta viagem
+            if (currentUserId && trip.members && trip.members[currentUserId]) {
+                const userRole = trip.members[currentUserId];
+                // Se o papel for 'viewer', prepara o HTML do ícone
+                if (userRole === 'viewer') {
+                    viewOnlyIconHtml = `
+                        <div class="absolute bottom-3 right-3 z-10" title="Apenas visualização">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 bg-white/70 backdrop-blur-sm p-1 rounded-full">
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </div>
+                    `;
+                }
+            }
+            // --- FIM: LÓGICA DO ÍCONE DE VISUALIZAÇÃO ---
+
             let deleteButtonHtml = '';
             if (isOwner) {
                 deleteButtonHtml = `
@@ -3084,6 +3125,7 @@ window.addEventListener('popstate', (event) => {
                     <div class="mt-2 text-xs font-medium text-slate-600">
                        ${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}
                     </div>
+                    ${viewOnlyIconHtml}
                 </div>
             `;
             return tripCard;
@@ -3098,6 +3140,9 @@ window.addEventListener('popstate', (event) => {
                 showTripsView();
                 return;
             }
+
+            const userRole = (trip.members && currentUserId) ? trip.members[currentUserId] : 'editor';
+            const isReadOnly = (userRole === 'viewer');
 
             // Atualiza o contador de anotações no botão do Índice Rápido
             const notesCount = trip.notes ? trip.notes.length : 0;
@@ -3148,14 +3193,15 @@ window.addEventListener('popstate', (event) => {
             renderDailyItinerary(trip);
             renderLodgingCoverageStatus(trip);
             renderSpendingPanel(trip);
-            renderSharedExpenses(trip);
+            renderSharedExpenses(trip);            
 
-            const flightTemplate = (flight, flightId, index, allFlights) => `
+            const flightTemplate = (flight, flightId, index, allFlights, isReadOnly) => `
                 <div>
                     <p class="font-semibold text-slate-800">${flight.origin} → ${flight.destination}</p>
                     <p class="text-sm text-slate-600">${flight.company} ${flight.code} - ${formatDate(flight.date)}</p>
                     <p class="text-xs text-slate-500">${flight.departureTime} - ${flight.arrivalTime}</p>
                 </div>
+                ${isReadOnly ? '' : `
                 <div class="flex flex-col gap-2 items-center">
                     <div class="flex gap-1">
                         <button ${index === 0 ? 'disabled' : ''} onclick="reorderDetailItem('flights', '${flightId}', 'up')" class="p-1 disabled:opacity-30 disabled:cursor-not-allowed">
@@ -3174,16 +3220,18 @@ window.addEventListener('popstate', (event) => {
                         </button>
                     </div>
                 </div>
+                `}
             `;
-            renderDetailList('flights-list', trip.flights, flightTemplate, 'Nenhum voo adicionado.');
+            renderDetailList('flights-list', trip.flights, flightTemplate, 'Nenhum voo adicionado.', isReadOnly);
 
-            const transportTemplate = (item, transportId, index, allTransport) => `
+            const transportTemplate = (item, transportId, index, allTransport, isReadOnly) => `
                 <div>
                     <p class="font-semibold text-slate-800">${item.type}</p>
                     <p class="text-sm text-slate-600">${item.from ? `${item.from} → ` : ''}${item.to ? item.to : ''}</p>
                     <p class="text-xs text-slate-500">Partida/Retirada: ${formatDate(item.departureDate)} às ${item.departureTime}</p>
                     <p class="text-xs text-slate-500">Chegada/Devolução: ${formatDate(item.arrivalDate)} às ${item.arrivalTime}</p>
                 </div>
+                ${isReadOnly ? '' : `
                 <div class="flex flex-col gap-2 items-center">
                     <div class="flex gap-1">
                         <button ${index === 0 ? 'disabled' : ''} onclick="reorderDetailItem('transport', '${transportId}', 'up')" class="p-1 disabled:opacity-30 disabled:cursor-not-allowed">
@@ -3202,10 +3250,11 @@ window.addEventListener('popstate', (event) => {
                         </button>
                     </div>
                 </div>
+                `}
             `;
-            renderDetailList('transport-list', trip.transport, transportTemplate, 'Nenhum transporte adicionado.');
+            renderDetailList('transport-list', trip.transport, transportTemplate, 'Nenhum transporte adicionado.', isReadOnly);
 
-            const lodgingTemplate = (item, lodgingId, index, allLodging) => `
+            const lodgingTemplate = (item, lodgingId, index, allLodging, isReadOnly) => `
                 <div class="flex-1">
                     <p class="font-semibold text-slate-800">${item.name}</p>
                     <p class="text-sm text-slate-600">${item.address}</p>
@@ -3217,6 +3266,7 @@ window.addEventListener('popstate', (event) => {
                         <span>Acessar Link</span>
                     </a>` : ''}
                 </div>
+                ${isReadOnly ? '' : `
                 <div class="flex flex-col gap-2 items-center">
                     <div class="flex gap-1">
                         <button ${index === 0 ? 'disabled' : ''} onclick="reorderDetailItem('lodging', '${lodgingId}', 'up')" class="p-1 disabled:opacity-30 disabled:cursor-not-allowed">
@@ -3235,11 +3285,15 @@ window.addEventListener('popstate', (event) => {
                         </button>
                     </div>
                 </div>
+                `}
             `;
-            renderDetailList('lodging-list', trip.lodging, lodgingTemplate, 'Nenhuma hospedagem adicionada.');
+            renderDetailList('lodging-list', trip.lodging, lodgingTemplate, 'Nenhuma hospedagem adicionada.', isReadOnly);
         }
 
         function renderDocuments(trip) {
+            const userRole = (trip.members && currentUserId) ? trip.members[currentUserId] : 'editor'; 
+            const isReadOnly = (userRole === 'viewer');
+
             const listElement = document.getElementById('documents-list');
             listElement.innerHTML = '';
             const documents = trip.documents || [];
@@ -3254,6 +3308,7 @@ window.addEventListener('popstate', (event) => {
                 docElement.className = 'flex items-center justify-between p-2 rounded-md hover:bg-slate-50';
                 docElement.innerHTML = `
                     <span class="text-slate-700">${doc.name}</span>
+                    ${isReadOnly ? '' : `
                     <div class="flex items-center gap-2">
                         <button ${index === 0 ? 'disabled' : ''} onclick="reorderDocument('${doc.id}', 'up')" class="p-1 disabled:opacity-30 disabled:cursor-not-allowed">
                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-circle"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4"/><path d="M12 16V8"/></svg>
@@ -3265,14 +3320,17 @@ window.addEventListener('popstate', (event) => {
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                         </button>
                     </div>
+                    `}
                 `;
                 listElement.appendChild(docElement);
             });
         }
 
         // NOVO: Função para renderizar as anotações
-        // NOVO: Função para renderizar as anotações (COM AGRUPAMENTO POR AUTOR)
         function renderNotes(trip) {
+            const userRole = (trip.members && currentUserId) ? trip.members[currentUserId] : 'editor'; // ADICIONE
+            const isReadOnly = (userRole === 'viewer'); // ADICIONE
+            
             const listElement = document.getElementById('notes-list');
             listElement.innerHTML = '';
             const notes = trip.notes || [];
@@ -3328,6 +3386,7 @@ window.addEventListener('popstate', (event) => {
                             </div>
                             <span class="text-slate-700 font-medium">${note.title}</span>
                         </div>
+                        ${isReadOnly ? '' : `
                         <div class="flex items-center gap-2">
                             <button ${originalNoteIndex === 0 ? 'disabled' : ''} onclick="event.stopPropagation(); reorderNote('${note.id}', 'up')" class="p-1 disabled:opacity-30 disabled:cursor-not-allowed text-slate-400 hover:text-slate-700">
                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-circle"><circle cx="12" cy="12" r="10"></circle><path d="m16 12-4-4-4 4"></path><path d="M12 16V8"></path></svg>
@@ -3342,6 +3401,7 @@ window.addEventListener('popstate', (event) => {
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
                             </button>
                         </div>
+                        `}
                     `;
                     listElement.appendChild(noteElement);
                 });
@@ -3349,6 +3409,10 @@ window.addEventListener('popstate', (event) => {
         }
         
         function renderDailyItinerary(trip) {
+            
+            const userRole = (trip.members && currentUserId) ? trip.members[currentUserId] : 'editor'; // ADICIONE
+            const isReadOnly = (userRole === 'viewer');
+        
             const container = document.getElementById('daily-itinerary-list');
             container.innerHTML = '';
             
@@ -3487,7 +3551,7 @@ window.addEventListener('popstate', (event) => {
                                 ${event.description ? ` | ${event.description}` : ''}
                             </p>
                         </div>
-                        ${isEditable ? `
+                        ${(isEditable && !isReadOnly) ? `
                         <div class="flex gap-2 items-center flex-shrink-0">
                             <button onclick="event.stopPropagation(); openEditActivityModal('${event.data.id}')" class="text-slate-500 hover:text-blue-600">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
@@ -3510,6 +3574,7 @@ window.addEventListener('popstate', (event) => {
                             <svg class="drag-handle" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
                             <h3 class="font-bold text-lg text-slate-800">${dayCounter}/${totalTripDays} | ${formatDate(dayKey, {weekday: 'long', day: 'numeric', month: 'long'})}</h3>
                         </div>
+                        ${isReadOnly ? '' : `
                         <div class="flex items-center gap-2">
                              <button onclick="deleteDay('${dayKey}')" class="delete-day-btn flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
@@ -3518,6 +3583,7 @@ window.addEventListener('popstate', (event) => {
                                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </button>
                         </div>
+                        `}
                     </div>
                     <div class="activity-list border-l-2 border-slate-100 pl-2 space-y-1" data-date="${dayKey}">
                         ${eventsHtml}
@@ -3535,22 +3601,31 @@ window.addEventListener('popstate', (event) => {
             }
         }
         
-        function renderDetailList(elementId, items, itemTemplate, emptyMessage) {
+        function renderDetailList(elementId, items, itemTemplate, emptyMessage, isReadOnly) {
             const listElement = document.getElementById(elementId);
             listElement.innerHTML = '';
-            // 'items' agora é um objeto. Verificamos se ele está vazio.
             if (!items || Object.keys(items).length === 0) {
                 listElement.innerHTML = `<p class="text-slate-500 text-sm">${emptyMessage}</p>`;
                 return;
             }
-            // Convertemos o objeto para um array de pares [id, dados]
+
+            // --- INÍCIO DA MODIFICAÇÃO ---
+            // Converte o objeto para um array de [id, dados]
             const itemsArray = Object.entries(items);
+
+            // Classifica (ordena) o array com base no campo 'order'
+            // Itens sem 'order' (os antigos) serão tratados como 'order: 0'
+            itemsArray.sort(([, a], [, b]) => {
+                const orderA = a.order ?? 0;
+                const orderB = b.order ?? 0;
+                return orderA - orderB;
+            });
+            // --- FIM DA MODIFICAÇÃO ---
 
             itemsArray.forEach(([itemId, itemData], index) => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'flex justify-between items-start border-l-4 border-slate-200 pl-4 py-2';
-                // Agora passamos o ID do item para a função de template!
-                itemDiv.innerHTML = itemTemplate(itemData, itemId, index, itemsArray);
+                itemDiv.innerHTML = itemTemplate(itemData, itemId, index, itemsArray, isReadOnly);
                 listElement.appendChild(itemDiv);
             });
         }
@@ -3922,8 +3997,9 @@ let dividerHtml = '';
         };
 
         window.showTripDetails = (tripId) => {
+            applyReadOnlyMode(tripId);
             currentTripId = tripId;
-            history.pushState({ view: 'details', tripId: tripId }, 'Detalhes da Viagem', '#trip=' + tripId);
+            history.pushState({ view: 'details', tripId: tripId }, 'Detalhes da Viagem', '#trip=' + tripId);           
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
             // Prepara os painéis internos para a visualização
@@ -4349,35 +4425,39 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
         async function addDetail(category) {
             if (!currentTripId) return;
 
+            // --- INÍCIO DA MODIFICAÇÃO ---
+            // Pega a viagem e conta quantos itens já existem para definir a próxima 'order'
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const currentItems = trip[category] ? Object.values(trip[category]) : [];
+            const newOrder = currentItems.length; // O novo item será o último da lista
+            // --- FIM DA MODIFICAÇÃO ---
+
             let newItem = {};
-            // A lógica para pegar os dados do formulário continua a mesma
             if (category === 'flights') {
                 newItem = { 
                     legType: document.getElementById('flight-leg-type').value, date: document.getElementById('flight-date').value, departureTime: document.getElementById('flight-departure-time').value, arrivalTime: document.getElementById('flight-arrival-time').value, origin: document.getElementById('flight-origin').value, destination: document.getElementById('flight-destination').value, company: document.getElementById('flight-company').value, code: document.getElementById('flight-code').value, flightType: document.getElementById('flight-type').value,
                     cost: document.getElementById('flight-cost').value,
+                    order: newOrder // <-- ADICIONADO
                 };
             } else if (category === 'transport') {
                 newItem = { 
                     type: document.getElementById('transport-type').value, from: document.getElementById('transport-origin').value, to: document.getElementById('transport-destination').value, description: document.getElementById('transport-description').value, departureDate: document.getElementById('transport-departure-date').value, departureTime: document.getElementById('transport-departure-time').value, arrivalDate: document.getElementById('transport-arrival-date').value, arrivalTime: document.getElementById('transport-arrival-time').value,
                     cost: document.getElementById('transport-cost').value,
+                    order: newOrder // <-- ADICIONADO
                 };
             } else if (category === 'lodging') {
                 newItem = { 
                     name: document.getElementById('lodging-name').value, address: document.getElementById('lodging-address').value, checkinDate: document.getElementById('lodging-checkin-date').value, checkinTime: document.getElementById('lodging-checkin-time').value, checkoutDate: document.getElementById('lodging-checkout-date').value, checkoutTime: document.getElementById('lodging-checkout-time').value,
                     cost: document.getElementById('lodging-cost').value,
-                    link: document.getElementById('lodging-link').value.trim()
+                    link: document.getElementById('lodging-link').value.trim(),
+                    order: newOrder // <-- ADICIONADO
                 };
             }
 
-            // A nova forma de salvar:
-            // 1. Criamos uma referência para a categoria específica (ex: .../trips/ID_VIAGEM/flights)
             const categoryRef = ref(db, `trips/${currentTripId}/${category}`);
-            // 2. Usamos push() para que o Firebase crie um ID único para o novo item
             const newItemRef = push(categoryRef);
-            // 3. Salvamos o novo item nesse local único
             await set(newItemRef, newItem);
 
-            // O código para fechar o modal continua o mesmo
             let modalIdToClose = category === 'flights' ? 'add-flight-modal' : (category === 'transport' ? 'add-transport-modal' : 'add-lodging-modal');
             if (modalIdToClose) closeModal(modalIdToClose);
         }
@@ -4502,25 +4582,50 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
         window.reorderDetailItem = async (category, itemId, direction) => {
             if (!currentTripId) return;
             const trip = tripsData.find(t => t.id === currentTripId);
-            // Converte o objeto de itens em um array de [id, dados]
-            const items = trip[category] ? Object.entries(trip[category]) : [];
+            const itemsObject = trip[category] || {}; // Pega o objeto { id1: data1, id2: data2 }
+            let itemsArray = Object.entries(itemsObject); // Converte para [ [id1, data1], [id2, data2] ]
 
-            const currentIndex = items.findIndex(([id, data]) => id === itemId);
-            if (currentIndex === -1) return;
+            // 1. Ordena o array pela ordem atual (ou 0 para itens antigos)
+            itemsArray.sort(([, a], [, b]) => (a.order ?? 0) - (b.order ?? 0));
 
+            // 2. Encontra o índice atual do item que foi clicado
+            const currentIndex = itemsArray.findIndex(([id]) => id === itemId);
+            if (currentIndex === -1) {
+                console.error("Item não encontrado para reordenar:", itemId);
+                return;
+            }
+
+            // 3. Calcula o novo índice desejado
             const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-            if (newIndex < 0 || newIndex >= items.length) return;
 
-            // Reordena o array trocando as posições
-            [items[currentIndex], items[newIndex]] = [items[newIndex], items[currentIndex]];
+            // 4. Verifica se o novo índice é válido
+            if (newIndex < 0 || newIndex >= itemsArray.length) {
+                console.log("Movimento inválido (início ou fim da lista).");
+                return; // Já está no início ou no fim, não faz nada
+            }
 
-            // Converte o array de volta para um objeto que o Firebase entende
-            const reorderedItemsObject = Object.fromEntries(items);
+            // 5. Move o item no array para a nova posição
+            // Remove o item da posição atual
+            const [movedItem] = itemsArray.splice(currentIndex, 1); 
+            // Insere o item na nova posição
+            itemsArray.splice(newIndex, 0, movedItem);
 
-            // Salva o objeto inteiro com a nova ordem
+            // 6. Prepara as atualizações para redefinir o campo 'order' de TODOS os itens
             const updates = {};
-            updates[`/${currentTripId}/${category}`] = reorderedItemsObject;
-            await update(ref(db, 'trips'), updates);
+            itemsArray.forEach(([id], index) => {
+                // Define o caminho para o campo 'order' de cada item
+                updates[`/${currentTripId}/${category}/${id}/order`] = index; 
+            });
+
+            // 7. Salva todas as atualizações no Firebase de uma vez
+            try {
+                await update(ref(db, 'trips'), updates);
+                // O listener 'onValue' detectará as mudanças e redesenhará a lista
+                // na ordem correta e sequencial (0, 1, 2...).
+            } catch (error) {
+                 console.error("Erro ao reordenar item:", error);
+                 alert("Ocorreu um erro ao tentar reordenar o item.");
+            }
         };
         
         window.openAddActivityModal = (date) => {
