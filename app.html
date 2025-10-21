@@ -1975,7 +1975,7 @@ window.addEventListener('popstate', (event) => {
                 } else {
                     // Outros usuários (editores/visualizadores) podem ser alterados ou removidos
                     roleDisplayHtml = `
-                        <select onchange="changeTravelerRole('${traveler.uid}', this.value)" class="text-sm bg-white border-slate-300 rounded-md shadow-sm">
+                        <select onchange="changeTravelerRole('${traveler.uid}', this.value)" class="text-sm bg-white border-slate-300 rounded-md shadow-sm w-10">
                             <option value="editor" ${travelerRole === 'editor' ? 'selected' : ''}>Editor</option>
                             <option value="viewer" ${travelerRole === 'viewer' ? 'selected' : ''}>Visualizador</option>
                         </select>
