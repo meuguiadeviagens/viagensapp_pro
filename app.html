@@ -157,7 +157,19 @@
             display: none; /* Escondidos por padrão */
             cursor: grab;
             color: #94a3b8;
+            touch-action: none;
         }
+
+        /* --- ESTILOS PARA O CLONE DE ARRASTE (MOBILE) --- */
+        .activity-item.sortable-fallback {
+            background: #dbeafe !important; /* Cor de fundo para o clone */
+            opacity: 0.9 !important;        /* Um pouco transparente */
+            border: 2px dashed #3b82f6 !important; /* Borda igual ao 'ghost' */
+            border-radius: 12px;
+            z-index: 1000 !important;      /* IMPORTANTE: Garante que fique no topo */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2); /* Sombra para destacar */
+        }
+
         /* Mostra o handle do DIA apenas no modo de dias */
         #daily-itinerary-list.is-reorganizing.mode-days .drag-handle {
             display: block;
@@ -421,7 +433,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2001 | 22/10/2025, 18:04</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2 | 22/10/2025, 18:04</p>
             </main>
         </div>
 
