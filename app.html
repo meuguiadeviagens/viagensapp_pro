@@ -433,8 +433,22 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2002 | 22/10/2025, 18:05</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2003 | 22/10/2025, 20:05</p>
             </main>
+        </div>
+
+        //menu botão direito
+        <div id="activity-color-menu" class="hidden fixed z-[1000] bg-white shadow-lg rounded-lg border border-slate-200 p-2 space-y-1">
+            <div class="px-2 py-1 text-xs font-semibold text-slate-500">Mudar cor</div>
+            <div class="flex gap-2 px-2">
+                <div onclick="setActivityColor('#FFFACD')" class="w-6 h-6 rounded-full bg-yellow-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
+                <div onclick="setActivityColor('#FFBBFF')" class="w-6 h-6 rounded-full bg-pink-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
+                <div onclick="setActivityColor('#F5DEB3')" class="w-6 h-6 rounded-full bg-orange-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
+                <div onclick="setActivityColor('#bbf7d0')" class="w-6 h-6 rounded-full bg-green-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
+                <div onclick="setActivityColor('#d1d5db')" class="w-6 h-6 rounded-full bg-slate-300 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
+            </div>
+            <div class="border-t my-1"></div>
+            <button onclick="setActivityColor('clear')" class="w-full text-left text-sm text-slate-700 px-2 py-1 rounded hover:bg-slate-100">Limpar cor</button>
         </div>
 
         <!-- NOVO: MODAL PARA IMPORTAR SUGESTÕES -->
@@ -1701,6 +1715,7 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
         let confirmDeleteTimer = null; // <<< ADICIONE ESTA LINHA
         let userFavoriteTrips = new Set();
         let suggestedItinerariesData = {};
+        let currentContextMenuActivityId = null;
 
         
         // Variáveis de estado para reorganização
@@ -2522,6 +2537,41 @@ window.addEventListener('popstate', (event) => {
                 loginView.classList.add('hidden');
                 signupView.classList.add('hidden');
                 appView.classList.remove('hidden');
+
+                const contextMenu = document.getElementById('activity-color-menu');
+
+                appView.addEventListener('contextmenu', (e) => {
+                    // Apenas ativa se estivermos na tela de detalhes
+                    if (detailsView.classList.contains('hidden')) return;
+
+                    const activityItem = e.target.closest('.activity-item[data-iseditable="true"]');
+                    
+                    // Não mostra o menu se estiver no modo de reorganização
+                    const isReorganizingActive = document.getElementById('daily-itinerary-list').classList.contains('is-reorganizing');
+
+                    if (activityItem && !isReorganizingActive) {
+                        e.preventDefault(); // Impede o menu padrão do navegador
+                        currentContextMenuActivityId = activityItem.dataset.activityId;
+                        
+                        // Posiciona o menu onde o usuário clicou
+                        contextMenu.style.top = `${e.clientY}px`;
+                        contextMenu.style.left = `${e.clientX}px`;
+                        contextMenu.classList.remove('hidden');
+                    } else {
+                        // Se clicou fora de uma atividade, esconde o menu
+                        contextMenu.classList.add('hidden');
+                        currentContextMenuActivityId = null;
+                    }
+                });
+                
+                // Listener global para fechar o menu ao clicar em qualquer outro lugar
+                window.addEventListener('click', (e) => {
+                    // Fecha se clicar fora do menu
+                    if (!contextMenu.contains(e.target)) {
+                        contextMenu.classList.add('hidden');
+                        currentContextMenuActivityId = null;
+                    }
+                }, true); // 'true' usa a fase de captura, garantindo que feche
 
                 loadSuggestedItineraries();
                 setupTripsListener(); 
@@ -3576,11 +3626,16 @@ window.addEventListener('popstate', (event) => {
                         .join(' ');
                     
                     let bgColorStyle = '';
-                    if (isEditable) {
+                    // 1. Prioridade: Cor personalizada do usuário (nova lógica)
+                    if (event.data.bgColor) {
+                        bgColorStyle = `background-color: ${event.data.bgColor};`;
+                    } 
+                    // 2. Se não houver, usa a lógica padrão
+                    else if (isEditable) {
                         if (eventData.type === 'Cidade') {
                             bgColorStyle = 'background-color: #F4C664;';
                         } else {
-                            bgColorStyle = 'background-color: #e6f1ff;';
+                            bgColorStyle = 'background-color: #e6f1ff;'; // Cor padrão azul
                         }
                     }
                     const time = event.dateTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
@@ -3596,6 +3651,7 @@ window.addEventListener('popstate', (event) => {
                         data-description="${(event.description || '').replace(/"/g, '&quot;')}"
                         data-iseditable="${isEditable}"
                         data-activity-id="${eventData.id || ''}"
+                        data-bgcolor="${event.data.bgColor || ''}"
                         data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
                         data-created-at="${event.data.createdAt || ''}"
                         ${datasetAttributes}
@@ -5240,6 +5296,30 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
                 sortableInstances = [];
             }
         };
+
+        window.setActivityColor = async (color) => {
+            if (!currentContextMenuActivityId || !currentTripId) return;
+
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const currentActivities = trip.activities ? Object.values(trip.activities) : [];
+            const activityIndex = currentActivities.findIndex(a => a.id === currentContextMenuActivityId);
+
+            if (activityIndex > -1) {
+                // Se 'clear' foi clicado, definimos como null para remover a propriedade
+                const newColor = (color === 'clear') ? null : color;
+                
+                // Adiciona ou atualiza a propriedade bgColor no objeto da atividade
+                currentActivities[activityIndex].bgColor = newColor; 
+                
+                // Salva o array de atividades inteiro de volta no Firebase
+                const updates = { [`/${currentTripId}/activities`]: currentActivities };
+                await update(ref(db, 'trips'), updates);
+            }
+
+            // Esconde o menu
+            document.getElementById('activity-color-menu').classList.add('hidden');
+            currentContextMenuActivityId = null;
+        }
 
         window.insertNewDay = async (index) => {
             const trip = tripsData.find(t => t.id === currentTripId);
