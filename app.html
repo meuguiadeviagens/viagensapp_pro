@@ -421,7 +421,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2 | 22/10/2025, 18:04</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2001 | 22/10/2025, 18:04</p>
             </main>
         </div>
 
@@ -5040,6 +5040,14 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
                         handle: '.activity-drag-handle',
                         draggable: '.activity-item[data-iseditable="true"]',
                         onEnd: (evt) => updateActivityOrderAndDate(),
+
+                        // --- INÍCIO DA CORREÇÃO PARA CELULAR ---
+                        forceFallback: true,        // Força o modo de "clone", muito melhor para toque
+                        delay: 100,                 // Atraso de 100ms para iniciar o arraste
+                        delayOnTouchOnly: true,     // Aplica o atraso apenas no toque (mouse fica instantâneo)
+                        touchStartThreshold: 5,     // Tolerância de 5px no movimento do dedo
+                        // --- FIM DA CORREÇÃO PARA CELULAR ---
+
                     });
                     sortableInstances.push(instance);
                 });
