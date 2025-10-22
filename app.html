@@ -11,6 +11,14 @@
     
     <style>
 
+        .city-suggestion-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+        }
+        .city-suggestion-item:hover {
+            background-color: #f1f5f9;
+        }
+
 /* --- ESTILOS PARA SUGESTÕES DE VIAJANTES --- */
         .suggestion-item {
             padding: 0.5rem 0.75rem;
@@ -413,10 +421,39 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1008 | 21/10/2025, 11:25</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1009 | 21/10/2025, 23:04</p>
             </main>
         </div>
 
+        <!-- NOVO: MODAL PARA IMPORTAR SUGESTÕES -->
+        <div id="import-suggestions-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-2xl m-4 flex flex-col max-h-[90vh]">
+                <h3 class="text-xl sm:text-2xl font-semibold mb-6">Importar Atividades Sugeridas</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                    <div class="relative autocomplete-container">
+                        <label for="suggestions-city-input" class="block text-sm font-medium text-slate-600">Digite o nome da cidade</label>
+                        <input type="text" id="suggestions-city-input" placeholder="Comece a digitar..." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md">
+                        <div id="city-suggestions-popup" class="hidden absolute z-10 w-full bg-white border border-slate-300 rounded-md mt-1 shadow-lg max-h-48 overflow-y-auto"></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center">
+                            <label class="block text-sm font-medium text-slate-600">...</label>
+                            <button id="select-all-suggestions-btn" type="button" class="text-sm text-blue-600 hover:underline">Marcar todas</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="suggestions-activities-list" class="flex-grow mt-4 border rounded-lg p-4 space-y-3 overflow-y-auto bg-slate-50 min-h-[200px]">
+                    <p class="text-center text-slate-500">Selecione uma cidade para ver as atividades.</p>
+                </div>
+
+                <div class="pt-6 flex justify-end gap-3 border-t mt-6">
+                    <button type="button" onclick="closeModal('import-suggestions-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+                    <button id="import-activities-btn" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md hover:bg-indigo-700">Importar Selecionadas</button>
+                </div>
+            </div>
+        </div>
+        
         <!-- Modal Minha Licença -->
         <div id="license-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
             <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md m-4">
@@ -540,6 +577,9 @@
                  <div class="flex justify-between items-center mb-4">
                     <h2 class="text-2xl font-semibold">Roteiro</h2>
                     <div class="flex items-center gap-2">
+                        <button onclick="openImportSuggestionsModal()" id="import-suggestions-btn" class="text-sm bg-indigo-600 text-white font-semibold px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors">
+                            Sugestões
+                        </button>
                         <div id="reorg-actions-container" class="hidden items-center gap-2">
                             <div class="flex items-center gap-1 bg-slate-300 p-1 rounded-lg">
                                 <button id="reorg-mode-days-btn" onclick="switchReorganizationType('days')" class="reorg-mode-btn text-xs font-bold px-3 py-1 rounded-md">Dias</button>
@@ -1647,6 +1687,7 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
         let onConfirmAction = () => {};
         let confirmDeleteTimer = null; // <<< ADICIONE ESTA LINHA
         let userFavoriteTrips = new Set();
+        let suggestedItinerariesData = {};
 
         
         // Variáveis de estado para reorganização
@@ -2469,6 +2510,7 @@ window.addEventListener('popstate', (event) => {
                 signupView.classList.add('hidden');
                 appView.classList.remove('hidden');
 
+                loadSuggestedItineraries();
                 setupTripsListener(); 
                 setupIconPickers();
                 setupNotificationListener(user.uid);
@@ -4762,6 +4804,186 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             console.log("Logout do Firebase concluído.");
         }
 
+        // --- NOVA SEÇÃO: LÓGICA DE IMPORTAÇÃO DE SUGESTÕES ---
+
+        async function loadSuggestedItineraries() {
+            try {
+                const snapshot = await get(ref(db, 'suggestedItineraries'));
+                suggestedItinerariesData = snapshot.exists() ? snapshot.val() : {};
+            } catch (error) {
+                console.error("Erro ao carregar roteiros sugeridos:", error);
+                suggestedItinerariesData = {};
+            }
+        }
+
+        window.openImportSuggestionsModal = () => {
+            document.getElementById('suggestions-city-input').value = '';
+            document.getElementById('city-suggestions-popup').classList.add('hidden');
+            document.getElementById('suggestions-activities-list').innerHTML = '<p class="text-center text-slate-500">Selecione uma cidade para ver as atividades.</p>';
+            openModal('import-suggestions-modal');
+        }
+        
+        // --- INÍCIO: NOVA LÓGICA DE AUTOCOMPLETE PARA CIDADES ---
+        const cityInput = document.getElementById('suggestions-city-input');
+        const citySuggestionsPopup = document.getElementById('city-suggestions-popup');
+
+        cityInput.addEventListener('input', () => {
+            const query = cityInput.value.toLowerCase();
+            citySuggestionsPopup.innerHTML = '';
+
+            if (query.length < 1) {
+                citySuggestionsPopup.classList.add('hidden');
+                return;
+            }
+
+            const filteredCities = Object.entries(suggestedItinerariesData).filter(([, cityData]) => 
+                cityData.cityName.toLowerCase().includes(query) || 
+                cityData.country.toLowerCase().includes(query)
+            ).sort(([, a], [, b]) => a.cityName.localeCompare(b.cityName));
+
+            if (filteredCities.length > 0) {
+                filteredCities.forEach(([cityId, cityData]) => {
+                    const item = document.createElement('div');
+                    item.className = 'city-suggestion-item';
+                    item.textContent = `${cityData.cityName}, ${cityData.country}`;
+                    item.addEventListener('click', () => selectCitySuggestion(cityId, cityData.cityName));
+                    citySuggestionsPopup.appendChild(item);
+                });
+                citySuggestionsPopup.classList.remove('hidden');
+            } else {
+                citySuggestionsPopup.classList.add('hidden');
+            }
+        });
+
+        function selectCitySuggestion(cityId, cityName) {
+            cityInput.value = cityName;
+            citySuggestionsPopup.classList.add('hidden');
+            loadActivitiesForCity(cityId);
+        }
+
+        function loadActivitiesForCity(cityId) {
+            const activitiesList = document.getElementById('suggestions-activities-list');
+            activitiesList.innerHTML = '';
+            
+            if (!cityId || !suggestedItinerariesData[cityId]?.activities) {
+                activitiesList.innerHTML = '<p class="text-center text-slate-500">Nenhuma atividade encontrada para esta cidade.</p>';
+                return;
+            }
+
+            const activities = suggestedItinerariesData[cityId].activities;
+            activities.forEach((activity, index) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-start gap-3 p-2 rounded hover:bg-slate-100';
+                item.innerHTML = `
+                    <input type="checkbox" id="suggestion-${index}" value="${index}" data-city-id="${cityId}" class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <label for="suggestion-${index}" class="flex-grow cursor-pointer">
+                        <div class="flex items-center gap-2">
+                           ${ICONS[activity.icon] || ICONS.passeio}
+                           <span class="font-semibold text-slate-800">${activity.name}</span>
+                        </div>
+                        <p class="text-sm text-slate-600 pl-7">${activity.description}</p>
+                    </label>
+                `;
+                activitiesList.appendChild(item);
+            });
+        }
+        
+        document.getElementById('import-activities-btn').addEventListener('click', async () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            if (!trip) return;
+
+            const selectedCheckboxes = document.querySelectorAll('#suggestions-activities-list input:checked');
+            if (selectedCheckboxes.length === 0) {
+                alert("Selecione pelo menos uma atividade para importar.");
+                return;
+            }
+            
+            const cityId = selectedCheckboxes[0].dataset.cityId; // Pega o cityId do primeiro item marcado
+            const selectedIndexes = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+            const activitiesToImport = selectedIndexes.map(index => suggestedItinerariesData[cityId].activities[index]);
+            
+            let currentActivities = trip.activities ? Object.values(trip.activities) : [];
+            let lastTime = 8 * 60 + 59; 
+
+            activitiesToImport.forEach(activity => {
+                lastTime++;
+                const hours = Math.floor(lastTime / 60).toString().padStart(2, '0');
+                const minutes = (lastTime % 60).toString().padStart(2, '0');
+
+                currentActivities.push({
+                    id: `${Date.now()}-${Math.random()}`, date: trip.startDate, time: `${hours}:${minutes}`,
+                    name: activity.name, type: activity.type, description: activity.description,
+                    icon: activity.icon, link: activity.link || '', cost: ''
+                });
+            });
+
+            try {
+                const activitiesObject = { ...currentActivities };
+                await update(ref(db, `trips/${currentTripId}`), { activities: activitiesObject });
+                alert(`${activitiesToImport.length} atividade(s) importada(s) para o primeiro dia!`);
+                closeModal('import-suggestions-modal');
+            } catch(error) {
+                console.error("Erro ao importar atividades:", error);
+                alert("Ocorreu um erro ao importar as atividades.");
+            }
+        });
+        // --- FIM: NOVA LÓGICA DE AUTOCOMPLETE PARA CIDADES ---        
+        
+        document.getElementById('select-all-suggestions-btn').addEventListener('click', () => {
+            const checkboxes = document.querySelectorAll('#suggestions-activities-list input[type="checkbox"]');
+            const shouldCheckAll = Array.from(checkboxes).some(cb => !cb.checked);
+            checkboxes.forEach(cb => cb.checked = shouldCheckAll);
+        });
+
+        document.getElementById('import-activities-btn').addEventListener('click', async () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            if (!trip) return;
+
+            const cityId = document.getElementById('suggestions-city-select').value;
+            if (!cityId) return;
+
+            const selectedIndexes = Array.from(document.querySelectorAll('#suggestions-activities-list input:checked')).map(cb => parseInt(cb.value));
+            
+            if (selectedIndexes.length === 0) {
+                alert("Selecione pelo menos uma atividade para importar.");
+                return;
+            }
+
+            const activitiesToImport = selectedIndexes.map(index => suggestedItinerariesData[cityId].activities[index]);
+            
+            let currentActivities = trip.activities ? [...Object.values(trip.activities)] : [];
+            let lastTime = 8 * 60 + 59; // Começa em 08:59 para o primeiro ser 09:00
+
+            activitiesToImport.forEach(activity => {
+                lastTime++; // Incrementa 1 minuto
+                const hours = Math.floor(lastTime / 60).toString().padStart(2, '0');
+                const minutes = (lastTime % 60).toString().padStart(2, '0');
+
+                const newActivity = {
+                    id: `${Date.now()}-${Math.random()}`, // ID único
+                    date: trip.startDate, // Adiciona ao primeiro dia da viagem
+                    time: `${hours}:${minutes}`,
+                    name: activity.name,
+                    type: activity.type,
+                    description: activity.description,
+                    icon: activity.icon,
+                    link: '',
+                    cost: ''
+                };
+                currentActivities.push(newActivity);
+            });
+
+            try {
+                const activitiesObject = { ...currentActivities };
+                await update(ref(db, `trips/${currentTripId}`), { activities: activitiesObject });
+                alert(`${activitiesToImport.length} atividade(s) importada(s) para o primeiro dia da sua viagem! Agora você pode reordená-las.`);
+                closeModal('import-suggestions-modal');
+            } catch(error) {
+                console.error("Erro ao importar atividades:", error);
+                alert("Ocorreu um erro ao importar as atividades.");
+            }
+        });
+        
         // --- SEÇÃO ATUALIZADA: LÓGICA DE REORGANIZAÇÃO DO ROTEIRO COM DUPLO MODO ---
         
         async function updateActivityOrderAndDate() {
@@ -4916,6 +5138,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             const startBtn = document.getElementById('reorg-start-btn');
             const actionsContainer = document.getElementById('reorg-actions-container');
             const scrollTopBtn = document.getElementById('back-to-top-btn');
+            const importBtn = document.getElementById('import-suggestions-btn');
 
             isReorganizing = !list.classList.contains('is-reorganizing');
             list.classList.toggle('is-reorganizing', isReorganizing);
@@ -4926,9 +5149,8 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
                 initialTripState = {
                     activities: trip.activities ? JSON.parse(JSON.stringify(trip.activities)) : {},
                     endDate: trip.endDate
-                };
-                
-                // --- CORREÇÃO AQUI ---
+                };                
+
                 startBtn.classList.add('hidden');
                 actionsContainer.classList.remove('hidden'); // Remove a classe 'hidden' para mostrar
                 
@@ -4936,6 +5158,8 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
                     scrollTopBtn.style.display = 'none';
                 }
 
+                importBtn.classList.add('hidden');
+                
                 document.getElementById('reorg-mode-activities-btn').click();
 
             } else { 
@@ -4949,6 +5173,8 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
                     update(ref(db, 'trips'), updates);
                 }
                 initialTripState = null;
+
+                importBtn.classList.remove('hidden');
                 
                 // --- CORREÇÃO AQUI ---
                 startBtn.classList.remove('hidden');
