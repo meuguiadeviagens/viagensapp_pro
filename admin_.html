@@ -141,14 +141,24 @@
             <h2 class="text-xl sm:text-2xl font-semibold text-slate-800 mb-4">Gerenciar Roteiros Sugeridos</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Coluna da Esquerda: Cidades -->
-                <div class="md:col-span-1 border rounded-lg p-4 bg-slate-50">
+                <div class="md:col-span-1 border rounded-lg p-4 bg-slate-50">                    
+                    <div class="md:col-span-1 border rounded-lg p-4 bg-slate-50">
                     <div class="flex justify-between items-center mb-3">
                          <h3 class="font-semibold">Cidades</h3>
                          <button onclick="openAddCityModal()" class="px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700">Nova Cidade</button>
                     </div>
+
+                    <div class="relative mb-3">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </span>
+                        <input type="text" id="filter-city-input" class="block w-full px-3 py-2 pl-10 bg-white border border-slate-300 rounded-md text-base" placeholder="Filtrar cidades...">
+                    </div>
+                    
                     <div id="suggested-cities-list" class="space-y-1 max-h-96 overflow-y-auto">
                         <p class="text-center text-sm text-slate-400 py-4">Carregando cidades...</p>
                     </div>
+                </div>
                 </div>
                 <!-- Coluna da Direita: Atividades da cidade selecionada -->
                 <div id="activities-panel" class="md:col-span-2 hidden">
@@ -414,6 +424,7 @@
                     setupFilters();
                     loadSuggestedItineraries();
                     setupSuggestionIconPicker();
+                    setupCityFilter();
                 } else {
                     alert("Acesso negado. Privilégios de administrador necessários.");
                     signOut(auth);
@@ -556,6 +567,16 @@
             }
             
             renderUsersTable(filteredUsers);
+        }
+
+        // NOVO: Adiciona o listener para o filtro de cidades
+        function setupCityFilter() {
+            const filterInput = document.getElementById('filter-city-input');
+            if (filterInput) {
+                // Adiciona o listener que chama a renderização
+                // A própria renderSuggestedCitiesList agora lê o valor do input
+                filterInput.addEventListener('input', renderSuggestedCitiesList);
+            }
         }
 
         function setupFilters() {
@@ -1206,13 +1227,38 @@
 
         function renderSuggestedCitiesList() {
             const listContainer = document.getElementById('suggested-cities-list');
+            
+            // NOVO: Pega o valor do filtro
+            const filterInput = document.getElementById('filter-city-input');
+            const filterText = filterInput ? filterInput.value.toLowerCase().trim() : '';
+
             listContainer.innerHTML = '';
-            const cityIds = Object.keys(suggestedItinerariesData).sort((a,b) => 
+
+            // MODIFICADO: Pega todos os IDs primeiro
+            let cityIds = Object.keys(suggestedItinerariesData);
+
+            // NOVO: Filtra os IDs se houver texto
+            if (filterText) {
+                cityIds = cityIds.filter(cityId => {
+                    const city = suggestedItinerariesData[cityId];
+                    // Filtra por nome da cidade OU país
+                    return city.cityName.toLowerCase().includes(filterText) ||
+                           city.country.toLowerCase().includes(filterText);
+                });
+            }
+
+            // MODIFICADO: Ordena a lista já filtrada
+            cityIds.sort((a,b) => 
                 suggestedItinerariesData[a].cityName.localeCompare(suggestedItinerariesData[b].cityName)
             );
 
             if (cityIds.length === 0) {
-                listContainer.innerHTML = '<p class="text-sm text-slate-500 text-center">Nenhuma cidade cadastrada.</p>';
+                // MODIFICADO: Mensagem customizada se for filtro ou não
+                if (filterText) {
+                    listContainer.innerHTML = '<p class="text-sm text-slate-500 text-center">Nenhuma cidade encontrada.</p>';
+                } else {
+                    listContainer.innerHTML = '<p class="text-sm text-slate-500 text-center">Nenhuma cidade cadastrada.</p>';
+                }
                 return;
             }
 
@@ -1394,7 +1440,7 @@
         }
 
     </script>
-<br><center><p>V. 1.004 - 21/10/2025 22:25</p></center><br>
+<br><center><p>V. 1.005 - 22/10/2025 09:25</p></center><br>
 
 </body>
 </html>
