@@ -421,7 +421,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1009 | 21/10/2025, 23:04</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2 | 22/10/2025, 18:04</p>
             </main>
         </div>
 
@@ -3642,6 +3642,18 @@ window.addEventListener('popstate', (event) => {
                 currentDate.setUTCDate(currentDate.getUTCDate() + 1);
                 dayCounter++;
             }
+        
+          if (isReorganizing) {
+                if (reorganizationMode === 'activities') {
+                    // A função initializeActivitySorting() já tem um
+                    // delay interno (setTimeout) que garante que o DOM
+                    // esteja pronto antes de anexar os listeners.
+                    initializeActivitySorting();
+                } else if (reorganizationMode === 'days') {
+                    initializeDaySorting();
+                }
+            }  
+
         }
         
         function renderDetailList(elementId, items, itemTemplate, emptyMessage, isReadOnly) {
