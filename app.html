@@ -433,7 +433,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2 | 22/10/2025, 18:04</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2002 | 22/10/2025, 18:05</p>
             </main>
         </div>
 
@@ -1307,6 +1307,7 @@
             </div>
             <h3 id="view-activity-name" class="text-2xl font-semibold text-slate-800"></h3>
             <p id="view-activity-time" class="text-slate-500"></p>
+            <p id="view-activity-meta" class="text-sm text-slate-500 mt-1"></p>
             <p id="view-activity-type" class="text-sm font-medium text-slate-500 bg-slate-100 rounded-full px-3 py-1 mt-2 mb-4 inline-block"></p>
             <p id="view-activity-description" class="text-slate-600 mb-4"></p>
             <div id="view-activity-details-list" class="text-sm text-left space-y-2 border-t pt-4"></div>
@@ -3595,6 +3596,8 @@ window.addEventListener('popstate', (event) => {
                         data-description="${(event.description || '').replace(/"/g, '&quot;')}"
                         data-iseditable="${isEditable}"
                         data-activity-id="${eventData.id || ''}"
+                        data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
+                        data-created-at="${event.data.createdAt || ''}"
                         ${datasetAttributes}
                     >
                         <div class="flex items-center gap-3 flex-1 min-w-0">
@@ -4278,6 +4281,20 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             document.getElementById('view-activity-name').textContent = ds.name;
             document.getElementById('view-activity-time').textContent = ds.time;
 
+            const metaElement = document.getElementById('view-activity-meta');
+            const authorName = ds.authorName || 'Desconhecido';
+            const createdAt = ds.createdAt;
+        
+            let metaText = `Adicionado por: ${authorName}`;
+            
+            // CORREÇÃO: Verificamos se 'createdAt' existe e se é um número
+            if (createdAt && !isNaN(createdAt)) { 
+                // CORREÇÃO: Convertemos a string "1729644917000" para o número 1729644917000
+                const date = new Date(parseInt(createdAt, 10)); 
+                metaText += ` em ${date.toLocaleDateString('pt-BR')}`;
+            }
+            metaElement.textContent = metaText;
+            
             const typeElement = document.getElementById('view-activity-type');
             if (ds.type && ds.iseditable === 'true') {
                 typeElement.textContent = ds.type;
@@ -5584,6 +5601,8 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 icon: document.getElementById('activity-icon').value,
                 link: document.getElementById('activity-link').value.trim(),
                 cost: document.getElementById('activity-cost').value,
+                authorName: currentUserProfile.fullName || 'Usuário Desconhecido',
+                createdAt: serverTimestamp()
             };
             const currentActivities = trip.activities ? [...Object.values(trip.activities)] : [];
             currentActivities.push(newActivity);
