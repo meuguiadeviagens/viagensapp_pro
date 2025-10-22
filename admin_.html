@@ -6,6 +6,26 @@
     <title>Painel Admin - Meu Guia de Viagens</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+
+        /* Estilos para as novas abas */
+        .admin-tab {
+            transition: all 0.2s ease-in-out;
+            border-bottom: 2px solid transparent;
+        }
+        .admin-tab.active {
+            border-bottom-color: #2563eb; /* blue-600 */
+            color: #1e293b; /* slate-800 */
+        }
+
+        /* Estilos para a lista de cidades e atividades */
+        .city-list-item.selected {
+            background-color: #dbeafe; /* blue-100 */
+            font-weight: 600;
+        }
+        .icon-picker-option { transition: all 0.2s ease-in-out; }
+        .icon-picker-option.selected { border-color: #3b82f6; background-color: #dbeafe; transform: scale(1.1); }
+
+
         .hidden { display: none !important; }
         .modal-backdrop { background-color: rgba(0, 0, 0, 0.5); }
         .table-responsive-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -38,6 +58,18 @@
 
     <div id="admin-panel" class="hidden max-w-7xl mx-auto p-4 sm:p-8">
         <header class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8">
+
+<div class="border-b border-slate-300 mb-6">
+            <nav class="flex -mb-px space-x-6">
+                <button onclick="switchAdminView('users')" id="tab-users" class="admin-tab active whitespace-nowrap py-4 px-1 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-400">
+                    Gerenciar Usuários
+                </button>
+                <button onclick="switchAdminView('suggestions')" id="tab-suggestions" class="admin-tab whitespace-nowrap py-4 px-1 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-400">
+                    Roteiros Sugeridos
+                </button>
+            </nav>
+        </div>
+
             <div class="flex flex-col sm:flex-row sm:items-baseline sm:gap-4">
     <h1 class="text-3xl sm:text-4xl font-bold text-slate-900">Painel de Admin</h1>
     <span id="user-count-display" class="text-lg sm:text-xl font-medium text-slate-500 mb-2 sm:mb-0"></span>
@@ -48,7 +80,7 @@
             </div>
         </header>
 
-        <main class="bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+        <main id="users-management-view" class="bg-white p-4 sm:p-6 rounded-xl shadow-lg">
             <h2 class="text-xl sm:text-2xl font-semibold text-slate-800 mb-4">Gerenciamento de Usuários</h2>
             <div class="mb-4 p-4 border rounded-lg bg-slate-50">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
@@ -103,7 +135,109 @@
                 </table>
             </div>
         </main>
-    </div>
+
+  <!-- PAINEL DE GERENCIAMENTO DE ROTEIROS SUGERIDOS -->
+        <div id="suggestions-management-view" class="hidden bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl sm:text-2xl font-semibold text-slate-800 mb-4">Gerenciar Roteiros Sugeridos</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Coluna da Esquerda: Cidades -->
+                <div class="md:col-span-1 border rounded-lg p-4 bg-slate-50">
+                    <div class="flex justify-between items-center mb-3">
+                         <h3 class="font-semibold">Cidades</h3>
+                         <button onclick="openAddCityModal()" class="px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700">Nova Cidade</button>
+                    </div>
+                    <div id="suggested-cities-list" class="space-y-1 max-h-96 overflow-y-auto">
+                        <p class="text-center text-sm text-slate-400 py-4">Carregando cidades...</p>
+                    </div>
+                </div>
+                <!-- Coluna da Direita: Atividades da cidade selecionada -->
+                <div id="activities-panel" class="md:col-span-2 hidden">
+                    <div class="flex justify-between items-center mb-3">
+                         <h3 class="font-semibold">Atividades para <span id="selected-city-name" class="text-blue-700"></span></h3>
+                         <button onclick="openEditActivitySuggestionModal()" class="px-3 py-1.5 bg-green-600 text-white text-sm font-semibold rounded-md hover:bg-green-700">Nova Atividade</button>
+                    </div>
+                    <div id="suggested-activities-list" class="border rounded-lg p-4 space-y-3 max-h-96 overflow-y-auto">
+                        <!-- Atividades da cidade selecionada serão carregadas aqui -->
+                    </div>
+                </div>
+                 <div id="activities-placeholder" class="md:col-span-2 flex items-center justify-center border-2 border-dashed rounded-lg p-8">
+                    <p class="text-slate-500">Selecione ou adicione uma cidade para ver as atividades.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>        
+
+        <!-- MODAIS PARA ROTEIROS SUGERIDOS -->
+        <div id="add-city-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-md m-4">
+                <h3 class="text-xl sm:text-2xl font-semibold mb-6">Adicionar Nova Cidade</h3>
+                <form id="add-city-form" class="space-y-4">
+                    <div>
+                        <label for="city-name" class="block text-sm font-medium text-slate-600">Nome da Cidade</label>
+                        <input type="text" id="city-name" placeholder="Ex: São Paulo" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
+                    </div>
+                    <div>
+                        <label for="city-country" class="block text-sm font-medium text-slate-600">País</label>
+                        <input type="text" id="city-country" placeholder="Ex: Brasil" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
+                    </div>
+                    <div class="pt-6 flex justify-end gap-3">
+                        <button type="button" onclick="closeModal('add-city-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Salvar Cidade</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div id="edit-activity-suggestion-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-lg m-4 max-h-[90vh] overflow-y-auto">
+                <h3 id="suggestion-modal-title" class="text-xl sm:text-2xl font-semibold mb-6"></h3>
+                <form id="edit-activity-suggestion-form" class="space-y-4">
+                    <input type="hidden" id="suggestion-activity-index">
+                    <input type="hidden" id="suggestion-activity-icon" value="passeio">
+                    <div>
+                        <label for="suggestion-activity-name" class="block text-sm font-medium text-slate-600">Nome da Atividade</label>
+                        <input type="text" id="suggestion-activity-name" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
+                    </div>
+                    <div>
+                        <label for="suggestion-activity-type" class="block text-sm font-medium text-slate-600">Tipo</label>
+                        <select id="suggestion-activity-type" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
+                            <option value="Passeio">Passeio</option>
+                            <option value="Cidade">Cidade</option>
+                            <option value="Restaurante">Restaurante</option>
+                            <option value="Outro">Outro</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="suggestion-activity-description" class="block text-sm font-medium text-slate-600">Descrição</label>
+                        <textarea id="suggestion-activity-description" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md"></textarea>
+                    </div>
+                    <div>
+                        <label for="suggestion-activity-link" class="block text-sm font-medium text-slate-600">Link (Opcional)</label>
+                        <input type="url" id="suggestion-activity-link" placeholder="https://..." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600">Ícone</label>
+                        <div id="suggestion-icon-picker" class="mt-2 flex flex-wrap gap-2"></div>
+                    </div>
+                    <div class="pt-6 flex justify-end gap-3">
+                        <button type="button" onclick="closeModal('edit-activity-suggestion-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Salvar Atividade</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="confirm-delete-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-sm m-4">
+                <h3 class="text-xl font-semibold mb-4">Confirmar Exclusão</h3>
+                <p id="confirm-delete-message" class="text-slate-600 mb-6"></p>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('confirm-delete-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+                    <button id="confirm-delete-btn" class="px-4 py-2 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700">Excluir</button>
+                </div>
+            </div>
+        </div>
 
     <div id="edit-license-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
         <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-lg m-4 max-h-[90vh] overflow-y-auto">
@@ -225,6 +359,25 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
+        // --- ICONS (COPIADO DE viagens_pro.html) ---
+        const ICONS = {
+            passeio: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
+            restaurante: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3z"/></svg>`,
+            outro: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12a10.06 10.06 1 0 0-20 0Z"/><path d="M12 12v8a2 2 0 0 0 4 0"/><path d="M12 2v1"/></svg>`,
+            basketball: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 0-10 10c0 .2 0 .5.1.7"/><path d="M22 12a10 10 0 0 0-10-10c-.2 0-.5 0-.7.1"/><path d="M2 12h20"/><path d="M12 22a10 10 0 0 0 10-10c0-.2 0-.5-.1-.7"/><path d="M2 12a10 10 0 0 0 10 10c.2 0 .5 0 .7-.1"/></svg>`,
+            building: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>`,
+            shopping: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`,
+            tree: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-8"/><path d="m17 14-5-5-5 5h10z"/><path d="M8.5 14h7"/><path d="M7 9a5 5 0 0 1 10 0v2H7Z"/></svg>`,
+            cake: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16h16"/><path d="M16 11V7a4 4 0 0 0-8 0v4"/><path d="M12 21v-4"/><path d="M12 7a2 2 0 0 1 0-4 2 2 0 0 1 0 4Z"/></svg>`,
+            sun: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`,
+            leaf: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`,
+            mountain: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>`,
+            ferris_wheel: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="10"/><path d="m12 22 3-8 3 8"/><path d="m12 22-3-8-3 8"/><path d="m2 12h8"/><path d="m14 12h8"/><path d="m19.07 4.93-4.24 4.24"/><path d="m4.93 19.07 4.24-4.24"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 19.07-4.24-4.24"/></svg>`,
+            music: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
+            waves: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6c.9.5 2.2 1 3.5 1s2.6-.5 3.5-1 2.2 1 3.5 1 2.6-.5 3.5-1"/><path d="M3 12c.9.5 2.2 1 3.5 1s2.6-.5 3.5-1 2.2 1 3.5 1 2.6-.5 3.5-1"/><path d="M3 18c.9.5 2.2 1 3.5 1s2.6-.5 3.5-1 2.2 1 3.5 1 2.6-.5 3.5-1"/></svg>`,
+            sunglasses: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14h2"/><path d="M20 14h2"/><path d="M5.2 11.3 4 14"/><path d="M18.8 11.3 20 14"/><circle cx="8" cy="15" r="4"/><circle cx="16" cy="15" r="4"/><path d="M12 15a4 4 0 0 0-4-4h8a4 4 0 0 0-4 4Z"/></svg>`,
+        };
+        
         const loginView = document.getElementById('login-form');
         const adminView = document.getElementById('admin-panel');
         const usersTableBody = document.getElementById('users-table-body');
@@ -233,6 +386,11 @@
         let currentEditingUid = null;
         let tempPurchasedTrips = {};
         let currentEditingOldLicenseData = null; 
+
+        // Variáveis para a nova aba de sugestões
+        let suggestedItinerariesData = {};
+        let selectedCityId = null;
+        let onConfirmAction = () => {};
 
         // --- 1. CONTROLE DE AUTENTICAÇÃO ---
         onAuthStateChanged(auth, (user) => {
@@ -254,6 +412,8 @@
                     document.getElementById('admin-email').textContent = user.email; 
                     loadAllUsers(); 
                     setupFilters();
+                    loadSuggestedItineraries();
+                    setupSuggestionIconPicker();
                 } else {
                     alert("Acesso negado. Privilégios de administrador necessários.");
                     signOut(auth);
@@ -264,6 +424,13 @@
                 signOut(auth); 
             }
         }
+
+        window.switchAdminView = (view) => {
+            document.getElementById('users-management-view').classList.toggle('hidden', view !== 'users');
+            document.getElementById('suggestions-management-view').classList.toggle('hidden', view !== 'suggestions');
+            document.getElementById('tab-users').classList.toggle('active', view === 'users');
+            document.getElementById('tab-suggestions').classList.toggle('active', view === 'suggestions');
+        };
 
         // --- 2. LÓGICA DE LOGIN/LOGOUT ---
         loginView.addEventListener('submit', (e) => {
@@ -570,23 +737,48 @@
             }
         }
 
-        function renderPurchasedTripsList() {
+        async function renderPurchasedTripsList() {
             const listContainer = document.getElementById('purchased-trips-list');
-            listContainer.innerHTML = ''; 
-            const tripIds = Object.keys(tempPurchasedTrips); 
+            // Mostra um indicador de carregamento
+            listContainer.innerHTML = '<p class="text-slate-400 text-xs animate-pulse">Carregando nomes das viagens...</p>';
+            const tripIds = Object.keys(tempPurchasedTrips);
 
             if (tripIds.length === 0) {
                 listContainer.innerHTML = '<p class="text-slate-400 text-xs">Nenhuma viagem avulsa adicionada.</p>';
                 return;
             }
 
-            tripIds.forEach(tripId => {
+            // Busca os detalhes de cada viagem em paralelo
+            const tripPromises = tripIds.map(async (tripId) => {
+                try {
+                    const tripRef = ref(db, `trips/${tripId}`);
+                    const snapshot = await get(tripRef);
+                    if (snapshot.exists()) {
+                        // Retorna o ID e o nome da viagem
+                        return { id: tripId, name: snapshot.val().name || 'Nome não encontrado' };
+                    }
+                    return { id: tripId, name: 'Viagem não encontrada' };
+                } catch (error) {
+                    console.error(`Erro ao buscar viagem ${tripId}:`, error);
+                    return { id: tripId, name: 'Erro ao buscar' };
+                }
+            });
+
+            const tripsWithDetails = await Promise.all(tripPromises);
+            
+            // Limpa o container antes de adicionar os itens
+            listContainer.innerHTML = ''; 
+
+            tripsWithDetails.forEach(trip => {
                 const item = document.createElement('div');
-                item.className = 'flex justify-between items-center bg-slate-100 p-2 rounded text-xs';
+                item.className = 'flex justify-between items-center bg-slate-100 p-2 rounded';
                 item.innerHTML = `
-                    <span class="truncate" title="${tripId}">${tripId}</span>
-                    <button type="button" class="text-red-500 font-bold ml-2 flex-shrink-0" data-tripid="${tripId}">&times;</button>`;
-                item.querySelector('button').addEventListener('click', () => removePurchasedTrip(tripId));
+                    <div class="flex-grow min-w-0">
+                        <p class="text-sm font-medium text-slate-800 truncate" title="${trip.name}">${trip.name}</p>
+                        <p class="text-xs text-slate-500 font-mono truncate" title="${trip.id}">${trip.id}</p>
+                    </div>
+                    <button type="button" class="text-red-500 font-bold ml-2 flex-shrink-0" data-tripid="${trip.id}">&times;</button>`;
+                item.querySelector('button').addEventListener('click', () => removePurchasedTrip(trip.id));
                 listContainer.appendChild(item);
             });
         }
@@ -994,8 +1186,215 @@
              }
         }
 
+        // --- 4. LÓGICA DO PAINEL DE ROTEIROS SUGERIDOS ---
+
+        function loadSuggestedItineraries() {
+            const suggestionsRef = ref(db, 'suggestedItineraries');
+            onValue(suggestionsRef, (snapshot) => {
+                suggestedItinerariesData = snapshot.val() || {};
+                renderSuggestedCitiesList();
+                if (selectedCityId && suggestedItinerariesData[selectedCityId]) {
+                    renderSuggestedActivities(selectedCityId);
+                } else {
+                    // Se a cidade selecionada foi deletada, reseta a view
+                    selectedCityId = null;
+                    document.getElementById('activities-panel').classList.add('hidden');
+                    document.getElementById('activities-placeholder').classList.remove('hidden');
+                }
+            });
+        }
+
+        function renderSuggestedCitiesList() {
+            const listContainer = document.getElementById('suggested-cities-list');
+            listContainer.innerHTML = '';
+            const cityIds = Object.keys(suggestedItinerariesData).sort((a,b) => 
+                suggestedItinerariesData[a].cityName.localeCompare(suggestedItinerariesData[b].cityName)
+            );
+
+            if (cityIds.length === 0) {
+                listContainer.innerHTML = '<p class="text-sm text-slate-500 text-center">Nenhuma cidade cadastrada.</p>';
+                return;
+            }
+
+            cityIds.forEach(cityId => {
+                const city = suggestedItinerariesData[cityId];
+                const item = document.createElement('div');
+                item.className = 'city-list-item flex justify-between items-center p-2 rounded-md cursor-pointer hover:bg-slate-200';
+                if (cityId === selectedCityId) {
+                    item.classList.add('selected');
+                }
+                item.innerHTML = `
+                    <span>${city.cityName}</span>
+                    <button onclick="event.stopPropagation(); deleteCity('${cityId}')" class="text-red-400 hover:text-red-700 p-1 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                `;
+                item.addEventListener('click', () => selectCity(cityId));
+                listContainer.appendChild(item);
+            });
+        }
+
+        window.selectCity = (cityId) => {
+            selectedCityId = cityId;
+            document.getElementById('activities-panel').classList.remove('hidden');
+            document.getElementById('activities-placeholder').classList.add('hidden');
+            document.getElementById('selected-city-name').textContent = suggestedItinerariesData[cityId].cityName;
+            renderSuggestedCitiesList(); // Re-renderiza para destacar a seleção
+            renderSuggestedActivities(cityId);
+        }
+
+        function renderSuggestedActivities(cityId) {
+            const listContainer = document.getElementById('suggested-activities-list');
+            const activities = suggestedItinerariesData[cityId]?.activities || [];
+            listContainer.innerHTML = '';
+
+            if (activities.length === 0) {
+                listContainer.innerHTML = '<p class="text-sm text-slate-500 text-center">Nenhuma atividade para esta cidade.</p>';
+                return;
+            }
+
+            activities.forEach((activity, index) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-3 rounded-lg bg-slate-50 border';
+                item.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="text-slate-500 flex-shrink-0">${ICONS[activity.icon] || ICONS.passeio}</div>
+                        <div class="min-w-0">
+                            <p class="font-semibold truncate flex items-center gap-2">
+                                <span>${activity.name}</span>
+                                ${activity.link ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="lucide lucide-link flex-shrink-0 text-blue-500"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>` : ''}
+                            </p>
+                            <p class="text-xs text-slate-600 truncate">${activity.description}</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 flex-shrink-0">
+                        <button onclick="openEditActivitySuggestionModal(${index})" class="text-blue-500 hover:text-blue-800">Editar</button>
+                        <button onclick="deleteActivitySuggestion(${index})" class="text-red-500 hover:text-red-800">Excluir</button>
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        window.openAddCityModal = () => {
+            document.getElementById('add-city-form').reset();
+            openModal('add-city-modal');
+        }
+
+        document.getElementById('add-city-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const cityName = document.getElementById('city-name').value.trim();
+            const country = document.getElementById('city-country').value.trim();
+            if (!cityName || !country) return;
+
+            const cityId = cityName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+            
+            if (suggestedItinerariesData[cityId]) {
+                alert('Uma cidade com este nome (ou ID similar) já existe.');
+                return;
+            }
+
+            const newCity = { cityName, country, activities: [] };
+            await set(ref(db, `suggestedItineraries/${cityId}`), newCity);
+            closeModal('add-city-modal');
+        });
+
+        window.openEditActivitySuggestionModal = (index = null) => {
+            const form = document.getElementById('edit-activity-suggestion-form');
+            form.reset();
+            const title = document.getElementById('suggestion-modal-title');
+            const indexInput = document.getElementById('suggestion-activity-index');
+            
+            if (index === null) { // Adicionando
+                title.textContent = `Nova Atividade para ${suggestedItinerariesData[selectedCityId].cityName}`;
+                indexInput.value = -1; // Sinaliza que é um novo item
+            } else { // Editando
+                title.textContent = `Editar Atividade em ${suggestedItinerariesData[selectedCityId].cityName}`;
+                indexInput.value = index;
+                const activity = suggestedItinerariesData[selectedCityId].activities[index];
+                document.getElementById('suggestion-activity-name').value = activity.name;
+                document.getElementById('suggestion-activity-type').value = activity.type;
+                document.getElementById('suggestion-activity-description').value = activity.description || '';
+                document.getElementById('suggestion-activity-link').value = activity.link || '';
+                document.getElementById('suggestion-activity-icon').value = activity.icon || 'passeio';
+            }
+
+            const icon = document.getElementById('suggestion-activity-icon').value;
+            const picker = document.getElementById('suggestion-icon-picker');
+            picker.querySelectorAll('.icon-picker-option').forEach(opt => opt.classList.remove('selected'));
+            picker.querySelector(`[data-icon="${icon}"]`)?.classList.add('selected');
+
+            openModal('edit-activity-suggestion-modal');
+        }
+
+        document.getElementById('edit-activity-suggestion-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const index = parseInt(document.getElementById('suggestion-activity-index').value);
+            const currentActivities = [...(suggestedItinerariesData[selectedCityId].activities || [])];
+            
+            const newActivityData = {
+                name: document.getElementById('suggestion-activity-name').value,
+                type: document.getElementById('suggestion-activity-type').value,
+                description: document.getElementById('suggestion-activity-description').value,
+                link: document.getElementById('suggestion-activity-link').value.trim(),
+                icon: document.getElementById('suggestion-activity-icon').value
+            };
+
+            if (index === -1) {
+                currentActivities.push(newActivityData);
+            } else {
+                currentActivities[index] = newActivityData;
+            }
+
+            await set(ref(db, `suggestedItineraries/${selectedCityId}/activities`), currentActivities);
+            closeModal('edit-activity-suggestion-modal');
+        });
+
+        window.deleteCity = (cityId) => {
+            const cityName = suggestedItinerariesData[cityId].cityName;
+            showConfirmDelete(`Tem certeza que deseja excluir "${cityName}" e todas as suas atividades?`, async () => {
+                await remove(ref(db, `suggestedItineraries/${cityId}`));
+                closeModal('confirm-delete-modal');
+            });
+        }
+        
+        window.deleteActivitySuggestion = (index) => {
+            const activityName = suggestedItinerariesData[selectedCityId].activities[index].name;
+             showConfirmDelete(`Tem certeza que deseja excluir a atividade "${activityName}"?`, async () => {
+                const currentActivities = [...(suggestedItinerariesData[selectedCityId].activities || [])];
+                currentActivities.splice(index, 1);
+                await set(ref(db, `suggestedItineraries/${selectedCityId}/activities`), currentActivities);
+                closeModal('confirm-delete-modal');
+            });
+        }
+        
+        function setupSuggestionIconPicker() {
+            const picker = document.getElementById('suggestion-icon-picker');
+            picker.innerHTML = '';
+            const activityIcons = {
+                passeio: ICONS.passeio, restaurante: ICONS.restaurante, shopping: ICONS.shopping, music: ICONS.music,
+                building: ICONS.building, tree: ICONS.tree, leaf: ICONS.leaf, sun: ICONS.sun, cake: ICONS.cake, 
+                mountain: ICONS.mountain, ferris_wheel: ICONS.ferris_wheel, basketball: ICONS.basketball, 
+                waves: ICONS.waves, sunglasses: ICONS.sunglasses, outro: ICONS.outro
+            };
+            for (const [name, svg] of Object.entries(activityIcons)) {
+                const option = document.createElement('div');
+                option.className = 'icon-picker-option cursor-pointer p-2 border-2 border-slate-200 rounded-full';
+                option.dataset.icon = name;
+                option.innerHTML = svg.replace(/w-[\d_]+ h-[\d_]+/, 'w-6 h-6');
+                picker.appendChild(option);
+            }
+            picker.addEventListener('click', (e) => {
+                const target = e.target.closest('.icon-picker-option');
+                if (!target) return;
+                document.getElementById('suggestion-activity-icon').value = target.dataset.icon;
+                picker.querySelectorAll('.icon-picker-option').forEach(opt => opt.classList.remove('selected'));
+                target.classList.add('selected');
+            });
+        }
+
     </script>
-<br><center><p>V. 1.002 - 20/10/2025 11:54</p></center><br>
+<br><center><p>V. 1.004 - 21/10/2025 22:25</p></center><br>
 
 </body>
 </html>
