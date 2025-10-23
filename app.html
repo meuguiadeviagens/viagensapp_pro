@@ -433,7 +433,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2003 | 22/10/2025, 20:05</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2004 | 23/10/2025, 16:05</p>
             </main>
         </div>
 
@@ -961,6 +961,11 @@
                     <label for="transport-description" class="block text-sm font-medium text-slate-600">Descrição (Opcional)</label>
                     <textarea id="transport-description" rows="3" placeholder="Ex: Trem #9418, vagão 5, assentos 21, 22" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
                 </div>
+                
+                <div>
+                    <label for="transport-link" class="block text-sm font-medium text-slate-600">Link (Opcional)</label>
+                    <input type="url" id="transport-link" placeholder="https://..." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
                 <div>
                     <label for="transport-cost" class="block text-sm font-medium text-slate-600">Custo (R$) (Opcional)</label>
                     <input type="number" id="transport-cost" placeholder="Ex: 150.00" min="0" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
@@ -1066,6 +1071,11 @@
                 <div>
                     <label for="edit-transport-description" class="block text-sm font-medium text-slate-600">Descrição (Opcional)</label>
                     <textarea id="edit-transport-description" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+
+                <div>
+                    <label for="edit-transport-link" class="block text-sm font-medium text-slate-600">Link (Opcional)</label>
+                    <input type="url" id="edit-transport-link" placeholder="https://..." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 <div>
                     <label for="edit-transport-cost" class="block text-sm font-medium text-slate-600">Custo (R$) (Opcional)</label>
@@ -3331,11 +3341,16 @@ window.addEventListener('popstate', (event) => {
             renderDetailList('flights-list', trip.flights, flightTemplate, 'Nenhum voo adicionado.', isReadOnly);
 
             const transportTemplate = (item, transportId, index, allTransport, isReadOnly) => `
-                <div>
+                <div class="flex-1">
                     <p class="font-semibold text-slate-800">${item.type}</p>
                     <p class="text-sm text-slate-600">${item.from ? `${item.from} → ` : ''}${item.to ? item.to : ''}</p>
                     <p class="text-xs text-slate-500">Partida/Retirada: ${formatDate(item.departureDate)} às ${item.departureTime}</p>
                     <p class="text-xs text-slate-500">Chegada/Devolução: ${formatDate(item.arrivalDate)} às ${item.arrivalTime}</p>
+                    ${item.link ? `
+                    <a href="${item.link}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="mt-2 inline-flex items-center gap-2 text-xs bg-slate-100 text-slate-700 font-semibold px-3 py-1.5 rounded-md hover:bg-slate-200 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" x2="21" y1="14" y2="3"></line></svg>
+                        <span>Acessar Link</span>
+                    </a>` : ''}
                 </div>
                 ${isReadOnly ? '' : `
                 <div class="flex flex-col gap-2 items-center">
@@ -4488,6 +4503,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             document.getElementById('edit-transport-departure-time').value = transport.departureTime;
             document.getElementById('edit-transport-arrival-date').value = transport.arrivalDate;
             document.getElementById('edit-transport-arrival-time').value = transport.arrivalTime;
+            document.getElementById('edit-transport-link').value = transport.link || ''; // <-- ADICIONADO
             document.getElementById('edit-transport-cost').value = transport.cost || '';
             document.getElementById('edit-transport-type').dispatchEvent(new Event('change'));
             openModal('edit-transport-modal');
@@ -4582,6 +4598,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             } else if (category === 'transport') {
                 newItem = { 
                     type: document.getElementById('transport-type').value, from: document.getElementById('transport-origin').value, to: document.getElementById('transport-destination').value, description: document.getElementById('transport-description').value, departureDate: document.getElementById('transport-departure-date').value, departureTime: document.getElementById('transport-departure-time').value, arrivalDate: document.getElementById('transport-arrival-date').value, arrivalTime: document.getElementById('transport-arrival-time').value,
+                    link: document.getElementById('transport-link').value.trim(), // <-- ADICIONADO
                     cost: document.getElementById('transport-cost').value,
                     order: newOrder // <-- ADICIONADO
                 };
@@ -5646,6 +5663,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             if (!currentTripId || !currentEditingItemId) return;
             const updatedTransport = {
                 type: document.getElementById('edit-transport-type').value, from: document.getElementById('edit-transport-origin').value, to: document.getElementById('edit-transport-destination').value, description: document.getElementById('edit-transport-description').value, departureDate: document.getElementById('edit-transport-departure-date').value, departureTime: document.getElementById('edit-transport-departure-time').value, arrivalDate: document.getElementById('edit-transport-arrival-date').value, arrivalTime: document.getElementById('edit-transport-arrival-time').value,
+                link: document.getElementById('edit-transport-link').value.trim(), // <-- ADICIONADO
                 cost: document.getElementById('edit-transport-cost').value,
             };
             const itemRef = ref(db, `trips/${currentTripId}/transport/${currentEditingItemId}`);
