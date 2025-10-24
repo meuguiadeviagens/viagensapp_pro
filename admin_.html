@@ -187,9 +187,12 @@
                         <label for="city-name" class="block text-sm font-medium text-slate-600">Nome da Cidade</label>
                         <input type="text" id="city-name" placeholder="Ex: São Paulo" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
                     </div>
-                    <div>
+                    <div class="relative">
                         <label for="city-country" class="block text-sm font-medium text-slate-600">País</label>
-                        <input type="text" id="city-country" placeholder="Ex: Brasil" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
+                        <input type="text" id="city-country" placeholder="Ex: Brasil" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required autocomplete="off">
+                        
+                        <div id="country-suggestions-list" class="hidden absolute z-10 w-full bg-white border border-slate-300 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
+                            </div>
                     </div>
                     <div class="pt-6 flex justify-end gap-3">
                         <button type="button" onclick="closeModal('add-city-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
@@ -401,6 +404,7 @@
         let suggestedItinerariesData = {};
         let selectedCityId = null;
         let onConfirmAction = () => {};
+        let uniqueCountries = [];
 
         // --- 1. CONTROLE DE AUTENTICAÇÃO ---
         onAuthStateChanged(auth, (user) => {
@@ -425,6 +429,7 @@
                     loadSuggestedItineraries();
                     setupSuggestionIconPicker();
                     setupCityFilter();
+                    setupCountrySuggestions();
                 } else {
                     alert("Acesso negado. Privilégios de administrador necessários.");
                     signOut(auth);
@@ -567,6 +572,58 @@
             }
             
             renderUsersTable(filteredUsers);
+        }
+
+        function setupCountrySuggestions() {
+            const countryInput = document.getElementById('city-country');
+            const suggestionsList = document.getElementById('country-suggestions-list');
+
+            if (!countryInput || !suggestionsList) return;
+
+            countryInput.addEventListener('input', () => {
+                const query = countryInput.value.toLowerCase().trim();
+                suggestionsList.innerHTML = ''; // Limpa sugestões antigas
+
+                if (query.length === 0) {
+                    suggestionsList.classList.add('hidden');
+                    return;
+                }
+
+                // Filtra os países
+                const filteredCountries = uniqueCountries.filter(country =>
+                    country.toLowerCase().includes(query)
+                );
+
+                if (filteredCountries.length === 0) {
+                    suggestionsList.classList.add('hidden');
+                    return;
+                }
+
+                // Renderiza os países filtrados
+                filteredCountries.forEach(country => {
+                    const item = document.createElement('div');
+                    item.className = 'p-2 text-sm text-slate-700 hover:bg-slate-100 cursor-pointer';
+                    item.textContent = country;
+                    
+                    // Ação ao clicar na sugestão
+                    item.addEventListener('click', () => {
+                        countryInput.value = country; // Preenche o input
+                        suggestionsList.innerHTML = ''; // Limpa a lista
+                        suggestionsList.classList.add('hidden'); // Esconde a lista
+                    });
+                    suggestionsList.appendChild(item);
+                });
+
+                suggestionsList.classList.remove('hidden'); // Mostra a lista
+            });
+
+            // Opcional: Fechar a lista ao clicar fora
+            window.addEventListener('click', (e) => {
+                // Se o clique NÃO for no input e NÃO for na lista de sugestões
+                if (e.target !== countryInput && !suggestionsList.contains(e.target)) {
+                    suggestionsList.classList.add('hidden');
+                }
+            });
         }
 
         // NOVO: Adiciona o listener para o filtro de cidades
@@ -1174,6 +1231,14 @@
                  const form = modalElement.querySelector('form');
                  if (form) form.reset(); 
 
+                 if (id === 'add-city-modal') {
+                    const suggestionsList = document.getElementById('country-suggestions-list');
+                    if (suggestionsList) {
+                        suggestionsList.innerHTML = '';
+                        suggestionsList.classList.add('hidden');
+                    }
+                 }
+
                  if (id === 'edit-license-modal') {
                      tempPurchasedTrips = {}; 
                      const purchasedList = document.getElementById('purchased-trips-list');
@@ -1213,6 +1278,12 @@
             const suggestionsRef = ref(db, 'suggestedItineraries');
             onValue(suggestionsRef, (snapshot) => {
                 suggestedItinerariesData = snapshot.val() || {};
+                
+                const countries = Object.values(suggestedItinerariesData)
+                                      .map(city => city.country.trim()) // Pega o país e remove espaços
+                                      .filter(Boolean); // Remove strings vazias (caso haja)
+                uniqueCountries = [...new Set(countries)].sort(); // Lista única e ordenada
+                
                 renderSuggestedCitiesList();
                 if (selectedCityId && suggestedItinerariesData[selectedCityId]) {
                     renderSuggestedActivities(selectedCityId);
@@ -1440,7 +1511,7 @@
         }
 
     </script>
-<br><center><p>V. 1.005 - 22/10/2025 09:25</p></center><br>
+<br><center><p>V. 1.005 - 23/10/2025 21:35</p></center><br>
 
 </body>
 </html>
