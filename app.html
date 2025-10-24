@@ -433,7 +433,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2004 | 23/10/2025, 21:31</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2005 | 24/10/2025, 09:19</p>
             </main>
         </div>
 
@@ -3704,15 +3704,19 @@ window.addEventListener('popstate', (event) => {
                     <div class="flex justify-between items-center mb-2">
                          <div class="flex items-center gap-3">
                             <svg class="drag-handle" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-                            <h3 class="font-bold text-lg text-slate-800">${dayCounter}/${totalTripDays} | ${formatDate(dayKey, {weekday: 'long', day: 'numeric', month: 'long'})}</h3>
+                            <h3 class="font-bold text-lg text-slate-800">${formatDate(dayKey, {weekday: 'long', day: 'numeric', month: 'long'})} | ${dayCounter}/${totalTripDays}</h3>
                         </div>
                         ${isReadOnly ? '' : `
                         <div class="flex items-center gap-2">
                              <button onclick="deleteDay('${dayKey}')" class="delete-day-btn flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                             </button>
-                            <button onclick="openAddActivityModal('${dayKey}')" class="add-activity-btn flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition-colors">
-                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <button 
+                                onclick="openAddActivityModal('${dayKey}')" 
+                                oncontextmenu="openSuggestionsForDay(event, '${dayKey}')" 
+                                title="Clique para adicionar / Botão direito para sugestões"
+                                class="add-activity-btn flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </button>
                         </div>
                         `}
@@ -4113,7 +4117,21 @@ let dividerHtml = '';
             totalElement.innerHTML = `Total Geral: ${formatCurrency(totalCost)}`;
         }
 
-        
+       
+        // --- NOVA FUNÇÃO PARA ABRIR SUGESTÕES COM O DIA PRÉ-SELECIONADO ---
+        window.openSuggestionsForDay = (event, dayKey) => {
+            event.preventDefault(); // Impede o menu de contexto padrão
+            
+            // 1. Abre o modal. A função openImportSuggestionsModal() já
+            //    é responsável por popular o select com todos os dias da viagem.
+            openImportSuggestionsModal();
+            
+            // 2. Agora que o modal está aberto e o select populado,
+            //    definimos o valor para o dia que foi clicado.
+            const daySelect = document.getElementById('import-target-day-select');
+            daySelect.value = dayKey; // Define o dia selecionado
+        };
+
         // --- CONTROLE DE NAVEGAÇÃO, MODAIS E FORMULÁRIOS ---
         window.scrollToCity = (cityName) => {
             const targetId = `itinerary-day-${cityName.toLowerCase().replace(/\s+/g, '-')}`;
