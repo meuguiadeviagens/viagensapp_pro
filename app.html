@@ -11,6 +11,28 @@
     
     <style>
 
+        @media print {
+        /* Força a impressão de cores e imagens de fundo */
+        *,
+        *::before,
+        *::after {
+            -webkit-print-color-adjust: exact !important; /* Chrome, Safari, Edge */
+            print-color-adjust: exact !important;          /* Firefox */
+        }
+
+        /* Exemplo Específico: Garantir que as atividades e cidades tenham suas cores */
+        /* Supondo que suas atividades tenham uma classe como '.atividade-item' */
+        .atividade-item {
+            background-color: #e0f2fe !important; /* Exemplo de azul claro */
+        }
+
+        /* Supondo que os títulos das cidades tenham uma classe como '.cidade-titulo' */
+        .cidade-titulo {
+            background-color: #ffedd5 !important; /* Exemplo de alaranjado */
+            color: #c2410c !important;             /* Exemplo de cor de texto escura para contraste */
+        }
+        }
+
         .city-suggestion-item {
             padding: 0.75rem 1rem;
             cursor: pointer;
@@ -433,7 +455,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2005 | 24/10/2025, 09:19</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2006 | 24/10/2025, 11:59</p>
             </main>
         </div>
 
@@ -542,13 +564,19 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-receipt-text"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M11 16H8"/></svg>
                         <span>Despesas</span>
                     </button>
-                    <button onclick="scrollToItinerary()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
+                    <button onclick="scrollToItinerary()" class="flex items-center gap-2 text-sm bg-cyan-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-cyan-400 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-collapse"><path d="m3 10 2.5-2.5L3 5"></path><path d="m3 19 2.5-2.5L3 14"></path><path d="M10 6h11"></path><path d="M10 12h11"></path><path d="M10 18h11"></path></svg>
                         <span>Roteiro</span>
                     </button>
+                    <button onclick="window.print()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-printer"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+                        <span>PDF Offline</span>
+                    </button>
                     <button id="custom-link-btn" style="display: none;" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
-                        <span></span> </button>
+                        <span></span>
+                    </button>
+
                 </div>
             </header>
 
@@ -4165,8 +4193,8 @@ let dividerHtml = '';
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
             // Prepara os painéis internos para a visualização
-            document.getElementById('documents-panel').classList.add('collapsed');
-            document.getElementById('spending-panel').classList.add('collapsed');
+            document.getElementById('documents-panel').classList.remove('collapsed'); //remove mantém maximizado ao iniciar
+            document.getElementById('spending-panel').classList.add('collapsed'); // add faz iniciar minimizado
             document.getElementById('notes-panel').classList.remove('collapsed');
 
             // Carrega os dados da viagem
