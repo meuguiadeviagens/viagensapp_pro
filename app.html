@@ -433,7 +433,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2004 | 23/10/2025, 16:05</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2004 | 23/10/2025, 21:31</p>
             </main>
         </div>
 
@@ -455,15 +455,18 @@
         <div id="import-suggestions-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
             <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-2xl m-4 flex flex-col max-h-[90vh]">
                 <h3 class="text-xl sm:text-2xl font-semibold mb-6">Importar Atividades Sugeridas</h3>
+                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                     <div class="relative autocomplete-container">
-                        <label for="suggestions-city-input" class="block text-sm font-medium text-slate-600">Digite o nome da cidade</label>
+                        <label for="suggestions-city-input" class="block text-sm font-medium text-slate-600">1. Digite o nome da cidade</label>
                         <input type="text" id="suggestions-city-input" placeholder="Comece a digitar..." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md">
                         <div id="city-suggestions-popup" class="hidden absolute z-10 w-full bg-white border border-slate-300 rounded-md mt-1 shadow-lg max-h-48 overflow-y-auto"></div>
                     </div>
                     <div>
-                        <div class="flex justify-between items-center">
-                            <label class="block text-sm font-medium text-slate-600">...</label>
+                        <label for="import-target-day-select" class="block text-sm font-medium text-slate-600">2. Escolha o dia para importar</label>
+                        <select id="import-target-day-select" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm">
+                            </select>
+                        <div class="flex justify-end items-center mt-2">
                             <button id="select-all-suggestions-btn" type="button" class="text-sm text-blue-600 hover:underline">Marcar todas</button>
                         </div>
                     </div>
@@ -4934,6 +4937,34 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             document.getElementById('suggestions-city-input').value = '';
             document.getElementById('city-suggestions-popup').classList.add('hidden');
             document.getElementById('suggestions-activities-list').innerHTML = '<p class="text-center text-slate-500">Selecione uma cidade para ver as atividades.</p>';
+            
+            // --- INÍCIO DA NOVA LÓGICA PARA POPULAR DIAS ---
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const daySelect = document.getElementById('import-target-day-select');
+            daySelect.innerHTML = ''; // Limpa opções antigas
+
+            if (trip && trip.startDate && trip.endDate) {
+                let currentDate = new Date(trip.startDate + 'T00:00:00Z');
+                const endDate = new Date(trip.endDate + 'T00:00:00Z');
+                let dayCounter = 1;
+
+                while(currentDate <= endDate) {
+                    const dayKey = currentDate.toISOString().split('T')[0];
+                    const dayString = formatDate(dayKey, {weekday: 'short', day: 'numeric', month: 'short'});
+                    
+                    const option = document.createElement('option');
+                    option.value = dayKey; // O valor será o ISO date string, ex: "2025-10-24"
+                    option.textContent = `Dia ${dayCounter}: ${dayString}`;
+                    daySelect.appendChild(option);
+
+                    currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+                    dayCounter++;
+                }
+            } else {
+                daySelect.innerHTML = '<option value="" disabled>Erro: Viagem sem datas.</option>';
+            }
+            // --- FIM DA NOVA LÓGICA ---
+            
             openModal('import-suggestions-modal');
         }
         
@@ -5002,46 +5033,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             });
         }
         
-        document.getElementById('import-activities-btn').addEventListener('click', async () => {
-            const trip = tripsData.find(t => t.id === currentTripId);
-            if (!trip) return;
-
-            const selectedCheckboxes = document.querySelectorAll('#suggestions-activities-list input:checked');
-            if (selectedCheckboxes.length === 0) {
-                alert("Selecione pelo menos uma atividade para importar.");
-                return;
-            }
-            
-            const cityId = selectedCheckboxes[0].dataset.cityId; // Pega o cityId do primeiro item marcado
-            const selectedIndexes = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
-            const activitiesToImport = selectedIndexes.map(index => suggestedItinerariesData[cityId].activities[index]);
-            
-            let currentActivities = trip.activities ? Object.values(trip.activities) : [];
-            let lastTime = 8 * 60 + 59; 
-
-            activitiesToImport.forEach(activity => {
-                lastTime++;
-                const hours = Math.floor(lastTime / 60).toString().padStart(2, '0');
-                const minutes = (lastTime % 60).toString().padStart(2, '0');
-
-                currentActivities.push({
-                    id: `${Date.now()}-${Math.random()}`, date: trip.startDate, time: `${hours}:${minutes}`,
-                    name: activity.name, type: activity.type, description: activity.description,
-                    icon: activity.icon, link: activity.link || '', cost: ''
-                });
-            });
-
-            try {
-                const activitiesObject = { ...currentActivities };
-                await update(ref(db, `trips/${currentTripId}`), { activities: activitiesObject });
-                alert(`${activitiesToImport.length} atividade(s) importada(s) para o primeiro dia!`);
-                closeModal('import-suggestions-modal');
-            } catch(error) {
-                console.error("Erro ao importar atividades:", error);
-                alert("Ocorreu um erro ao importar as atividades.");
-            }
-        });
-        // --- FIM: NOVA LÓGICA DE AUTOCOMPLETE PARA CIDADES ---        
+               
         
         document.getElementById('select-all-suggestions-btn').addEventListener('click', () => {
             const checkboxes = document.querySelectorAll('#suggestions-activities-list input[type="checkbox"]');
@@ -5053,36 +5045,57 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             const trip = tripsData.find(t => t.id === currentTripId);
             if (!trip) return;
 
-            const cityId = document.getElementById('suggestions-city-select').value;
-            if (!cityId) return;
-
-            const selectedIndexes = Array.from(document.querySelectorAll('#suggestions-activities-list input:checked')).map(cb => parseInt(cb.value));
-            
-            if (selectedIndexes.length === 0) {
-                alert("Selecione pelo menos uma atividade para importar.");
+            // 1. PEGA A DATA ALVO DO NOVO DROPDOWN
+            const targetDate = document.getElementById('import-target-day-select').value;
+            if (!targetDate) {
+                alert("Não foi possível encontrar o dia selecionado.");
                 return;
             }
 
+            const selectedCheckboxes = document.querySelectorAll('#suggestions-activities-list input:checked');
+            if (selectedCheckboxes.length === 0) {
+                alert("Selecione pelo menos uma atividade para importar.");
+                return;
+            }
+            
+            const cityId = selectedCheckboxes[0].dataset.cityId; // Pega o cityId do item
+            const selectedIndexes = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
             const activitiesToImport = selectedIndexes.map(index => suggestedItinerariesData[cityId].activities[index]);
             
-            let currentActivities = trip.activities ? [...Object.values(trip.activities)] : [];
-            let lastTime = 8 * 60 + 59; // Começa em 08:59 para o primeiro ser 09:00
+            let currentActivities = trip.activities ? Object.values(trip.activities) : [];
+
+            // 2. LÓGICA DE TEMPO APRIMORADA
+            // Encontra a última atividade *no dia selecionado*
+            const activitiesOnTargetDay = currentActivities
+                .filter(a => a.date === targetDate)
+                .sort((a, b) => a.time.localeCompare(b.time)); // Ordena por hora
+            
+            let lastTimeInMinutes = 8 * 60 + 59; // Padrão 08:59 (para começar às 09:00)
+            
+            if (activitiesOnTargetDay.length > 0) {
+                const lastActivity = activitiesOnTargetDay[activitiesOnTargetDay.length - 1];
+                const [lastHours, lastMinutes] = lastActivity.time.split(':').map(Number);
+                lastTimeInMinutes = (lastHours * 60) + lastMinutes;
+            }
+            // --- FIM DA LÓGICA DE TEMPO APRIMORADA ---
 
             activitiesToImport.forEach(activity => {
-                lastTime++; // Incrementa 1 minuto
-                const hours = Math.floor(lastTime / 60).toString().padStart(2, '0');
-                const minutes = (lastTime % 60).toString().padStart(2, '0');
+                lastTimeInMinutes++; // Incrementa 1 minuto
+                const hours = Math.floor(lastTimeInMinutes / 60).toString().padStart(2, '0');
+                const minutes = (lastTimeInMinutes % 60).toString().padStart(2, '0');
 
                 const newActivity = {
-                    id: `${Date.now()}-${Math.random()}`, // ID único
-                    date: trip.startDate, // Adiciona ao primeiro dia da viagem
+                    id: `${Date.now()}-${Math.random()}`,
+                    date: targetDate, // <-- 3. USA A DATA ALVO
                     time: `${hours}:${minutes}`,
                     name: activity.name,
                     type: activity.type,
                     description: activity.description,
                     icon: activity.icon,
-                    link: '',
-                    cost: ''
+                    link: activity.link || '',
+                    cost: '',
+                    authorName: currentUserProfile.fullName || 'Sugestão', // Identifica a origem
+                    createdAt: serverTimestamp()
                 };
                 currentActivities.push(newActivity);
             });
@@ -5090,13 +5103,18 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             try {
                 const activitiesObject = { ...currentActivities };
                 await update(ref(db, `trips/${currentTripId}`), { activities: activitiesObject });
-                alert(`${activitiesToImport.length} atividade(s) importada(s) para o primeiro dia da sua viagem! Agora você pode reordená-las.`);
+                
+                // Mensagem de sucesso personalizada
+                const selectedDayText = document.getElementById('import-target-day-select').options[document.getElementById('import-target-day-select').selectedIndex].text;
+                alert(`${activitiesToImport.length} atividade(s) importada(s) para "${selectedDayText}"!`);
+                
                 closeModal('import-suggestions-modal');
             } catch(error) {
                 console.error("Erro ao importar atividades:", error);
                 alert("Ocorreu um erro ao importar as atividades.");
             }
         });
+
         
         // --- SEÇÃO ATUALIZADA: LÓGICA DE REORGANIZAÇÃO DO ROTEIRO COM DUPLO MODO ---
         
