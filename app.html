@@ -471,7 +471,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2008 | 25/10/2025, 09:35</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2009 | 25/10/2025, 12:00</p>
             </main>
         </div>
 
@@ -802,7 +802,7 @@
             <button type="button" onclick="closeModal('index-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Fechar</button>
         </div>
     </div>
-</div>
+</div>    
 
     <div id="add-trip-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
         <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md m-4">
@@ -3101,16 +3101,40 @@ window.addEventListener('popstate', (event) => {
                 featuredTripsPanel.appendChild(featuredTripsList);
             }
             
-            // Caso não haja nenhuma viagem cadastrada
+            // --- INÍCIO DA CORREÇÃO ---
+            // A linha 'if' abaixo estava faltando
             if (tripsData.length === 0) {
-                const emptyMessage = `<div class="col-span-full text-center p-10 bg-white rounded-lg shadow-sm">
-                    <h3 class="text-xl font-medium text-slate-700">Nenhuma viagem encontrada.</h3>
-                    <p class="text-slate-500 mt-2">Clique em "Nova Viagem" para começar a planejar!</p>
-                </div>`;
-                upcomingContent.innerHTML = emptyMessage;
+                const welcomeCardHtml = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <a 
+                            href="https://www.youtube.com/watch?v=FAoFesoNhuI" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            class="trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative border-2 border-dashed border-blue-400 hover:border-blue-600">
+                            
+                            <div 
+                                class="h-48 bg-cover bg-center flex items-center justify-center relative" 
+                                style="background-image: url('https://midias-turismo.eurodicas.com.br/wp-content/uploads/2025/02/paris_na_primavera-2-1200x800.jpg.webp');">
+                                
+                                <div class="absolute inset-0 bg-black opacity-40"></div>
+                                
+                                <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play-circle text-white z-10 opacity-80"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                            </div>
+
+                            <div class="p-6 text-center">
+                                <h3 class="text-2xl font-bold text-slate-900">Crie sua primeira viagem</h3>
+                                <p class="text-slate-500 mt-2">Clique aqui para ver um vídeo rápido de como começar a usar o app.</p>
+                            </div>
+                        </a>
+                    </div>
+                `;
+                upcomingContent.innerHTML = welcomeCardHtml;
+                // --- FIM DA MODIFICAÇÃO ---
+                
                 pastContent.innerHTML = `<p class="col-span-full text-center text-sm text-slate-500 py-4">Nenhuma viagem realizada ainda.</p>`;
                 return;
-            }
+            } // --- ESTA '}' (linha 3226 no seu arquivo) estava sobrando, mas agora está correta.
+            // --- FIM DA CORREÇÃO ---
 
             // Separa as viagens em futuras e passadas
             const today = new Date();
@@ -4261,7 +4285,7 @@ let dividerHtml = '';
             }
         }
 
-window.scrollToSectionAndClose = (targetId, modalId) => {
+        window.scrollToSectionAndClose = (targetId, modalId) => {
             const targetElement = document.getElementById(targetId);
             if (targetElement) {
                 targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4320,7 +4344,7 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
         window.closeModal = (modalId) => {
             document.getElementById(modalId).classList.replace('flex', 'hidden');
             const form = document.getElementById(modalId).querySelector('form');
-            if (form) form.reset();
+            if (form) form.reset();            
             
             // Verificação específica para o modal de exclusão
             if (modalId === 'confirm-delete-modal') {
