@@ -11,6 +11,22 @@
     
     <style>
 
+        /* ... (outros estilos) ... */
+        .paid-transaction {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        /* INÍCIO: ESTILOS PARA POPUP DE IMAGEM */
+        #image-preview-popup {
+            transition: opacity 0.1s ease-in-out;
+            /* pointer-events: none; já está inline no HTML */
+        }
+        #image-preview-popup.hidden {
+            opacity: 0;
+        }
+        /* FIM: ESTILOS PARA POPUP DE IMAGEM */
+
         @media print {
         /* Força a impressão de cores e imagens de fundo */
         *,
@@ -455,7 +471,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2007 | 25/10/2025, 08:25</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2008 | 25/10/2025, 09:35</p>
             </main>
         </div>
 
@@ -5090,21 +5106,28 @@ window.scrollToSectionAndClose = (targetId, modalId) => {
             const activities = suggestedItinerariesData[cityId].activities;
             activities.forEach((activity, index) => {
                 const item = document.createElement('div');
-                item.className = 'flex items-start gap-3 p-2 rounded hover:bg-slate-100';
+                item.className = 'flex items-start gap-3 p-2 rounded hover:bg-slate-100'; // Alterado para items-start
+
+                // --- INÍCIO DA MODIFICAÇÃO ---
+                // Cria a miniatura SE imageUrl existir
+                let thumbnailHtml = '';
+                if (activity.imageUrl) {
+                    thumbnailHtml = `<img src="${activity.imageUrl}" alt="Miniatura" class="w-10 h-10 rounded object-cover flex-shrink-0">`; // Miniatura
+                }
+                // --- FIM DA MODIFICAÇÃO ---
+
                 item.innerHTML = `
-                    <input type="checkbox" id="suggestion-${index}" value="${index}" data-city-id="${cityId}" class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <label for="suggestion-${index}" class="flex-grow cursor-pointer">
-                        <div class="flex items-center gap-2">
-                           ${ICONS[activity.icon] || ICONS.passeio}
-                           <span class="font-semibold text-slate-800">${activity.name}</span>
+                    <input type="checkbox" id="suggestion-${index}" value="${index}" data-city-id="${cityId}" class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 flex-shrink-0">
+                    <label for="suggestion-${index}" class="flex-grow cursor-pointer flex items-center gap-3"> ${thumbnailHtml} <div class="flex items-center gap-2 flex-shrink-0"> ${ICONS[activity.icon] || ICONS.passeio}
                         </div>
-                        <p class="text-sm text-slate-600 pl-7">${activity.description}</p>
+                        <div class="min-w-0"> <span class="font-semibold text-slate-800">${activity.name}</span>
+                           <p class="text-sm text-slate-600 truncate">${activity.description}</p>
+                        </div>
                     </label>
                 `;
                 activitiesList.appendChild(item);
             });
-        }
-        
+        }        
                
         
         document.getElementById('select-all-suggestions-btn').addEventListener('click', () => {
@@ -6270,6 +6293,96 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         // --- FIM: FUNÇÕES PARA TROCA DE SENHA ---
 
+        // --- INÍCIO: LÓGICA DO POPUP DE PRÉ-VISUALIZAÇÃO DE IMAGEM (VERSÃO REFINADA) ---
+        const previewPopup = document.getElementById('image-preview-popup');
+        const previewImage = document.getElementById('image-preview-content');
+        let hidePreviewTimeout;
+
+        // Função que mostra o popup
+        function showImagePreview(event) {
+            const targetImage = event.target;
+            const listContainer = event.currentTarget;
+            const isThumbnail = targetImage.tagName === 'IMG' && targetImage.alt === 'Miniatura' && targetImage.closest(`#${listContainer.id}`);
+
+            if (isThumbnail && previewPopup && previewImage) {
+                // event.stopPropagation(); // <-- REMOVEMOS STOP PROPAGATION POR ENQUANTO
+
+                clearTimeout(hidePreviewTimeout); // Cancela qualquer timeout pendente para esconder
+
+                const imageUrl = targetImage.src;
+                if (!imageUrl || imageUrl.endsWith('/')) return;
+                previewImage.src = imageUrl;
+
+                // --- Lógica de Posicionamento (mantida igual) ---
+                const rect = targetImage.getBoundingClientRect();
+                const popupWidth = previewPopup.offsetWidth > 0 ? previewPopup.offsetWidth : 300;
+                const popupHeight = previewPopup.offsetHeight > 0 ? previewPopup.offsetHeight : 300;
+                const margin = 10;
+                let top = rect.top;
+                let left = rect.right + margin;
+                if (left + popupWidth > window.innerWidth) { left = rect.left - popupWidth - margin; }
+                if (top + popupHeight > window.innerHeight) { top = window.innerHeight - popupHeight - margin; }
+                if (top < margin) top = margin;
+                if (left < margin) left = margin;
+                // --- Fim Posicionamento ---
+
+                previewPopup.style.top = `${top}px`;
+                previewPopup.style.left = `${left}px`;
+                previewPopup.classList.remove('hidden');
+            }
+        }
+
+        // Função que INICIA o timer para esconder o popup
+        function startHideTimer() {
+            clearTimeout(hidePreviewTimeout); // Limpa qualquer timer anterior
+            hidePreviewTimeout = setTimeout(() => {
+                if (previewPopup) {
+                    previewPopup.classList.add('hidden');
+                }
+            }, 200); // Aumentamos um pouco o delay para 200ms, pode ajudar na estabilidade
+        }
+
+        // Handler para quando o mouse SAI da área da lista (ou de um filho dela)
+        function handleMouseOutOfList(event) {
+            // event.stopPropagation(); // <-- REMOVEMOS STOP PROPAGATION POR ENQUANTO
+
+            // Verifica se o mouse está se movendo PARA DENTRO do popup
+            // Se sim, NÃO iniciamos o timer para esconder.
+            if (event.relatedTarget === previewPopup || previewPopup.contains(event.relatedTarget)) {
+                return;
+            }
+            // Se o mouse saiu da lista e NÃO foi para o popup, inicia o timer para esconder.
+            startHideTimer();
+        }
+
+        // Handler para quando o mouse ENTRA na área do popup
+        function handleMouseOverPopup() {
+            // Se o mouse entrou no popup, cancelamos qualquer timer que ia escondê-lo.
+            clearTimeout(hidePreviewTimeout);
+        }
+
+        // Handler para quando o mouse SAI da área do popup
+        function handleMouseOutOfPopup() {
+            // Se o mouse saiu do popup, iniciamos o timer para escondê-lo.
+            startHideTimer();
+        }
+
+        // Anexa os listeners à lista de atividades sugeridas
+        const suggestionsListContainer = document.getElementById('suggestions-activities-list');
+        if (suggestionsListContainer) {
+            suggestionsListContainer.addEventListener('mouseover', showImagePreview);
+            suggestionsListContainer.addEventListener('mouseout', handleMouseOutOfList); // Usa o novo handler
+        } else {
+             console.error("Erro Crítico: Container suggestions-activities-list não encontrado!");
+        }
+
+        // Anexa listeners AO PRÓPRIO POPUP
+        if (previewPopup) {
+            previewPopup.addEventListener('mouseover', handleMouseOverPopup); // Cancela o hide se entrar no popup
+            previewPopup.addEventListener('mouseout', handleMouseOutOfPopup);  // Inicia o hide se sair do popup
+        }
+        // --- FIM: LÓGICA DO POPUP DE PRÉ-VISUALIZAÇÃO DE IMAGEM (VERSÃO REFINADA) ---
+
     </script>
 
 <button id="back-to-top-btn" onclick="scrollToTop()" class="hidden fixed bottom-8 left-8 z-40 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
@@ -6284,5 +6397,9 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 </button>
 <br>
 <br>
+
+        <div id="image-preview-popup" class="hidden fixed z-[1000] border border-slate-300 shadow-lg rounded-md overflow-hidden bg-white p-1 max-w-[300px] max-h-[300px]" style="pointer-events: none;">
+            <img id="image-preview-content" src="" alt="Pré-visualização" class="block w-full h-full object-contain">
+        </div>
 </body>
 </html>
