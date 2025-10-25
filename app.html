@@ -450,6 +450,7 @@
                             <a href="#" id="upgrade-plan-btn" class="hidden block px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-100" onclick="event.preventDefault(); openModal('upgrade-plan-modal'); userMenuDropdown.classList.add('hidden');">
                                 Adquirir um Plano
                             </a>
+                            <a href="https://youtu.be/taDKKjWjJWk" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Como criar uma viagem?</a>
                             <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-slate-100">Sair</a>
                         </div>
                     </div>
@@ -471,7 +472,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2009 | 25/10/2025, 12:00</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2010 | 25/10/2025, 15:00</p>
             </main>
         </div>
 
@@ -845,14 +846,18 @@
                         <option value="volta">Volta</option>
                     </select>
                 </div>
-                <div>
-                    <label for="flight-date" class="block text-sm font-medium text-slate-600">Data do Voo</label>
-                    <input type="date" id="flight-date" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
-                </div>
                 <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="flight-departure-date" class="block text-sm font-medium text-slate-600">Data de Saída</label>
+                        <input type="date" id="flight-departure-date" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
+                    </div>
                     <div>
                         <label for="flight-departure-time" class="block text-sm font-medium text-slate-600">Horário de Saída</label>
                         <input type="time" id="flight-departure-time" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
+                    </div>
+                    <div>
+                        <label for="flight-arrival-date" class="block text-sm font-medium text-slate-600">Data de Chegada</label>
+                        <input type="date" id="flight-arrival-date" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
                     </div>
                     <div>
                         <label for="flight-arrival-time" class="block text-sm font-medium text-slate-600">Horário de Chegada</label>
@@ -909,14 +914,18 @@
                         <option value="volta">Volta</option>
                     </select>
                 </div>
-                <div>
-                    <label for="edit-flight-date" class="block text-sm font-medium text-slate-600">Data do Voo</label>
-                    <input type="date" id="edit-flight-date" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
-                </div>
                 <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-flight-departure-date" class="block text-sm font-medium text-slate-600">Data de Saída</label>
+                        <input type="date" id="edit-flight-departure-date" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
+                    </div>
                     <div>
                         <label for="edit-flight-departure-time" class="block text-sm font-medium text-slate-600">Horário de Saída</label>
                         <input type="time" id="edit-flight-departure-time" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
+                    </div>
+                    <div>
+                        <label for="edit-flight-arrival-date" class="block text-sm font-medium text-slate-600">Data de Chegada</label>
+                        <input type="date" id="edit-flight-arrival-date" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
                     </div>
                     <div>
                         <label for="edit-flight-arrival-time" class="block text-sm font-medium text-slate-600">Horário de Chegada</label>
@@ -3107,7 +3116,7 @@ window.addEventListener('popstate', (event) => {
                 const welcomeCardHtml = `
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <a 
-                            href="https://www.youtube.com/watch?v=FAoFesoNhuI" 
+                            href="https://youtu.be/taDKKjWjJWk" 
                             target="_blank" 
                             rel="noopener noreferrer"
                             class="trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative border-2 border-dashed border-blue-400 hover:border-blue-600">
@@ -3391,33 +3400,41 @@ window.addEventListener('popstate', (event) => {
             renderSpendingPanel(trip);
             renderSharedExpenses(trip);            
 
-            const flightTemplate = (flight, flightId, index, allFlights, isReadOnly) => `
+            const flightTemplate = (flight, flightId, index, allFlights, isReadOnly) => {
+                // PRIMEIRO DEFINIMOS AS VARIÁVEIS...
+                const departureDate = flight.departureDate || flight.date;
+                const arrivalDate = flight.arrivalDate || flight.date;
+                
+                // ...DEPOIS RETORNAMOS O HTML
+                return `
                 <div>
                     <p class="font-semibold text-slate-800">${flight.origin} → ${flight.destination}</p>
-                    <p class="text-sm text-slate-600">${flight.company} ${flight.code} - ${formatDate(flight.date)}</p>
-                    <p class="text-xs text-slate-500">${flight.departureTime} - ${flight.arrivalTime}</p>
+                    <p class="text-sm text-slate-600">${flight.company} ${flight.code || ''}</p>
+                    <p class="text-xs text-slate-500">Saída: ${formatDate(departureDate)} às ${flight.departureTime}</p>
+                    <p class="text-xs text-slate-500">Chegada: ${formatDate(arrivalDate)} às ${flight.arrivalTime}</p>
                 </div>
                 ${isReadOnly ? '' : `
                 <div class="flex flex-col gap-2 items-center">
                     <div class="flex gap-1">
                         <button ${index === 0 ? 'disabled' : ''} onclick="reorderDetailItem('flights', '${flightId}', 'up')" class="p-1 disabled:opacity-30 disabled:cursor-not-allowed">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-circle"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4"/><path d="M12 16V8"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-circle"><circle cx="12" cy="12" r="10"></circle><path d="m16 12-4-4-4 4"></path><path d="M12 16V8"></path></svg>
                         </button>
                         <button ${index === allFlights.length - 1 ? 'disabled' : ''} onclick="reorderDetailItem('flights', '${flightId}', 'down')" class="p-1 disabled:opacity-30 disabled:cursor-not-allowed">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down-circle"><circle cx="12" cy="12" r="10"/><path d="m8 12 4 4 4-4"/><path d="m12 8 v8"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><path d="m8 12 4 4 4-4"></path><path d="m12 8 v8"></path></svg>
                         </button>
                     </div>
                     <div class="flex gap-1">
                         <button onclick="openEditFlightModal('${flightId}')" class="p-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
                         </button>
                         <button onclick="deleteDetailItem('flights', '${flightId}')" class="p-1 text-red-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
                         </button>
                     </div>
                 </div>
                 `}
             `;
+            }
             renderDetailList('flights-list', trip.flights, flightTemplate, 'Nenhum voo adicionado.', isReadOnly);
 
             const transportTemplate = (item, transportId, index, allTransport, isReadOnly) => `
@@ -3625,15 +3642,17 @@ window.addEventListener('popstate', (event) => {
                 Object.values(trip.flights).forEach(f => {
                     const flightData = { isEditable: false, ...f };
                     const eventName = `Voo ${f.company}`;
-                    if (f.date && f.departureTime) {
-                        allEvents.push({ dateTime: new Date(`${f.date}T${f.departureTime}`), name: eventName, description: `Partida de ${f.origin} para ${f.destination}`, icon: ICONS.flight_departure, data: flightData });
+                    
+                    // Lógica de compatibilidade (usa o campo novo ou o 'date' antigo)
+                    const departureDate = f.departureDate || f.date;
+                    const arrivalDate = f.arrivalDate || f.date;
+
+                    if (departureDate && f.departureTime) {
+                        allEvents.push({ dateTime: new Date(`${departureDate}T${f.departureTime}`), name: eventName, description: `Partida de ${f.origin} para ${f.destination}`, icon: ICONS.flight_departure, data: flightData });
                     }
-                    if (f.date && f.arrivalTime) {
-                        let arrivalDateTime = new Date(`${f.date}T${f.arrivalTime}`);
-                        if (arrivalDateTime < new Date(`${f.date}T${f.departureTime}`)) {
-                            arrivalDateTime.setDate(arrivalDateTime.getDate() + 1);
-                        }
-                        allEvents.push({ dateTime: arrivalDateTime, name: eventName, description: `Chegada em ${f.destination}`, icon: ICONS.flight_arrival, data: flightData });
+                    if (arrivalDate && f.arrivalTime) {
+                        // A lógica complexa de +1 dia foi removida, pois agora temos a data de chegada correta
+                        allEvents.push({ dateTime: new Date(`${arrivalDate}T${f.arrivalTime}`), name: eventName, description: `Chegada em ${f.destination}`, icon: ICONS.flight_arrival, data: flightData });
                     }
                 });
             }
@@ -4589,8 +4608,14 @@ let dividerHtml = '';
             if (!flight) return;
 
             currentEditingItemId = flightId; // Armazena o ID para usar ao salvar
+            
+            // Lógica para compatibilidade: usa os novos campos se existirem, senão usa o campo 'date' antigo
+            const departureDate = flight.departureDate || flight.date;
+            const arrivalDate = flight.arrivalDate || flight.date;
+
             document.getElementById('edit-flight-leg-type').value = flight.legType;
-            document.getElementById('edit-flight-date').value = flight.date;
+            document.getElementById('edit-flight-departure-date').value = departureDate;
+            document.getElementById('edit-flight-arrival-date').value = arrivalDate;
             document.getElementById('edit-flight-departure-time').value = flight.departureTime;
             document.getElementById('edit-flight-arrival-time').value = flight.arrivalTime;
             document.getElementById('edit-flight-origin').value = flight.origin;
@@ -4706,9 +4731,18 @@ let dividerHtml = '';
             let newItem = {};
             if (category === 'flights') {
                 newItem = { 
-                    legType: document.getElementById('flight-leg-type').value, date: document.getElementById('flight-date').value, departureTime: document.getElementById('flight-departure-time').value, arrivalTime: document.getElementById('flight-arrival-time').value, origin: document.getElementById('flight-origin').value, destination: document.getElementById('flight-destination').value, company: document.getElementById('flight-company').value, code: document.getElementById('flight-code').value, flightType: document.getElementById('flight-type').value,
+                    legType: document.getElementById('flight-leg-type').value, 
+                    departureDate: document.getElementById('flight-departure-date').value, 
+                    arrivalDate: document.getElementById('flight-arrival-date').value, 
+                    departureTime: document.getElementById('flight-departure-time').value, 
+                    arrivalTime: document.getElementById('flight-arrival-time').value, 
+                    origin: document.getElementById('flight-origin').value, 
+                    destination: document.getElementById('flight-destination').value, 
+                    company: document.getElementById('flight-company').value, 
+                    code: document.getElementById('flight-code').value, 
+                    flightType: document.getElementById('flight-type').value,
                     cost: document.getElementById('flight-cost').value,
-                    order: newOrder // <-- ADICIONADO
+                    order: newOrder
                 };
             } else if (category === 'transport') {
                 newItem = { 
@@ -5787,8 +5821,18 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             e.preventDefault();
             if (!currentTripId || !currentEditingItemId) return;
             const updatedFlight = {
-                legType: document.getElementById('edit-flight-leg-type').value, date: document.getElementById('edit-flight-date').value, departureTime: document.getElementById('edit-flight-departure-time').value, arrivalTime: document.getElementById('edit-flight-arrival-time').value, origin: document.getElementById('edit-flight-origin').value, destination: document.getElementById('edit-flight-destination').value, company: document.getElementById('edit-flight-company').value, code: document.getElementById('edit-flight-code').value, flightType: document.getElementById('edit-flight-type').value,
+                legType: document.getElementById('edit-flight-leg-type').value,
+                departureDate: document.getElementById('edit-flight-departure-date').value,
+                arrivalDate: document.getElementById('edit-flight-arrival-date').value,
+                departureTime: document.getElementById('edit-flight-departure-time').value,
+                arrivalTime: document.getElementById('edit-flight-arrival-time').value,
+                origin: document.getElementById('edit-flight-origin').value, 
+                destination: document.getElementById('edit-flight-destination').value, 
+                company: document.getElementById('edit-flight-company').value, 
+                code: document.getElementById('edit-flight-code').value, 
+                flightType: document.getElementById('edit-flight-type').value,
                 cost: document.getElementById('edit-flight-cost').value,
+                date: null // Remove o campo 'date' antigo
             };
             const itemRef = ref(db, `trips/${currentTripId}/flights/${currentEditingItemId}`);
             await update(itemRef, updatedFlight);
