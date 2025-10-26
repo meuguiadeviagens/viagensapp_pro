@@ -3942,48 +3942,46 @@ window.addEventListener('popstate', (event) => {
         }
         
         function renderDailyItinerary(trip) {
-            
-            const userRole = (trip.members && currentUserId) ? trip.members[currentUserId] : 'editor'; // ADICIONE
+            const userRole = (trip.members && currentUserId) ? trip.members[currentUserId] : 'editor';
             const isReadOnly = (userRole === 'viewer');
-        
+
             const container = document.getElementById('daily-itinerary-list');
             container.innerHTML = '';
-            
-            if (!trip.startDate || !trip.endDate) { return; }
+
+            if (!trip.startDate || !trip.endDate) {
+                console.warn("Viagem sem datas de início/fim válidas.");
+                return;
+            }
 
             const allEvents = [];
-            
+
+            // Adiciona Voos
             if (trip.flights) {
                 Object.values(trip.flights).forEach(f => {
                     const flightData = { isEditable: false, ...f };
                     const eventName = `Voo ${f.company}`;
-                    
-                    // Lógica de compatibilidade (usa o campo novo ou o 'date' antigo)
                     const departureDate = f.departureDate || f.date;
                     const arrivalDate = f.arrivalDate || f.date;
-
                     if (departureDate && f.departureTime) {
                         allEvents.push({ dateTime: new Date(`${departureDate}T${f.departureTime}`), name: eventName, description: `Partida de ${f.origin} para ${f.destination}`, icon: ICONS.flight_departure, data: flightData });
                     }
                     if (arrivalDate && f.arrivalTime) {
-                        // A lógica complexa de +1 dia foi removida, pois agora temos a data de chegada correta
                         allEvents.push({ dateTime: new Date(`${arrivalDate}T${f.arrivalTime}`), name: eventName, description: `Chegada em ${f.destination}`, icon: ICONS.flight_arrival, data: flightData });
                     }
                 });
             }
+
+            // Adiciona Transportes
             if (trip.transport) {
                 Object.values(trip.transport).forEach(t => {
                     let eventIcon;
                     const transportData = { isEditable: false, ...t };
-
                     switch (t.type) {
-                        case 'Carro Alugado': 
+                        case 'Carro Alugado':
                             eventIcon = ICONS.car;
                             if (t.departureDate && t.departureTime) allEvents.push({ dateTime: new Date(`${t.departureDate}T${t.departureTime}`), name: `Retirada de Carro`, description: t.description || 'Detalhes do aluguel', icon: eventIcon, data: transportData });
                             if (t.arrivalDate && t.arrivalTime) allEvents.push({ dateTime: new Date(`${t.arrivalDate}T${t.arrivalTime}`), name: `Devolução de Carro`, description: t.description || 'Detalhes da devolução', icon: eventIcon, data: transportData });
                             break;
-                        case 'Trem':
-                        case 'Ônibus':
                         default:
                             eventIcon = t.type === 'Trem' ? ICONS.train : (t.type === 'Ônibus' ? ICONS.bus : ICONS.transport_other);
                             if (t.departureDate && t.departureTime) allEvents.push({ dateTime: new Date(`${t.departureDate}T${t.departureTime}`), name: `Partida (${t.type})`, description: `De ${t.from || '?'} para ${t.to || '?'}`, icon: eventIcon, data: transportData });
@@ -3991,6 +3989,8 @@ window.addEventListener('popstate', (event) => {
                     }
                 });
             }
+
+             // Adiciona Hospedagens
             if (trip.lodging) {
                 Object.values(trip.lodging).forEach(l => {
                     const lodgingData = { isEditable: false, ...l };
@@ -3998,6 +3998,8 @@ window.addEventListener('popstate', (event) => {
                     if (l.checkoutDate && l.checkoutTime) allEvents.push({ dateTime: new Date(`${l.checkoutDate}T${l.checkoutTime}`), name: `Check-out`, description: l.name, icon: ICONS.lodging_checkout, data: lodgingData });
                 });
             }
+
+            // Adiciona Atividades
             if (trip.activities) {
                 Object.values(trip.activities).forEach(a => {
                     const activityIcon = ICONS[a.icon] || ICONS.default;
@@ -4005,8 +4007,8 @@ window.addEventListener('popstate', (event) => {
                 });
             }
 
+            // Ordena e Agrupa
             allEvents.sort((a,b) => a.dateTime - b.dateTime);
-
             const groupedByDay = allEvents.reduce((acc, event) => {
                 const date = new Date(event.dateTime);
                 date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
@@ -4015,64 +4017,65 @@ window.addEventListener('popstate', (event) => {
                 acc[day].push(event);
                 return acc;
             }, {});
-            
+
             const cityAnchorsCreated = new Set();
             const startDate = new Date(trip.startDate + 'T00:00:00Z');
             const endDate = new Date(trip.endDate + 'T00:00:00Z');
             const totalTripDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             let dayCounter = 1;
-
             let currentDate = new Date(trip.startDate + 'T00:00:00Z');
-            
-            container.innerHTML += `<div class="insertion-point" onclick="insertNewDay(0)">
+
+            // Ponto de inserção inicial
+            container.insertAdjacentHTML('beforeend', `<div class="insertion-point" onclick="insertNewDay(0)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 <span>Inserir Novo Dia</span>
-            </div>`;
-            
+            </div>`);
+
+            // Loop principal pelos dias
             while(currentDate <= endDate) {
                 const dayKey = currentDate.toISOString().split('T')[0];
                 const dayEvents = groupedByDay[dayKey] || [];
-                
+
                 const dayPanel = document.createElement('div');
                 dayPanel.className = 'day-panel border-t pt-6 space-y-4';
                 dayPanel.dataset.date = dayKey;
-                
+
+                // Define ID para âncora de cidade
                 for (const event of dayEvents) {
                     if (event.data.isEditable && event.data.type === 'Cidade') {
                         const cityName = event.data.name;
                         if (!cityAnchorsCreated.has(cityName)) {
                             dayPanel.id = `itinerary-day-${cityName.toLowerCase().replace(/\s+/g, '-')}`;
                             cityAnchorsCreated.add(cityName);
-                            break; 
+                            break;
                         }
                     }
                 }
-                
+
+                // Gera HTML dos eventos do dia
                 let eventsHtml = dayEvents.map(event => {
                     const { isEditable, ...eventData } = event.data;
-                    const { imageUrl, ...restEventData } = eventData; // Separa imageUrl
-                    const datasetAttributes = Object.entries(restEventData) // Gera atributos para o resto
+                    const { imageUrl, isClosedToday, closedDays, ...restEventData } = eventData; // Extrai closedDays aqui
+                    const datasetAttributes = Object.entries(restEventData)
                         .map(([key, value]) => `data-${key.toLowerCase()}="${String(value || '').replace(/"/g, '&quot;')}"`)
                         .join(' ');
-                    
+                    // Adiciona o atributo data-closeddays se existir
+                    const closedDaysAttr = closedDays && closedDays.length > 0 ? `data-closeddays='${JSON.stringify(closedDays)}'` : '';
+
                     let bgColorStyle = '';
-                    // 1. Prioridade: Cor personalizada do usuário (nova lógica)
                     if (event.data.bgColor) {
                         bgColorStyle = `background-color: ${event.data.bgColor};`;
-                    } 
-                    // 2. Se não houver, usa a lógica padrão
-                    else if (isEditable) {
-                        if (eventData.type === 'Cidade') {
-                            bgColorStyle = 'background-color: #F4C664;';
-                        } else {
-                            bgColorStyle = 'background-color: #e6f1ff;'; // Cor padrão azul
-                        }
+                    } else if (isEditable) {
+                        bgColorStyle = (eventData.type === 'Cidade') ? 'background-color: #F4C664;' : 'background-color: #e6f1ff;';
                     }
-                    const time = event.dateTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
 
+                    const time = event.dateTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+                    const closedClasses = isClosedToday ? 'text-red-600 font-bold' : '';
+
+                    // Retorna o HTML do item
                     return `
-                    <div 
-                        class="activity-item flex items-center justify-between gap-4 p-2 rounded-md cursor-pointer hover:bg-slate-100" 
+                    <div
+                        class="activity-item flex items-center justify-between gap-4 p-2 rounded-md cursor-pointer hover:bg-slate-100"
                         style="${bgColorStyle}"
                         onclick='openViewActivityModal(this)'
                         data-icon='${event.icon}'
@@ -4081,38 +4084,42 @@ window.addEventListener('popstate', (event) => {
                         data-description="${(event.description || '').replace(/"/g, '&quot;')}"
                         data-iseditable="${isEditable}"
                         data-activity-id="${eventData.id || ''}"
-                        data-imageurl="${imageUrl || ''}" data-bgcolor="${event.data.bgColor || ''}"
+                        data-imageurl="${imageUrl || ''}"
                         data-bgcolor="${event.data.bgColor || ''}"
                         data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
                         data-created-at="${event.data.createdAt || ''}"
                         ${datasetAttributes}
+                        ${closedDaysAttr} /* Adiciona o atributo data-closeddays */
                     >
                         <div class="flex items-center gap-3 flex-1 min-w-0">
                              <svg class="activity-drag-handle" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
                             <span class="font-bold text-sm w-12 text-right flex-shrink-0">${time}</span>
                             <div class="flex items-center gap-2 text-slate-500 flex-shrink-0">${event.icon || ''}</div>
                             <p class="text-sm text-slate-700 truncate">
-                                <strong class="font-semibold">${event.name}</strong>
+                                <strong class="font-semibold ${closedClasses}">${event.name}</strong>
                                 ${event.description ? ` | ${event.description}` : ''}
                             </p>
                         </div>
                         ${(isEditable && !isReadOnly) ? `
                         <div class="flex gap-2 items-center flex-shrink-0">
-                            <button onclick="event.stopPropagation(); openEditActivityModal('${event.data.id}')" class="text-slate-500 hover:text-blue-600">
+                            <button onclick="event.stopPropagation(); openEditActivityModal('${event.data.id}')" class="text-slate-500 hover:text-blue-600 p-1" title="Editar Atividade">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                             </button>
-                            <button onclick="event.stopPropagation(); deleteActivity('${event.data.id}')" class="text-slate-500 hover:text-red-600">
+                            <button onclick="event.stopPropagation(); deleteActivity('${event.data.id}')" class="text-slate-500 hover:text-red-600 p-1" title="Excluir Atividade">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                             </button>
                         </div>
                         ` : ''}
                     </div>
-                `}).join('');
+                `;
+                }).join('');
 
+                // Mensagem se não houver eventos
                 if (dayEvents.length === 0) {
                     eventsHtml = '<p class="text-sm text-slate-400 py-2 ml-4">Nenhuma atividade para este dia.</p>';
                 }
 
+                // Monta o HTML do painel do dia
                 dayPanel.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
                          <div class="flex items-center gap-3">
@@ -4121,12 +4128,12 @@ window.addEventListener('popstate', (event) => {
                         </div>
                         ${isReadOnly ? '' : `
                         <div class="flex items-center gap-2">
-                             <button onclick="deleteDay('${dayKey}')" class="delete-day-btn flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors">
+                             <button onclick="deleteDay('${dayKey}')" class="delete-day-btn flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors" title="Excluir este dia e suas atividades">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                             </button>
-                            <button 
-                                onclick="openAddActivityModal('${dayKey}')" 
-                                oncontextmenu="openSuggestionsForDay(event, '${dayKey}')" 
+                            <button
+                                onclick="openAddActivityModal('${dayKey}')"
+                                oncontextmenu="openSuggestionsForDay(event, '${dayKey}')"
                                 title="Clique para adicionar / Botão direito para sugestões"
                                 class="add-activity-btn flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -4140,26 +4147,25 @@ window.addEventListener('popstate', (event) => {
                 `;
                 container.appendChild(dayPanel);
 
-                container.innerHTML += `<div class="insertion-point" onclick="insertNewDay(${dayCounter})">
+                // Ponto de inserção após o dia
+                container.insertAdjacentHTML('beforeend', `<div class="insertion-point" onclick="insertNewDay(${dayCounter})">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span>Inserir Novo Dia</span>
-                </div>`;
+                </div>`);
 
+                // Avança para o próximo dia
                 currentDate.setUTCDate(currentDate.getUTCDate() + 1);
                 dayCounter++;
             }
-        
+
+          // Inicializa SortableJS se estiver no modo de reorganização
           if (isReorganizing) {
                 if (reorganizationMode === 'activities') {
-                    // A função initializeActivitySorting() já tem um
-                    // delay interno (setTimeout) que garante que o DOM
-                    // esteja pronto antes de anexar os listeners.
                     initializeActivitySorting();
                 } else if (reorganizationMode === 'days') {
                     initializeDaySorting();
                 }
-            }  
-
+            }
         }
         
         function renderDetailList(elementId, items, itemTemplate, emptyMessage, isReadOnly) {
@@ -5513,7 +5519,6 @@ let dividerHtml = '';
             const trip = tripsData.find(t => t.id === currentTripId);
             if (!trip) return;
 
-            // 1. PEGA A DATA ALVO DO NOVO DROPDOWN
             const targetDate = document.getElementById('import-target-day-select').value;
             if (!targetDate) {
                 alert("Não foi possível encontrar o dia selecionado.");
@@ -5525,58 +5530,77 @@ let dividerHtml = '';
                 alert("Selecione pelo menos uma atividade para importar.");
                 return;
             }
-            
-            const cityId = selectedCheckboxes[0].dataset.cityId; // Pega o cityId do item
+
+            const cityId = selectedCheckboxes[0].dataset.cityId;
             const selectedIndexes = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
             const activitiesToImport = selectedIndexes.map(index => suggestedItinerariesData[cityId].activities[index]);
-            
+
             let currentActivities = trip.activities ? Object.values(trip.activities) : [];
 
-            // 2. LÓGICA DE TEMPO APRIMORADA
-            // Encontra a última atividade *no dia selecionado*
+            // --- INÍCIO DA LÓGICA DE VERIFICAÇÃO DO DIA DA SEMANA ---
+            const dayMap = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+            // Criar a data com hora ao meio-dia para evitar problemas de fuso/DST
+            const targetDateObj = new Date(targetDate + 'T12:00:00');
+            const dayOfWeekString = dayMap[targetDateObj.getDay()];
+            // --- FIM DA LÓGICA DE VERIFICAÇÃO DO DIA DA SEMANA ---
+
+
             const activitiesOnTargetDay = currentActivities
                 .filter(a => a.date === targetDate)
-                .sort((a, b) => a.time.localeCompare(b.time)); // Ordena por hora
-            
-            let lastTimeInMinutes = 8 * 60 + 59; // Padrão 08:59 (para começar às 09:00)
-            
+                .sort((a, b) => a.time.localeCompare(b.time));
+
+            let lastTimeInMinutes = 8 * 60 + 59;
+
             if (activitiesOnTargetDay.length > 0) {
                 const lastActivity = activitiesOnTargetDay[activitiesOnTargetDay.length - 1];
                 const [lastHours, lastMinutes] = lastActivity.time.split(':').map(Number);
                 lastTimeInMinutes = (lastHours * 60) + lastMinutes;
             }
-            // --- FIM DA LÓGICA DE TEMPO APRIMORADA ---
 
             activitiesToImport.forEach(activity => {
-                lastTimeInMinutes++; // Incrementa 1 minuto
+                lastTimeInMinutes++;
                 const hours = Math.floor(lastTimeInMinutes / 60).toString().padStart(2, '0');
                 const minutes = (lastTimeInMinutes % 60).toString().padStart(2, '0');
 
+                // --- VERIFICA SE ESTÁ FECHADO ---
+                let isClosedToday = false;
+                let descriptionPrefix = "";
+                if (activity.closedDays && activity.closedDays.includes(dayOfWeekString)) {
+                    isClosedToday = true;
+                    descriptionPrefix = "(Neste dia não abre) ";
+                }
+                // --- FIM DA VERIFICAÇÃO ---
+
                 const newActivity = {
                     id: `${Date.now()}-${Math.random()}`,
-                    date: targetDate, // <-- 3. USA A DATA ALVO
+                    date: targetDate,
                     time: `${hours}:${minutes}`,
                     name: activity.name,
                     type: activity.type,
-                    description: activity.description,
+                    // Adiciona o prefixo à descrição
+                    description: descriptionPrefix + (activity.description || ''),
                     icon: activity.icon,
                     link: activity.link || '',
                     imageUrl: activity.imageUrl || '',
                     cost: '',
-                    authorName: currentUserProfile.fullName || 'Sugestão', // Identifica a origem
-                    createdAt: serverTimestamp()
+                    authorName: currentUserProfile.fullName || 'Sugestão',
+                    createdAt: serverTimestamp(),
+                    isClosedToday: isClosedToday // <-- Guarda a informação
                 };
                 currentActivities.push(newActivity);
             });
 
             try {
-                const activitiesObject = { ...currentActivities };
-                await update(ref(db, `trips/${currentTripId}`), { activities: activitiesObject });
-                
-                // Mensagem de sucesso personalizada
+                // Convert back to object if necessary or save as array
+                const activitiesToSave = Array.isArray(trip.activities) ? currentActivities : currentActivities.reduce((obj, item) => { obj[item.id] = item; return obj; }, {});
+
+                // Use update to potentially save as an array or object depending on original structure
+                await update(ref(db, `trips/${currentTripId}`), { activities: activitiesToSave });
+
+
                 const selectedDayText = document.getElementById('import-target-day-select').options[document.getElementById('import-target-day-select').selectedIndex].text;
                 alert(`${activitiesToImport.length} atividade(s) importada(s) para "${selectedDayText}"!`);
-                
+
                 closeModal('import-suggestions-modal');
             } catch(error) {
                 console.error("Erro ao importar atividades:", error);
@@ -5587,31 +5611,133 @@ let dividerHtml = '';
         
         // --- SEÇÃO ATUALIZADA: LÓGICA DE REORGANIZAÇÃO DO ROTEIRO COM DUPLO MODO ---
         
-        async function updateActivityOrderAndDate() {
+        async function updateActivityOrderAndDate(evt) {
             if (!currentTripId) return;
             const trip = tripsData.find(t => t.id === currentTripId);
             if (!trip) return;
 
-            const allActivityElements = document.querySelectorAll('.activity-item[data-activity-id]');
-            let allCurrentActivities = trip.activities ? JSON.parse(JSON.stringify(Object.values(trip.activities))) : [];
-            let updatedActivities = [];
+            // Atualização visual imediata do item arrastado
+            if (evt && evt.item && evt.to) {
+                const movedItem = evt.item;
+                const targetList = evt.to;
+                const newDate = targetList.dataset.date;
+
+                let closedDays = [];
+                try {
+                    // Tenta ler os dias fechados do atributo data-closeddays
+                    closedDays = JSON.parse(movedItem.dataset.closeddays || '[]');
+                } catch (e) {
+                    console.error("Erro ao parsear data-closeddays:", movedItem.dataset.closeddays, e);
+                    closedDays = []; // Garante um array vazio em caso de erro
+                }
+
+                const dayMap = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+                // Usa T12:00:00 para evitar problemas de fuso horário/horário de verão
+                const targetDateObj = new Date(newDate + 'T12:00:00');
+                const dayOfWeekString = dayMap[targetDateObj.getDay()];
+
+                const isNowClosed = closedDays.includes(dayOfWeekString);
+
+                const nameElement = movedItem.querySelector('strong.font-semibold');
+                // Encontra o parágrafo que contém nome e descrição
+                const textElement = movedItem.querySelector('p.text-sm');
+                const descriptionSpanText = movedItem.dataset.description || ''; // Descrição original sem prefixo
+
+                const closedWarningText = "(Neste dia não abre) ";
+
+                // Atualiza estilo do nome
+                if (nameElement) {
+                    nameElement.classList.toggle('text-red-600', isNowClosed);
+                    nameElement.classList.toggle('font-bold', isNowClosed);
+                }
+
+                // Atualiza o texto completo (nome + descrição com/sem prefixo)
+                if (textElement && nameElement) {
+                    let newDescriptionPart = '';
+                    if (isNowClosed) {
+                        newDescriptionPart = descriptionSpanText ? ` | ${closedWarningText}${descriptionSpanText}` : ` | ${closedWarningText}`;
+                         // Atualiza o data-description para refletir o aviso visual
+                        movedItem.dataset.description = `${closedWarningText}${descriptionSpanText}`;
+                    } else {
+                        newDescriptionPart = descriptionSpanText ? ` | ${descriptionSpanText}` : '';
+                         // Atualiza o data-description removendo o aviso
+                         movedItem.dataset.description = descriptionSpanText;
+                    }
+                    // Remonta o conteúdo do parágrafo
+                    textElement.innerHTML = `
+                        <strong class="font-semibold ${isNowClosed ? 'text-red-600 font-bold' : ''}">${nameElement.textContent}</strong>
+                        ${newDescriptionPart}
+                    `;
+                }
+            }
+
+            // Lógica para salvar TODAS as atividades no Firebase (após a atualização visual)
+            const allActivityElements = document.querySelectorAll('#daily-itinerary-list .activity-item[data-activity-id]');
+            let allCurrentActivitiesData = trip.activities ? JSON.parse(JSON.stringify(Object.values(trip.activities))) : [];
+            let updatedActivitiesForSave = [];
 
             allActivityElements.forEach(el => {
                 const activityId = el.dataset.activityId;
-                const newDate = el.closest('.activity-list').dataset.date;
-                const activityData = allCurrentActivities.find(a => a.id === activityId);
-                if (activityData) {
-                    activityData.date = newDate;
-                    updatedActivities.push(activityData);
+                const currentDayDate = el.closest('.activity-list')?.dataset.date;
+                const activityData = allCurrentActivitiesData.find(a => a.id === activityId);
+
+                if (activityData && currentDayDate) {
+                    activityData.date = currentDayDate; // Atualiza a data no objeto de dados
+
+                    // *** RECALCULA isClosedToday ANTES DE SALVAR ***
+                    let closedDaysForSave = [];
+                    try {
+                        closedDaysForSave = JSON.parse(el.dataset.closeddays || '[]');
+                    } catch(e) { /* Usa array vazio */ }
+                    const saveDateObj = new Date(currentDayDate + 'T12:00:00');
+                    const saveDayMap = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+                    const saveDayOfWeek = saveDayMap[saveDateObj.getDay()];
+                    activityData.isClosedToday = closedDaysForSave.includes(saveDayOfWeek);
+                    // Adiciona também a descrição atualizada ao salvar
+                    activityData.description = el.dataset.description || '';
+
+                    updatedActivitiesForSave.push(activityData);
+                } else if (activityData) {
+                    // Mantém a atividade original se não encontrar a data (pouco provável)
+                    updatedActivitiesForSave.push(activityData);
                 }
             });
 
-            allCurrentActivities.forEach(act => {
-                if (!updatedActivities.find(a => a.id === act.id)) { updatedActivities.push(act); }
+            // Garante que atividades não presentes no DOM não sejam perdidas
+            allCurrentActivitiesData.forEach(act => {
+                if (!updatedActivitiesForSave.find(a => a.id === act.id)) {
+                    updatedActivitiesForSave.push(act);
+                }
             });
 
-            const updates = { [`/${currentTripId}/activities`]: updatedActivities };
-            await update(ref(db, 'trips'), updates);
+            // Prepara para salvar no Firebase
+            const updates = {};
+            // Mantém a estrutura original (array ou objeto)
+            if (Array.isArray(trip.activities)) {
+                 updates[`/${currentTripId}/activities`] = updatedActivitiesForSave;
+            } else {
+                 const activitiesObject = updatedActivitiesForSave.reduce((obj, item) => {
+                     // Adiciona ou atualiza a propriedade isClosedToday antes de salvar
+                     let itemClosedDays = item.closedDays || [];
+                     const itemDateObj = new Date(item.date + 'T12:00:00');
+                     const itemDayMap = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+                     const itemDayOfWeek = itemDayMap[itemDateObj.getDay()];
+                     item.isClosedToday = itemClosedDays.includes(itemDayOfWeek);
+
+                     obj[item.id] = item;
+                     return obj;
+                 }, {});
+                 updates[`/${currentTripId}/activities`] = activitiesObject;
+            }
+
+            // Envia as atualizações para o Firebase
+            try {
+                await update(ref(db, 'trips'), updates);
+                console.log("Ordem e datas das atividades atualizadas no Firebase.");
+            } catch (error) {
+                console.error("Erro ao salvar ordem/datas das atividades:", error);
+                // Considerar reverter a mudança visual aqui se o salvamento falhar?
+            }
         }
 
         function initializeActivitySorting() {
