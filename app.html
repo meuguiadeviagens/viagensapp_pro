@@ -6082,6 +6082,8 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             // 5. Reseta os checkboxes "Marcar Todos"
             document.getElementById('select-all-participants').checked = true;
             document.getElementById('select-all-participants').dispatchEvent(new Event('change'));
+
+            document.getElementById('add-expense-panel').classList.add('collapsed');
         });
 
 
