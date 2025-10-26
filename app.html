@@ -472,7 +472,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2011 | 25/10/2025, 22:53</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2012 | 26/10/2025, 09:05</p>
             </main>
         </div>
 
@@ -739,6 +739,17 @@
                     <label class="block text-sm font-medium text-slate-700 font-semibold">Quem Pagou? (Credores)</label>
                     <div id="expense-payers-checkboxes" class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
                         </div>
+                    
+                    <div id="expense-payers-split-container" class="hidden space-y-3 mt-4 p-3 bg-green-100 border border-green-300 rounded-md">
+                        <h4 class="text-sm font-semibold text-slate-700">Dividir o valor pago entre os credores:</h4>
+                        <div id="expense-payers-split-inputs" class="space-y-2">
+                            </div>
+                        <div class="text-right text-sm font-medium">
+                            <span class="text-slate-600">Total dividido: </span>
+                            <span id="expense-payers-split-total" class="font-bold text-slate-800">R$ 0,00</span>
+                            <p id="expense-payers-split-warning" class="text-red-600 font-semibold hidden">O total dividido não bate com o Valor Total da despesa!</p>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="bg-red-50 p-3 rounded-md border border-red-200 mt-4">
@@ -1582,6 +1593,17 @@
                     <label class="block text-sm font-medium text-slate-700 font-semibold">Quem Pagou? (Credores)</label>
                     <div id="edit-expense-payers-checkboxes" class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
                         </div>
+
+                        <div id="edit-expense-payers-split-container" class="hidden space-y-3 mt-4 p-3 bg-green-100 border border-green-300 rounded-md">
+                        <h4 class="text-sm font-semibold text-slate-700">Dividir o valor pago entre os credores:</h4>
+                        <div id="edit-expense-payers-split-inputs" class="space-y-2">
+                            </div>
+                        <div class="text-right text-sm font-medium">
+                            <span class="text-slate-600">Total dividido: </span>
+                            <span id="edit-expense-payers-split-total" class="font-bold text-slate-800">R$ 0,00</span>
+                            <p id="edit-expense-payers-split-warning" class="text-red-600 font-semibold hidden">O total dividido não bate com o Valor Total da despesa!</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="bg-red-50 p-3 rounded-md border border-red-200 mt-4">
@@ -2352,7 +2374,7 @@ window.addEventListener('popstate', (event) => {
                     // 3. Popula os checkboxes de PAGADORES
                     const payerCheckboxDiv = document.createElement('div');
                     payerCheckboxDiv.className = 'flex items-center gap-2';
-                    payerCheckboxDiv.innerHTML = `<input type="checkbox" id="payer-${safeName}" value="${traveler.name}" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"><label for="payer-${safeName}" class="text-sm text-slate-700">${traveler.name}</label>`;
+                    payerCheckboxDiv.innerHTML = `<input type="checkbox" id="payer-${safeName}" value="${traveler.name}" onchange="window.updatePayerSplitView()" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"><label for="payer-${safeName}" class="text-sm text-slate-700">${traveler.name}</label>`;
                     payersContainer.appendChild(payerCheckboxDiv);
                     
                     // 4. Popula os checkboxes de PARTICIPANTES (como antes)
@@ -2405,8 +2427,17 @@ window.addEventListener('popstate', (event) => {
                         expenseElement.className = 'flex justify-between items-center p-3 rounded-md bg-slate-50 border border-slate-200';
                         
                         // 6. Lida com dados antigos (payerName) E novos (payers) para exibir na lista
-                        const payers = expense.payers || (expense.payerName ? [expense.payerName] : []);
-                        const payersText = payers.join(', '); // Cria um texto "A, B"
+                        let payersText = 'N/A';
+                        if (Array.isArray(expense.payers)) {
+                            if (expense.payers.length > 0 && typeof expense.payers[0] === 'object') {
+                                // Novo formato: [{name, amount}, ...]
+                                payersText = expense.payers.map(p => p.name).join(', ');
+                            } else {
+                                // Formato antigo: [name1, name2, ...] ou payerName
+                                const oldPayers = expense.payers || (expense.payerName ? [expense.payerName] : []);
+                                payersText = oldPayers.join(', ');
+                            }
+                        }
 
                         expenseElement.innerHTML = `
                             <div>
@@ -2436,8 +2467,21 @@ window.addEventListener('popstate', (event) => {
             if (!expense) return;
 
             // 1. Lida com dados antigos (payerName) E novos (payers)
-            const payers = expense.payers || (expense.payerName ? [expense.payerName] : []);
-            const payersText = payers.join(', '); // Cria um texto "A, B"
+            let payersList = []; // Array de nomes
+            let payersText = 'N/A';
+            
+            if (Array.isArray(expense.payers)) {
+                if (expense.payers.length > 0 && typeof expense.payers[0] === 'object') {
+                    // Novo formato: [{name, amount}, ...]
+                    payersList = expense.payers.map(p => p.name);
+                    // Texto com valores: "Maria (R$ 50,00), João (R$ 30,00)"
+                    payersText = expense.payers.map(p => `${p.name} (${formatCurrency(p.amount, expense.currency)})`).join(', ');
+                } else {
+                    // Formato antigo: [name1, name2, ...] ou payerName
+                    payersList = expense.payers || (expense.payerName ? [expense.payerName] : []);
+                    payersText = payersList.join(', ');
+                }
+            }
 
             document.getElementById('view-expense-description').textContent = expense.description;
             document.getElementById('view-expense-amount').textContent = formatCurrency(expense.amount, expense.currency);
@@ -2449,7 +2493,7 @@ window.addEventListener('popstate', (event) => {
             const share = expense.amount / expense.participants.length;
             
             expense.participants.forEach(name => {
-                const isPayer = payers.includes(name); // <-- MUDANÇA (checa se o nome está no ARRAY de pagadores)
+                const isPayer = payersList.includes(name); // <-- MUDANÇA (checa se o nome está no ARRAY de nomes)
                 const item = document.createElement('div');
                 item.className = 'flex justify-between items-center p-2 bg-slate-50 rounded-md';
                 item.innerHTML = `
@@ -2495,18 +2539,37 @@ window.addEventListener('popstate', (event) => {
             participantsContainer.innerHTML = '';
 
             // 2. Lida com dados antigos (payerName) E novos (payers)
-            const payers = expense.payers || (expense.payerName ? [expense.payerName] : []);
+            let payersList = []; // Array de nomes
+            let payersMap = new Map(); // Mapa de name -> amount
+            
+            if (Array.isArray(expense.payers)) {
+                if (expense.payers.length > 0 && typeof expense.payers[0] === 'object') {
+                    // Novo formato: [{name, amount}, ...]
+                    expense.payers.forEach(p => {
+                        payersList.push(p.name);
+                        payersMap.set(p.name, p.amount);
+                    });
+                } else {
+                    // Formato antigo: [name1, name2, ...] ou payerName
+                    payersList = expense.payers || (expense.payerName ? [expense.payerName] : []);
+                    // Converte para o map, assumindo divisão igualitária
+                    const splitAmount = (expense.amount && payersList.length > 0) ? (expense.amount / payersList.length) : 0;
+                    payersList.forEach(name => {
+                        payersMap.set(name, splitAmount);
+                    });
+                }
+            }
 
             // Popula as listas de viajantes no modal de edição
             (trip.travelers || []).forEach(traveler => {
                 const safeName = traveler.name.replace(/\s+/g, '-');
                 
                 // 3. Popula os checkboxes de PAGADORES (edição)
-                const isPayer = payers.includes(traveler.name);
+                const isPayer = payersList.includes(traveler.name);
                 const payerCheckboxDiv = document.createElement('div');
                 payerCheckboxDiv.className = 'flex items-center gap-2';
                 payerCheckboxDiv.innerHTML = `
-                    <input type="checkbox" id="edit-payer-${safeName}" value="${traveler.name}" ${isPayer ? 'checked' : ''} class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <input type="checkbox" id="edit-payer-${safeName}" value="${traveler.name}" ${isPayer ? 'checked' : ''} onchange="window.updateEditPayerSplitView()" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                     <label for="edit-payer-${safeName}" class="text-sm text-slate-700">${traveler.name}</label>
                 `;
                 payersContainer.appendChild(payerCheckboxDiv);
@@ -2524,8 +2587,178 @@ window.addEventListener('popstate', (event) => {
             });
 
             openModal('edit-expense-modal');
+
+            // --- INÍCIO DA NOVA LÓGICA DE POPULAÇÃO ---
+            // Força a criação dos inputs de divisão (se houver > 1 pagador)
+            window.updateEditPayerSplitView(); 
+
+            // Agora, se os inputs foram criados, preenche com os valores salvos
+            if (payersMap.size > 0 && payersList.length > 1) {
+                document.querySelectorAll('#edit-expense-payers-split-container .edit-payer-split-input').forEach(input => {
+                    const payerName = input.dataset.payerName;
+                    if (payersMap.has(payerName)) {
+                        input.value = (payersMap.get(payerName)).toFixed(2);
+                    }
+                });
+                // Re-valida o total
+                window.validateEditPayerSplitTotal();
+            }
+            // --- FIM DA NOVA LÓGICA DE POPULAÇÃO ---
+
         };
 
+        // --- INÍCIO: NOVAS FUNÇÕES PARA DIVISÃO DE VALOR DO CREDOR ---
+
+        // Valida o total dividido no modal ADICIONAR
+        window.validatePayerSplitTotal = () => {
+            const totalDisplay = document.getElementById('expense-payers-split-total');
+            const warningDisplay = document.getElementById('expense-payers-split-warning');
+            const valorTotal = parseFloat(document.getElementById('expense-amount').value) || 0;
+            
+            let currentSplitTotal = 0;
+            document.querySelectorAll('#expense-payers-split-container .payer-split-input').forEach(input => {
+                currentSplitTotal += parseFloat(input.value) || 0;
+            });
+
+            const currencySelect = document.getElementById('expense-currency');
+            let currency = currencySelect.value;
+            if (currency === 'custom') {
+                currency = document.getElementById('expense-currency-custom').value.toUpperCase().trim() || 'CUSTOM';
+            }
+            
+            totalDisplay.textContent = formatCurrency(currentSplitTotal, currency);
+
+            // Compara totais com uma pequena tolerância para erros de ponto flutuante
+            if (Math.abs(valorTotal - currentSplitTotal) > 0.01) {
+                warningDisplay.classList.remove('hidden');
+            } else {
+                warningDisplay.classList.add('hidden');
+            }
+        };
+
+        // Mostra/oculta e preenche os campos de divisão no modal ADICIONAR
+        window.updatePayerSplitView = () => {
+            const container = document.getElementById('expense-payers-split-container');
+            const inputsContainer = document.getElementById('expense-payers-split-inputs');
+            const checkedPayers = document.querySelectorAll('#expense-payers-checkboxes input[type="checkbox"]:checked');
+            
+            const valorTotalInput = document.getElementById('expense-amount');
+            const valorTotal = parseFloat(valorTotalInput.value) || 0;
+
+            if (checkedPayers.length <= 1) {
+                container.classList.add('hidden');
+                inputsContainer.innerHTML = '';
+                return;
+            }
+
+            container.classList.remove('hidden');
+            
+            const splitAmount = valorTotal / checkedPayers.length;
+            let newInputsHTML = '';
+
+            // Preserva valores existentes se o usuário já digitou
+            const existingValues = new Map();
+            inputsContainer.querySelectorAll('.payer-split-input').forEach(input => {
+                existingValues.set(input.dataset.payerName, input.value);
+            });
+
+            checkedPayers.forEach(checkbox => {
+                const payerName = checkbox.value;
+                const safeName = payerName.replace(/\s+/g, '-');
+                // Usa valor existente ou a nova divisão calculada
+                const value = existingValues.get(payerName) || splitAmount.toFixed(2);
+
+                newInputsHTML += `
+                    <div class="flex items-center gap-2">
+                        <label for="split-for-${safeName}" class="flex-1 text-sm text-slate-700">${payerName}</label>
+                        <input type="number" step="0.01" min="0" 
+                               id="split-for-${safeName}" 
+                               class="payer-split-input w-28 px-2 py-1 border border-slate-300 rounded-md shadow-sm"
+                               data-payer-name="${payerName}"
+                               value="${value}"
+                               oninput="window.validatePayerSplitTotal()">
+                    </div>
+                `;
+            });
+            
+            inputsContainer.innerHTML = newInputsHTML;
+            window.validatePayerSplitTotal(); // Atualiza o total e o aviso
+        };
+
+        // Valida o total dividido no modal EDITAR
+        window.validateEditPayerSplitTotal = () => {
+            const totalDisplay = document.getElementById('edit-expense-payers-split-total');
+            const warningDisplay = document.getElementById('edit-expense-payers-split-warning');
+            const valorTotal = parseFloat(document.getElementById('edit-expense-amount').value) || 0;
+            
+            let currentSplitTotal = 0;
+            document.querySelectorAll('#edit-expense-payers-split-container .edit-payer-split-input').forEach(input => {
+                currentSplitTotal += parseFloat(input.value) || 0;
+            });
+
+            const currencySelect = document.getElementById('edit-expense-currency');
+            let currency = currencySelect.value;
+            if (currency === 'custom') {
+                currency = document.getElementById('edit-expense-currency-custom').value.toUpperCase().trim() || 'CUSTOM';
+            }
+            
+            totalDisplay.textContent = formatCurrency(currentSplitTotal, currency);
+
+            if (Math.abs(valorTotal - currentSplitTotal) > 0.01) {
+                warningDisplay.classList.remove('hidden');
+            } else {
+                warningDisplay.classList.add('hidden');
+            }
+        };
+
+        // Mostra/oculta e preenche os campos de divisão no modal EDITAR
+        window.updateEditPayerSplitView = () => {
+            const container = document.getElementById('edit-expense-payers-split-container');
+            const inputsContainer = document.getElementById('edit-expense-payers-split-inputs');
+            const checkedPayers = document.querySelectorAll('#edit-expense-payers-checkboxes input[type="checkbox"]:checked');
+            
+            const valorTotalInput = document.getElementById('edit-expense-amount');
+            const valorTotal = parseFloat(valorTotalInput.value) || 0;
+
+            if (checkedPayers.length <= 1) {
+                container.classList.add('hidden');
+                inputsContainer.innerHTML = '';
+                return;
+            }
+
+            container.classList.remove('hidden');
+            
+            const splitAmount = valorTotal / checkedPayers.length;
+            let newInputsHTML = '';
+
+            const existingValues = new Map();
+            inputsContainer.querySelectorAll('.edit-payer-split-input').forEach(input => {
+                existingValues.set(input.dataset.payerName, input.value);
+            });
+
+            checkedPayers.forEach(checkbox => {
+                const payerName = checkbox.value;
+                const safeName = payerName.replace(/\s+/g, '-');
+                const value = existingValues.get(payerName) || splitAmount.toFixed(2);
+
+                newInputsHTML += `
+                    <div class="flex items-center gap-2">
+                        <label for="edit-split-for-${safeName}" class="flex-1 text-sm text-slate-700">${payerName}</label>
+                        <input type="number" step="0.01" min="0" 
+                               id="edit-split-for-${safeName}" 
+                               class="edit-payer-split-input w-28 px-2 py-1 border border-slate-300 rounded-md shadow-sm"
+                               data-payer-name="${payerName}"
+                               value="${value}"
+                               oninput="window.validateEditPayerSplitTotal()">
+                    </div>
+                `;
+            });
+            
+            inputsContainer.innerHTML = newInputsHTML;
+            window.validateEditPayerSplitTotal();
+        };
+
+        // --- FIM: NOVAS FUNÇÕES PARA DIVISÃO DE VALOR DO CREDOR ---
 
         // --- INÍCIO DAS FUNÇÕES DE NOTIFICAÇÃO ---
 
@@ -2819,9 +3052,32 @@ window.addEventListener('popstate', (event) => {
 
             // 1. Coleta múltiplos PAGADORES (edição)
             const payers = [];
-            document.querySelectorAll('#edit-expense-payers-checkboxes input[type="checkbox"]:checked').forEach(checkbox => {
-                payers.push(checkbox.value);
-            });
+            const checkedPayers = document.querySelectorAll('#edit-expense-payers-checkboxes input[type="checkbox"]:checked');
+            const valorTotal = parseFloat(document.getElementById('edit-expense-amount').value);
+
+            if (checkedPayers.length === 1) {
+                // Cenário 1: Apenas um pagador
+                payers.push({
+                    name: checkedPayers[0].value,
+                    amount: valorTotal
+                });
+            } else if (checkedPayers.length > 1) {
+                // Cenário 2: Múltiplos pagadores (lê dos inputs de divisão)
+                let splitTotalCheck = 0;
+                document.querySelectorAll('#edit-expense-payers-split-container .edit-payer-split-input').forEach(input => {
+                    const amount = parseFloat(input.value) || 0;
+                    payers.push({
+                        name: input.dataset.payerName,
+                        amount: amount
+                    });
+                    splitTotalCheck += amount;
+                });
+                
+                if (Math.abs(valorTotal - splitTotalCheck) > 0.01) {
+                    alert('O total dividido entre os credores não bate com o Valor Total da despesa! Verifique os valores.');
+                    return; // Impede o envio
+                }
+            }
 
             // 2. Coleta múltiplos PARTICIPANTES (edição)
             const participants = [];
@@ -5701,6 +5957,14 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
         });
         
+        document.getElementById('expense-amount').addEventListener('input', window.updatePayerSplitView);
+        document.getElementById('expense-currency').addEventListener('change', window.validatePayerSplitTotal);
+        document.getElementById('expense-currency-custom').addEventListener('input', window.validatePayerSplitTotal);
+        
+        document.getElementById('edit-expense-amount').addEventListener('input', window.updateEditPayerSplitView);
+        document.getElementById('edit-expense-currency').addEventListener('change', window.validateEditPayerSplitTotal);
+        document.getElementById('edit-expense-currency-custom').addEventListener('input', window.validateEditPayerSplitTotal);
+
         // --- LISTENERS DOS FORMULÁRIOS ---
         document.getElementById('add-trip-form').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -6022,7 +6286,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     link: document.getElementById('edit-note-link').value.trim(),
                     icon: document.getElementById('edit-note-icon').value,
                 };
-                const updates = { [`/${currentTripId}/notes`]: trip.notes };
+                const updates = { [`${currentTripId}/notes`]: trip.notes };
                 await update(ref(db, 'trips'), updates);
             }
             closeModal('edit-note-modal');
@@ -6040,9 +6304,32 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             
             // 1. Coleta múltiplos PAGADORES
             const payers = [];
-            document.querySelectorAll('#expense-payers-checkboxes input[type="checkbox"]:checked').forEach(checkbox => {
-                payers.push(checkbox.value);
-            });
+            const checkedPayers = document.querySelectorAll('#expense-payers-checkboxes input[type="checkbox"]:checked');
+
+            if (checkedPayers.length === 1) {
+                // Cenário 1: Apenas um pagador
+                payers.push({
+                    name: checkedPayers[0].value,
+                    amount: amount
+                });
+            } else if (checkedPayers.length > 1) {
+                // Cenário 2: Múltiplos pagadores (lê dos inputs de divisão)
+                let splitTotalCheck = 0;
+                document.querySelectorAll('#expense-payers-split-container .payer-split-input').forEach(input => {
+                    const payerAmount = parseFloat(input.value) || 0;
+                    payers.push({
+                        name: input.dataset.payerName,
+                        amount: payerAmount
+                    });
+                    splitTotalCheck += payerAmount;
+                });
+                
+                // Validação
+                if (Math.abs(amount - splitTotalCheck) > 0.01) {
+                    alert('O total dividido entre os credores não bate com o Valor Total da despesa! Verifique os valores.');
+                    return; // Impede o envio
+                }
+            }
 
             // 2. Coleta múltiplos PARTICIPANTES
             const participants = [];
@@ -6157,21 +6444,33 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 currencyExpenses.forEach(expense => {
                 // 1. Lida com dados antigos (payerName) E novos (payers)
                 const payers = expense.payers || (expense.payerName ? [expense.payerName] : []);
-                if (payers.length > 0) {
-                    // 2. Divide o valor pago igualmente entre os pagadores
-                    const amountPerPayer = expense.amount / payers.length;
-                    payers.forEach(payerName => {
-                        if (travelerDetails[payerName]) {
-                            travelerDetails[payerName].totalPaid += amountPerPayer;
-                            // 3. Adiciona na lista de despesas (informa que foi dividido, se for o caso)
-                            const splitText = payers.length > 1 ? ` (dividido por ${payers.length})` : '';
-                            travelerDetails[payerName].expensesPaidList.push({
-                                description: `${expense.description}${splitText}`,
-                                amount: amountPerPayer // Mostra o valor que essa pessoa realmente pagou
+                    
+                    if (payers.length > 0) {
+                        if (typeof payers[0] === 'object') {
+                            // Novo formato: [{name, amount}, ...]
+                            payers.forEach(p => {
+                                if (travelerDetails[p.name]) {
+                                    travelerDetails[p.name].totalPaid += p.amount;
+                                    travelerDetails[p.name].expensesPaidList.push({
+                                        description: expense.description,
+                                        amount: p.amount
+                                    });
+                                }
+                            });
+                        } else {
+                            // Formato antigo: [name1, name2, ...] ou payerName
+                            const amountPerPayer = (expense.amount && payers.length > 0) ? (expense.amount / payers.length) : 0;
+                            payers.forEach(payerName => {
+                                if (travelerDetails[payerName]) {
+                                    travelerDetails[payerName].totalPaid += amountPerPayer;
+                                    travelerDetails[payerName].expensesPaidList.push({
+                                        description: `${expense.description} (dividido por ${payers.length})`,
+                                        amount: amountPerPayer
+                                    });
+                                }
                             });
                         }
-                    });
-                }
+                    }
 
                     // Adiciona à cota-parte (total DEVIDO) de cada participante
                     const share = expense.amount / expense.participants.length;
@@ -6270,12 +6569,22 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     // --- Início da Lógica dos Pagadores (Crédito) ---
                     const payers = expense.payers || (expense.payerName ? [expense.payerName] : []);
                     if (payers.length > 0) {
-                        const amountPerPayer = expense.amount / payers.length;
-                        payers.forEach(payerName => {
-                            if (balances[payerName] !== undefined) {
-                                balances[payerName] += amountPerPayer; // Adiciona ao balanço
-                            }
-                        });
+                        if (typeof payers[0] === 'object') {
+                            // Novo formato: [{name, amount}, ...]
+                            payers.forEach(p => {
+                                if (balances[p.name] !== undefined) {
+                                    balances[p.name] += p.amount; // Adiciona o valor exato que a pessoa pagou
+                                }
+                            });
+                        } else {
+                            // Formato antigo: [name1, name2, ...] ou payerName
+                            const amountPerPayer = (expense.amount && payers.length > 0) ? (expense.amount / payers.length) : 0;
+                            payers.forEach(payerName => {
+                                if (balances[payerName] !== undefined) {
+                                    balances[payerName] += amountPerPayer; // Adiciona o valor dividido
+                                }
+                            });
+                        }
                     }
                     // --- Fim da Lógica dos Pagadores ---
                     
