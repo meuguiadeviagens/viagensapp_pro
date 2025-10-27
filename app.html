@@ -476,7 +476,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2012 | 26/10/2025, 09:05</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2013 | 26/10/2025, 21:51</p>
             </main>
         </div>
 
@@ -1601,7 +1601,7 @@
     </div>
 
     <div id="edit-expense-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4">
+        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4 overflow-y-auto max-h-screen">
             <h3 class="text-2xl font-semibold mb-6">Editar Despesa</h3>
             <form id="edit-expense-form" class="space-y-4">
                 <input type="hidden" id="edit-expense-id">
@@ -2533,7 +2533,7 @@ window.addEventListener('popstate', (event) => {
                 item.className = 'flex justify-between items-center p-2 bg-slate-50 rounded-md';
                 item.innerHTML = `
                 <span>${name} ${isPayer ? '(Pagou)' : ''}</span>
-                <span class="font-semibold">${isPayer ? 'Pagou (ou ajudou a pagar) a própria quota' : `Deve ${formatCurrency(share, expense.currency)}`}</span>
+                <span class="font-semibold">${isPayer ? 'Ver pagamento acima' : `Deve ${formatCurrency(share, expense.currency)}`}</span>
             `;
                 participantsList.appendChild(item);
             });
