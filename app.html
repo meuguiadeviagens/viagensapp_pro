@@ -476,7 +476,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2015 | 27/10/2025, 18:07</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2016 | 28/10/2025, 07:48</p>
             </main>
         </div>
 
@@ -3833,6 +3833,14 @@ window.addEventListener('popstate', (event) => {
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
                         </button>
                     </div>
+                    <div class="mt-1 flex justify-center w-full">
+                        <button
+                            onclick="event.stopPropagation(); toggleItemChecked('flights', '${flightId}')"
+                            class="p-1 rounded-full ${flight.isChecked ? 'bg-green-500 hover:bg-green-600' : 'bg-slate-300 hover:bg-slate-400'} text-white transition-colors"
+                            title="${flight.isChecked ? 'Marcar como pendente' : 'Marcar como concluído'}">                            
+                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </button>
+                    </div>
                 </div>
                 `}
             `;
@@ -3869,6 +3877,14 @@ window.addEventListener('popstate', (event) => {
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                         </button>
                     </div>
+                    <div class="mt-1 flex justify-center w-full">
+                        <button
+                            onclick="event.stopPropagation(); toggleItemChecked('transport', '${transportId}')"
+                            class="p-1 rounded-full ${item.isChecked ? 'bg-green-500 hover:bg-green-600' : 'bg-slate-300 hover:bg-slate-400'} text-white transition-colors"
+                            title="${item.isChecked ? 'Marcar como pendente' : 'Marcar como concluído'}">                            
+                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </button>
+                    </div>
                 </div>
                 `}
             `;
@@ -3902,6 +3918,14 @@ window.addEventListener('popstate', (event) => {
                         </button>
                         <button onclick="deleteDetailItem('lodging', '${lodgingId}')" class="p-1 text-red-500">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        </button>
+                    </div>
+                    <div class="mt-1 flex justify-center w-full">
+                        <button
+                            onclick="event.stopPropagation(); toggleItemChecked('lodging', '${lodgingId}')"
+                            class="p-1 rounded-full ${item.isChecked ? 'bg-green-500 hover:bg-green-600' : 'bg-slate-300 hover:bg-slate-400'} text-white transition-colors"
+                            title="${item.isChecked ? 'Marcar como pendente' : 'Marcar como concluído'}">                            
+                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         </button>
                     </div>
                 </div>
@@ -5209,21 +5233,24 @@ let dividerHtml = '';
                     code: document.getElementById('flight-code').value, 
                     flightType: document.getElementById('flight-type').value,
                     cost: document.getElementById('flight-cost').value,
-                    order: newOrder
+                    order: newOrder,
+                    isChecked: false
                 };
             } else if (category === 'transport') {
                 newItem = { 
                     type: document.getElementById('transport-type').value, from: document.getElementById('transport-origin').value, to: document.getElementById('transport-destination').value, description: document.getElementById('transport-description').value, departureDate: document.getElementById('transport-departure-date').value, departureTime: document.getElementById('transport-departure-time').value, arrivalDate: document.getElementById('transport-arrival-date').value, arrivalTime: document.getElementById('transport-arrival-time').value,
                     link: document.getElementById('transport-link').value.trim(), // <-- ADICIONADO
                     cost: document.getElementById('transport-cost').value,
-                    order: newOrder // <-- ADICIONADO
+                    order: newOrder,
+                    isChecked: false
                 };
             } else if (category === 'lodging') {
                 newItem = { 
                     name: document.getElementById('lodging-name').value, address: document.getElementById('lodging-address').value, checkinDate: document.getElementById('lodging-checkin-date').value, checkinTime: document.getElementById('lodging-checkin-time').value, checkoutDate: document.getElementById('lodging-checkout-date').value, checkoutTime: document.getElementById('lodging-checkout-time').value,
                     cost: document.getElementById('lodging-cost').value,
                     link: document.getElementById('lodging-link').value.trim(),
-                    order: newOrder // <-- ADICIONADO
+                    order: newOrder,
+                    isChecked: false
                 };
             }
 
@@ -7144,6 +7171,38 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         }
         // --- FIM: LÓGICA DO POPUP DE PRÉ-VISUALIZAÇÃO DE IMAGEM (VERSÃO REFINADA) ---
 
+        /**
+         * Alterna o estado 'isChecked' de um item (voo, transporte, hospedagem) no Firebase.
+         * @param {string} category - A categoria do item ('flights', 'transport', 'lodging').
+         * @param {string} itemId - O ID único do item dentro da categoria.
+         */
+        window.toggleItemChecked = async (category, itemId) => {
+            if (!currentTripId || !category || !itemId) return;
+
+            const trip = tripsData.find(t => t.id === currentTripId);
+            if (!trip || !trip[category] || !trip[category][itemId]) {
+                console.error(`Item ${itemId} na categoria ${category} não encontrado.`);
+                return;
+            }
+
+            // Pega o estado atual (ou assume false se não existir)
+            const currentState = trip[category][itemId].isChecked || false;
+            const newState = !currentState; // Inverte o estado
+
+            // Define o caminho para atualizar no Firebase
+            const itemPath = `/trips/${currentTripId}/${category}/${itemId}/isChecked`;
+            const updates = {};
+            updates[itemPath] = newState;
+
+            try {
+                // Atualiza o estado no Firebase
+                await update(ref(db), updates);
+                // O listener onValue cuidará de redesenhar a interface automaticamente.
+            } catch (error) {
+                console.error(`Erro ao atualizar o estado 'isChecked' para ${category}/${itemId}:`, error);
+                alert("Ocorreu um erro ao salvar o status.");
+            }
+        };
 
         /**
          * Abre uma nova guia do Google Imagens com o termo de pesquisa.
