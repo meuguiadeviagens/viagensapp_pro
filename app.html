@@ -4245,11 +4245,23 @@ window.addEventListener('popstate', (event) => {
                 }
 
                 // Monta o HTML do painel do dia
+
+                // NOVA FORMATAÇÃO DE DATA (ABREVIAÇÃO) ---
+                const dateObj = new Date(dayKey + 'T00:00:00Z');
+                // Mapa para as abreviações exatas (DOM-SÁB)
+                const dayMap = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+                // Usamos getUTCDay() pois estamos tratando a data como UTC (T00:00:00Z)
+                const weekdayAbbr = dayMap[dateObj.getUTCDay()]; 
+                // Formato original (ex: 10 de abril)
+                const dateString = dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC', day: 'numeric', month: 'long' });
+                // Junta os dois (ex: SEG, 10 de abril)
+                const newDateDisplay = `${weekdayAbbr}, ${dateString}`;
+
                 dayPanel.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
                          <div class="flex items-center gap-3">
                             <svg class="drag-handle" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-                            <h3 class="font-bold text-lg text-slate-800">${formatDate(dayKey, {weekday: 'long', day: 'numeric', month: 'long'})} | ${dayCounter}/${totalTripDays}</h3>
+                            <h3 class="font-bold text-lg text-slate-800">${newDateDisplay} | ${dayCounter}/${totalTripDays}</h3>
                         </div>
                         ${isReadOnly ? '' : `
                         <div class="flex items-center gap-2">
