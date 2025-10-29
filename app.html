@@ -476,7 +476,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2016 | 28/10/2025, 07:48</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2017 | 29/10/2025, 07:12</p>
             </main>
         </div>
 
@@ -2302,6 +2302,7 @@ window.addEventListener('popstate', (event) => {
                 '#add-document-form',
                 
                 // Botão "Reordenar" e "Adicionar Atividade" do Roteiro
+                '#import-suggestions-btn',
                 '#reorg-start-btn',
                 '.add-activity-btn',
                 
@@ -3829,7 +3830,7 @@ window.addEventListener('popstate', (event) => {
                         <button onclick="openEditFlightModal('${flightId}')" class="p-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
                         </button>
-                        <button onclick="deleteDetailItem('flights', '${flightId}')" class="p-1 text-red-500">
+                        <button onclick="deleteDetailItem('flights', '${flightId}')" class="p-1 text-slate-500 hover:text-red-600"">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
                         </button>
                     </div>
@@ -3873,7 +3874,7 @@ window.addEventListener('popstate', (event) => {
                         <button onclick="openEditTransportModal('${transportId}')" class="p-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                         </button>
-                        <button onclick="deleteDetailItem('transport', '${transportId}')" class="p-1 text-red-500">
+                        <button onclick="deleteDetailItem('transport', '${transportId}')" class="p-1 text-slate-500 hover:text-red-600">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                         </button>
                     </div>
@@ -3916,7 +3917,7 @@ window.addEventListener('popstate', (event) => {
                         <button onclick="openEditLodgingModal('${lodgingId}')" class="p-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                         </button>
-                        <button onclick="deleteDetailItem('lodging', '${lodgingId}')" class="p-1 text-red-500">
+                        <button onclick="deleteDetailItem('lodging', '${lodgingId}')" class="p-1 text-slate-500 hover:text-red-600">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                         </button>
                     </div>
