@@ -1846,7 +1846,7 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
             reauthenticateWithCredential, // <-- ADICIONE
             updatePassword // <-- ADICIONE
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; 
-        import { getDatabase, ref, onValue, set, push, remove, update, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, push, remove, update, get, serverTimestamp, enablePersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         // Configuração do Firebase
         const firebaseConfig = {
@@ -1863,6 +1863,9 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+
+        //permite o uso offline
+        enablePersistence(db).catch(err => console.error("Erro ao ativar persistência:", err));
         
 
         const loginView = document.getElementById('login-form');
