@@ -237,6 +237,32 @@
                         <label class="block text-sm font-medium text-slate-600">Ícone</label>
                         <div id="suggestion-icon-picker" class="mt-2 flex flex-wrap gap-2"></div>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600 mb-2">Dias que NÃO abre (Opcional)</label>
+                        <div id="closed-days-picker" class="grid grid-cols-3 sm:grid-cols-4 gap-2 text-sm">
+                            <label class="flex items-center gap-2 p-2 border rounded-md cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" name="closedDay" value="dom" class="rounded"> Domingo
+                            </label>
+                            <label class="flex items-center gap-2 p-2 border rounded-md cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" name="closedDay" value="seg" class="rounded"> Segunda
+                            </label>
+                            <label class="flex items-center gap-2 p-2 border rounded-md cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" name="closedDay" value="ter" class="rounded"> Terça
+                            </label>
+                            <label class="flex items-center gap-2 p-2 border rounded-md cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" name="closedDay" value="qua" class="rounded"> Quarta
+                            </label>
+                            <label class="flex items-center gap-2 p-2 border rounded-md cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" name="closedDay" value="qui" class="rounded"> Quinta
+                            </label>
+                            <label class="flex items-center gap-2 p-2 border rounded-md cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" name="closedDay" value="sex" class="rounded"> Sexta
+                            </label>
+                            <label class="flex items-center gap-2 p-2 border rounded-md cursor-pointer hover:bg-slate-50">
+                                <input type="checkbox" name="closedDay" value="sab" class="rounded"> Sábado
+                            </label>
+                        </div>
+                    </div>
                     <div class="pt-6 flex justify-end gap-3">
                         <button type="button" onclick="closeModal('edit-activity-suggestion-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
                         <button type="submit" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Salvar Atividade</button>
@@ -409,6 +435,14 @@
         let selectedCityId = null;
         let onConfirmAction = () => {};
         let uniqueCountries = [];
+
+        // NOVO: Listener para o botão de confirmação de exclusão
+        document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+            if (typeof onConfirmAction === 'function') {
+                onConfirmAction(); 
+                // A ação (onConfirmAction) é responsável por fechar o modal
+            }
+        });
 
         // --- 1. CONTROLE DE AUTENTICAÇÃO ---
         onAuthStateChanged(auth, (user) => {
@@ -1109,11 +1143,7 @@
             openModal('user-details-modal');
         };
 
-        window.openModal = (id) => {
-             // ...
-        }
-
-        // --- 5. LÓGICA DO HISTÓRICO ---
+          // --- 5. LÓGICA DO HISTÓRICO ---
         // NOVO: Função para abrir e popular o modal de histórico
         window.openHistoryModal = async (uid) => {
             const user = allUsersData.find(u => u.uid === uid);
@@ -1226,6 +1256,18 @@
         window.openModal = (id) => {
              const modal = document.getElementById(id);
              if(modal) modal.classList.replace('hidden', 'flex'); 
+        }
+
+        // ADICIONE ESTA FUNÇÃO:
+        window.showConfirmDelete = (message, onConfirm) => {
+            // Define a mensagem no modal
+            document.getElementById('confirm-delete-message').textContent = message;
+            
+            // Armazena a função de callback que deve ser executada
+            onConfirmAction = onConfirm; 
+            
+            // Abre o modal de confirmação
+            openModal('confirm-delete-modal');
         }
 
         window.closeModal = (id) => {
@@ -1428,15 +1470,21 @@
 
         window.openEditActivitySuggestionModal = (index = null) => {
             const form = document.getElementById('edit-activity-suggestion-form');
-            form.reset();
+            form.reset(); // Isso já deve desmarcar os checkboxes
+
+            // --- Limpa explicitamente os checkboxes (garantia extra) ---
+            document.querySelectorAll('#closed-days-picker input[name="closedDay"]').forEach(cb => cb.checked = false);
+            // --- Fim da limpeza explícita ---
+
             const title = document.getElementById('suggestion-modal-title');
             const indexInput = document.getElementById('suggestion-activity-index');
-            
+
             if (index === null) { // Adicionando
                 title.textContent = `Nova Atividade para ${suggestedItinerariesData[selectedCityId].cityName}`;
-                indexInput.value = -1; // Sinaliza que é um novo item
-                // Limpa campos específicos ao adicionar
-                document.getElementById('suggestion-activity-image-url').value = ''; // Limpa URL da imagem
+                indexInput.value = -1;
+                document.getElementById('suggestion-activity-image-url').value = '';
+                // Define o ícone padrão ao adicionar
+                document.getElementById('suggestion-activity-icon').value = 'passeio';
             } else { // Editando
                 title.textContent = `Editar Atividade em ${suggestedItinerariesData[selectedCityId].cityName}`;
                 indexInput.value = index;
@@ -1445,14 +1493,34 @@
                 document.getElementById('suggestion-activity-type').value = activity.type;
                 document.getElementById('suggestion-activity-description').value = activity.description || '';
                 document.getElementById('suggestion-activity-link').value = activity.link || '';
-                document.getElementById('suggestion-activity-image-url').value = activity.imageUrl || ''; // <-- LINHA ADICIONADA/MODIFICADA
+                document.getElementById('suggestion-activity-image-url').value = activity.imageUrl || '';
                 document.getElementById('suggestion-activity-icon').value = activity.icon || 'passeio';
+
+                // --- INÍCIO: Marcar checkboxes salvos ---
+                if (activity.closedDays && Array.isArray(activity.closedDays)) {
+                    activity.closedDays.forEach(dayValue => {
+                        const checkbox = document.querySelector(`#closed-days-picker input[value="${dayValue}"]`);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                        }
+                    });
+                }
+                // --- FIM: Marcar checkboxes salvos ---
             }
 
             const icon = document.getElementById('suggestion-activity-icon').value;
             const picker = document.getElementById('suggestion-icon-picker');
             picker.querySelectorAll('.icon-picker-option').forEach(opt => opt.classList.remove('selected'));
-            picker.querySelector(`[data-icon="${icon}"]`)?.classList.add('selected');
+            const selectedIconEl = picker.querySelector(`[data-icon="${icon}"]`);
+            if (selectedIconEl) {
+                selectedIconEl.classList.add('selected');
+            } else {
+                // Se o ícone salvo não existir mais, seleciona o padrão 'passeio'
+                const defaultIconEl = picker.querySelector('[data-icon="passeio"]');
+                if (defaultIconEl) defaultIconEl.classList.add('selected');
+                document.getElementById('suggestion-activity-icon').value = 'passeio';
+            }
+
 
             openModal('edit-activity-suggestion-modal');
         }
@@ -1460,25 +1528,29 @@
         document.getElementById('edit-activity-suggestion-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const index = parseInt(document.getElementById('suggestion-activity-index').value);
-            // CORREÇÃO: Garante que currentActivities seja sempre um array, mesmo que não haja atividades ainda.
             const currentActivities = [...(suggestedItinerariesData[selectedCityId]?.activities || [])];
-            
+
+            // --- INÍCIO DA MODIFICAÇÃO ---
+            const closedDaysCheckboxes = document.querySelectorAll('#closed-days-picker input[name="closedDay"]:checked');
+            const closedDays = Array.from(closedDaysCheckboxes).map(cb => cb.value);
+            // --- FIM DA MODIFICAÇÃO ---
+
             const newActivityData = {
                 name: document.getElementById('suggestion-activity-name').value,
                 type: document.getElementById('suggestion-activity-type').value,
                 description: document.getElementById('suggestion-activity-description').value,
                 link: document.getElementById('suggestion-activity-link').value.trim(),
-                imageUrl: document.getElementById('suggestion-activity-image-url').value.trim(), // <-- LINHA ADICIONADA
-                icon: document.getElementById('suggestion-activity-icon').value
+                imageUrl: document.getElementById('suggestion-activity-image-url').value.trim(),
+                icon: document.getElementById('suggestion-activity-icon').value,
+                closedDays: closedDays // <-- Salva o array de dias fechados
             };
 
-            if (index === -1) { // Adicionando nova atividade
+            if (index === -1) {
                 currentActivities.push(newActivityData);
-            } else { // Editando atividade existente
+            } else {
                 currentActivities[index] = newActivityData;
             }
 
-            // Salva o array atualizado de atividades de volta no Firebase
             await set(ref(db, `suggestedItineraries/${selectedCityId}/activities`), currentActivities);
             closeModal('edit-activity-suggestion-modal');
         });
@@ -1531,3 +1603,4 @@
 
 </body>
 </html>
+
