@@ -2,7 +2,7 @@ const CACHE_NAME = 'meu-guia-de-viagens-v1';
 
 // Arquivos que serão salvos em cache para o app funcionar offline
 const assetsToCache = [
-  './viagens_pro.html',
+  './app.html',
   './manifest.json',
   './icon-512.png',
   './logo_meuguiadeviagens.png',
