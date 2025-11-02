@@ -2,7 +2,7 @@
   "name": "Não Vou Sozinho",
   "short_name": "Viagens",
   "description": "Seu planejador de roteiros de viagem.",
-  "start_url": ".",
+  "start_url": "/app.html",
   "display": "standalone",
   "background_color": "#f1f5f9",
   "theme_color": "#0284c7",
