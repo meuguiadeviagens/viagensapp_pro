@@ -6,10 +6,7 @@ const assetsToCache = [
   './manifest.json',
   './icon-512.png',
   './logo_meuguiadeviagens.png',
-  './favicon.png',
-  'https://cdn.tailwindcss.com',
-  'https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+  './favicon.png'
 ];
 
 // Evento de 'install': Ocorre quando o Service Worker é instalado
