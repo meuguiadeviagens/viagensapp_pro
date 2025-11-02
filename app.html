@@ -5758,7 +5758,7 @@ let dividerHtml = '';
                 // --- FIM DA VERIFICAÇÃO ---
 
                 const newActivity = {
-                    id: `${Date.now()}-${Math.random()}`,
+                    id: `${Date.now()}-${Math.random().toString().replace('0.', '')}`,
                     date: targetDate,
                     time: `${hours}:${minutes}`,
                     name: activity.name,
