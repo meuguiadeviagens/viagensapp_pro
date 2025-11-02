@@ -3,6 +3,7 @@
     <link rel="icon" href="favicon.png" type="image/png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Não Vou Sozinho - Roteiro de Viagens</title>
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com/">
@@ -7312,6 +7313,8 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         // --- FIM: FUNÇÕES PARA EDITAR DOCUMENTOS ---
 
+
+
     </script>
 
 <button id="back-to-top-btn" onclick="scrollToTop()" class="hidden fixed bottom-8 left-8 z-40 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
@@ -7330,5 +7333,20 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         <div id="image-preview-popup" class="hidden fixed z-[1000] border border-slate-300 shadow-lg rounded-md overflow-hidden bg-white p-1 max-w-[300px] max-h-[300px]" style="pointer-events: none;">
             <img id="image-preview-content" src="" alt="Pré-visualização" class="block w-full h-full object-contain">
         </div>
+
+      <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(registration => {
+              console.log('Service Worker registrado com sucesso:', registration);
+            })
+            .catch(error => {
+              console.log('Falha ao registrar o Service Worker:', error);
+            });
+        });
+      }
+    </script>
+
 </body>
 </html>
