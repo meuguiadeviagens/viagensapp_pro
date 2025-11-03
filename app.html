@@ -29,26 +29,117 @@
         /* FIM: ESTILOS PARA POPUP DE IMAGEM */
 
         @media print {
-        /* Força a impressão de cores e imagens de fundo */
-        *,
-        *::before,
-        *::after {
-            -webkit-print-color-adjust: exact !important; /* Chrome, Safari, Edge */
-            print-color-adjust: exact !important;          /* Firefox */
+            /* * Regra 1: Força a impressão de cores e fundos 
+            * (Corrigido para evitar comentários aninhados)
+            */
+            *,
+            *::before,
+            *::after {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* * Regra 2: Garante que as cores de fundo personalizadas 
+            * das atividades e cidades sejam impressas.
+            */
+            .atividade-item {
+                background-color: #e0f2fe !important;
+            }
+            .cidade-titulo {
+                background-color: #ffedd5 !important;
+                color: #c2410c !important;
+            }
+
+            /* * Regra 3: Força TODOS os painéis de conteúdo a serem visíveis
+            * (Anotações, Documentos, Despesas, etc.)
+            */
+            #documents-panel.collapsed #documents-content,
+            #spending-panel.collapsed #spending-content,
+            #notes-panel.collapsed #notes-content,
+            #shared-expenses-panel.collapsed .panel-content,
+            #add-expense-panel.collapsed #add-expense-content {
+                max-height: none !important;
+                opacity: 1 !important;
+                overflow: visible !important;
+                display: block !important;
+                visibility: visible !important;
+                margin-top: 1.5rem !important;
+                padding-top: 1rem !important;
+                padding-bottom: 1rem !important;
+            }
+
+            /* * Regra 4: Esconde TODOS os botões e elementos interativos da interface
+            */
+            header#details-header button,
+            .panel-toggle-btn,
+            #add-document-form,
+            #add-expense-form,
+            #reorg-start-btn,
+            #reorg-actions-container,
+            #import-suggestions-btn,
+            .add-activity-btn,
+            .delete-day-btn,
+            .drag-handle,
+            .activity-drag-handle,
+            .insertion-point,
+            #back-to-top-btn,
+            #open-index-btn,
+            #back-to-trips-btn,
+            #flights-section .flex-col.gap-2.items-center,
+            #transport-section .flex-col.gap-2.items-center,
+            #lodging-section .flex-col.gap-2.items-center,
+            .document-item .flex.items-center.gap-2,
+            .note-item-container .flex.items-center.gap-2,
+            .activity-item .flex.gap-2.items-center.flex-shrink-0,
+            #shared-expenses-list button,
+            #shared-expenses-panel button[onclick] {
+                display: none !important;
+            }
+
+            /* * Regra 5: Ajustes de layout para impressão (fundo branco, bordas)
+            */
+            .shadow-lg {
+                box-shadow: none !important;
+                border: 1px solid #e2e8f0;
+            }
+            body,
+            .bg-slate-100 {
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
+            h2,
+            h3,
+            h4 {
+                color: #000000 !important;
+            }
+
+            /* * Regra 6: Evita quebras de página ruins no meio dos itens
+            */
+            section,
+            .day-panel,
+            .activity-item,
+            .document-item,
+            .note-item-container {
+                page-break-inside: avoid !important;
+            }
+
+            /* * Regra 7: Garante que o texto do roteiro quebre a linha (remove o "truncate")
+            */
+            .activity-item p.truncate {
+                overflow: visible !important;
+                text-overflow: clip !important;
+                white-space: normal !important;
+                word-break: break-word !important;
+            }
+
+            /* * Regra 8: Garante que as descrições nos modais (se impressas) também quebrem
+            */
+            #view-activity-description,
+            #view-note-description {
+                white-space: pre-wrap !important;
+            }
         }
 
-        /* Exemplo Específico: Garantir que as atividades e cidades tenham suas cores */
-        /* Supondo que suas atividades tenham uma classe como '.atividade-item' */
-        .atividade-item {
-            background-color: #e0f2fe !important; /* Exemplo de azul claro */
-        }
-
-        /* Supondo que os títulos das cidades tenham uma classe como '.cidade-titulo' */
-        .cidade-titulo {
-            background-color: #ffedd5 !important; /* Exemplo de alaranjado */
-            color: #c2410c !important;             /* Exemplo de cor de texto escura para contraste */
-        }
-        }
 
         .city-suggestion-item {
             padding: 0.75rem 1rem;
@@ -485,7 +576,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2017 | 02/11/2025, 17:03</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2018 | 03/11/2025, 07:15</p>
             </main>
         </div>
 
@@ -834,6 +925,13 @@
                         <h1 class="text-3xl font-bold text-slate-900">Checklist</h1>
                         <p class="text-slate-500">Seu checklist pessoal</p>
                     </div>
+                    <div class="flex items-center gap-2 p-2 ml-6 bg-slate-100 rounded-lg">
+                        <input type="checkbox" id="filter-pending-items-checkbox" onchange="applyChecklistFilter()"
+                            class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-slate-400">
+                        <label for="filter-pending-items-checkbox" class="text-sm font-semibold text-slate-700 cursor-pointer">
+                            Mostrar somente pendentes
+                        </label>
+                    </div>                
                 </div>
                 <button onclick="addChecklistSection()" class="flex items-center gap-2 bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -6750,16 +6848,26 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         const backToTopBtn = document.getElementById('back-to-top-btn');
         const openIndexBtn = document.getElementById('open-index-btn');
         const detailsView = document.getElementById('details-view');
+        const checklistView = document.getElementById('checklist-view'); // <-- ADICIONADO
 
         window.addEventListener('scroll', () => {
             const isDetailsViewVisible = !detailsView.classList.contains('hidden');
+            const isChecklistViewVisible = !checklistView.classList.contains('hidden'); // <-- ADICIONADO
             
-            // Mostra os botões após rolar 300 pixels E se a tela de detalhes estiver visível
-            if (window.scrollY > 300 && isDetailsViewVisible) { 
+            const isScrolled = window.scrollY > 300;
+
+            // Lógica para o botão "Voltar ao Topo"
+            // Mostra se estiver rolado E (na tela de detalhes OU na tela de checklist)
+            if (isScrolled && (isDetailsViewVisible || isChecklistViewVisible)) {
                 backToTopBtn.classList.remove('hidden');
-                openIndexBtn.classList.remove('hidden');
-            } else { // Esconde os botões em outras situações
+            } else {
                 backToTopBtn.classList.add('hidden');
+            }
+            
+            // Lógica separada para o botão "Índice" (que só aparece nos detalhes)
+            if (isScrolled && isDetailsViewVisible) {
+                openIndexBtn.classList.remove('hidden');
+            } else {
                 openIndexBtn.classList.add('hidden');
             }
         });
@@ -7372,7 +7480,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             checklist.forEach((section, sectionIndex) => {
                 const sectionElement = document.createElement('div');
-                sectionElement.className = 'bg-white p-4 sm:p-6 rounded-xl shadow-lg';
+                sectionElement.className = 'checklist-section-item bg-white p-4 sm:p-6 rounded-xl shadow-lg';
 
                 let itemsHtml = '';
                 
@@ -7382,9 +7490,9 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 itemsArray.forEach((item, itemIndex) => {
                     const isChecked = item.isChecked;
                     itemsHtml += `
-                        <div class="flex items-center justify-between p-2 rounded-md hover:bg-slate-50 ${isChecked ? '' : 'bg-yellow-100'}">
+                        <div class="checklist-row-item flex items-center justify-between p-2 rounded-md hover:bg-slate-50 ${isChecked ? '' : 'bg-yellow-100'}">
                             <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="toggleItem(${sectionIndex}, ${itemIndex})"
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="toggleItem(event, ${sectionIndex}, ${itemIndex})"
                                     class="h-5 w-5 rounded text-blue-600 focus:ring-green-500 border-slate-400">
                                 
                                 <span class="${isChecked ? 'text-slate-500 line-through' : 'font-bold text-red-700'}">
@@ -7431,6 +7539,8 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 `;
                 container.appendChild(sectionElement);
             });
+
+            applyChecklistFilter();
         }
 
         // 5. FUNÇÕES DE MANIPULAÇÃO (Handlers)
@@ -7470,11 +7580,38 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         };
 
         // Marca/Desmarca um item
-        window.toggleItem = (sectionIndex, itemIndex) => {
-            // Acessa o objeto no array e inverte o booleano
+        window.toggleItem = (event, sectionIndex, itemIndex) => {
+            // 1. Salva os dados no Firebase (como antes)
             const currentState = userChecklistData[sectionIndex].items[itemIndex].isChecked;
-            userChecklistData[sectionIndex].items[itemIndex].isChecked = !currentState;
-            saveChecklist(); // Salva
+            const isNowChecked = !currentState;
+            userChecklistData[sectionIndex].items[itemIndex].isChecked = isNowChecked;
+            saveChecklist();
+
+            // 2. Atualiza a UI imediatamente (para o texto laranja/amarelo)
+            const itemRow = event.target.closest('.checklist-row-item');
+            const itemText = itemRow.querySelector('span');
+            itemRow.classList.toggle('bg-yellow-100', !isNowChecked);
+            itemText.classList.toggle('text-slate-500', isNowChecked);
+            itemText.classList.toggle('line-through', isNowChecked);
+            itemText.classList.toggle('font-bold', !isNowChecked);
+            itemText.classList.toggle('text-orange-700', !isNowChecked);
+
+            // 3. Verifica se o filtro está ativo e esconde o item
+            const isFilterActive = document.getElementById('filter-pending-items-checkbox').checked;
+            if (isFilterActive && isNowChecked) {
+                
+                itemRow.classList.add('hidden'); // Esconde o item que acabou de ser marcado
+
+                // 4. Verifica se a seção inteira deve ser escondida
+                const section = itemRow.closest('.checklist-section-item');
+                // Procura por outros itens na seção que NÃO estejam escondidos
+                const pendingItems = section.querySelectorAll('.checklist-row-item:not(.hidden)');
+                
+                if (pendingItems.length === 0) {
+                    section.classList.add('hidden'); // Esconde a seção
+                }
+            }
+            // (Não é preciso fazer nada se o filtro estiver inativo ou se o item for desmarcado)
         };
 
         // Deleta um item
@@ -7484,6 +7621,45 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 userChecklistData[sectionIndex].items.splice(itemIndex, 1); // Remove o item do array
                 saveChecklist(); // Salva
             }
+        };
+
+        // NOVA FUNÇÃO: Aplica o filtro de "pendentes"
+        window.applyChecklistFilter = () => {
+            const filterCheckbox = document.getElementById('filter-pending-items-checkbox');
+            if (!filterCheckbox) return; // Sai se o elemento ainda não existir
+            
+            const isFilterActive = filterCheckbox.checked;
+            const sections = document.querySelectorAll('.checklist-section-item');
+
+            sections.forEach(section => {
+                let hasPendingItems = false;
+                const items = section.querySelectorAll('.checklist-row-item');
+
+                items.forEach(item => {
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    const isItemChecked = checkbox.checked;
+
+                    if (isFilterActive) {
+                        // FILTRO ATIVO: Esconde marcados, mostra pendentes
+                        if (isItemChecked) {
+                            item.classList.add('hidden');
+                        } else {
+                            item.classList.remove('hidden');
+                            hasPendingItems = true; // Marca a seção como "tem pendentes"
+                        }
+                    } else {
+                        // FILTRO INATIVO: Mostra todos os itens
+                        item.classList.remove('hidden');
+                    }
+                });
+
+                // Agora, decide se a seção inteira deve ser escondida
+                if (isFilterActive && !hasPendingItems) {
+                    section.classList.add('hidden'); // Esconde a seção se o filtro está ativo e não há pendentes
+                } else {
+                    section.classList.remove('hidden'); // Mostra a seção
+                }
+            });
         };
 
         // Edita um item
