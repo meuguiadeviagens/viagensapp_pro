@@ -1680,12 +1680,16 @@
                             ${planDetailsHtml}
                         </div>
                     </div>
-                    <div class="flex-shrink-0 w-full sm:w-auto">
+                    <div class="flex-shrink-0 w-full sm:w-auto flex flex-col gap-2">
                         <button onclick='approveUpgrade("${uid}", ${JSON.stringify(request)})' class="w-full sm:w-auto px-6 py-2 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700">
                             Aprovar Licença
                         </button>
+                        <button onclick='rejectUpgrade("${uid}", ${JSON.stringify(request)})' class="w-full sm:w-auto px-4 py-1 bg-red-100 text-red-700 font-semibold rounded-lg hover:bg-red-200">
+                            Rejeitar
+                        </button>
                     </div>
                 `;
+
                 listContainer.appendChild(card);
             });
         }
@@ -1775,6 +1779,46 @@
                 alert("Ocorreu um erro ao salvar as alterações. Verifique o console.");
             }
         }
+
+        /**
+         * NOVO: Função chamada pelo botão "Rejeitar".
+         * Registra a rejeição no histórico e remove a solicitação.
+         */
+        window.rejectUpgrade = async (uid, request) => {
+            const { email, plano } = request;
+            
+            // 1. Pede confirmação ao admin
+            if (!confirm(`Tem certeza que deseja REJEITAR a solicitação de '${plano}' para o usuário ${email}?`)) {
+                return; // Admin cancelou
+            }
+
+            // 2. Prepara as atualizações
+            const adminEmail = auth.currentUser ? auth.currentUser.email : 'unknown_admin';
+            const updates = {};
+
+            // 3. Loga a ação de rejeição no histórico do usuário
+            const logEntry = {
+                timestamp: serverTimestamp(),
+                admin: adminEmail,
+                action: "Rejeição de Pagamento",
+                oldValue: { status: "pendente", ...request },
+                newValue: { status: "rejeitado" }
+            };
+            const logRef = push(ref(db, `users/${uid}/adminHistory`));
+            updates[`/users/${uid}/adminHistory/${logRef.key}`] = logEntry;
+
+            // 4. Remove a solicitação da fila de 'solicitacoes_upgrade'
+            updates[`/solicitacoes_upgrade/${uid}`] = null;
+
+            // 5. Executa as atualizações
+            try {
+                await update(ref(db), updates);
+                alert(`Solicitação para ${email} foi rejeitada e removida da lista.`);
+            } catch (error) {
+                console.error("Erro ao rejeitar solicitação:", error);
+                alert("Ocorreu um erro ao tentar rejeitar a solicitação. Verifique o console.");
+            }
+        };
 
     </script>
 <br><center><p>V. 1.2008 - 03/11/2025 18:15</p></center><br>
