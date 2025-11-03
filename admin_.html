@@ -51,7 +51,7 @@
             <div>
                 <label for="password" class="block text-sm font-medium text-slate-600">Senha</label>
                 <input type="password" id="password" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base" required>
-            </div>
+            </div>            
             <button id="login-btn" type="submit" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Entrar</button>
         </div>
     </form>
@@ -819,7 +819,17 @@
 
             document.getElementById('edit-user-id').value = uid;
             document.getElementById('edit-user-name').textContent = `${user.name} (${user.email})`;
-            document.getElementById('edit-license-type').value = user.licenseData.type || 'gratuito'; 
+            // Pega o tipo de licença salvo no banco
+            const licenseType = user.licenseData.type || 'gratuito';
+            const dropdown = document.getElementById('edit-license-type');
+
+            if (licenseType === 'bianual') {
+                // Se o banco de dados disser "bianual", seleciona a opção "anual"
+                dropdown.value = 'anual';
+            } else {
+                // Para todos os outros casos, usa o valor normal
+                dropdown.value = licenseType;
+            }
             
             const aquisicaoInput = document.getElementById('edit-license-aquisicao');
             if (user.licenseData.dataAquisicao) {
@@ -1727,17 +1737,17 @@
             const adminEmail = auth.currentUser ? auth.currentUser.email : 'unknown_admin';
 
             if (plano === 'anual' || plano === 'bianual') {
-                // Define a data de expiração
-                const expirationDate = new Date(today);
-                const yearsToAdd = (plano === 'anual') ? 1 : 2;
-                expirationDate.setFullYear(expirationDate.getFullYear() + yearsToAdd);
-                
-                newLicenseData.type = plano;
-                newLicenseData.dataAquisicao = todayTimestamp;
-                newLicenseData.expires = expirationDate.getTime();
-                newLicenseData.purchasedTrips = newLicenseData.purchasedTrips || {}; // Mantém viagens avulsas se houver
-            
-            } else if (plano === 'avulsa') {
+            // Define a data de expiração
+            const expirationDate = new Date(today);
+            const yearsToAdd = (plano === 'anual') ? 1 : 2; // Lógica de 2 anos já está correta
+            expirationDate.setFullYear(expirationDate.getFullYear() + yearsToAdd);
+
+            newLicenseData.type = 'anual'; // <-- LINHA CORRIGIDA
+            newLicenseData.dataAquisicao = todayTimestamp;
+            newLicenseData.expires = expirationDate.getTime();
+            newLicenseData.purchasedTrips = newLicenseData.purchasedTrips || {}; 
+
+        } else if (plano === 'avulsa') {
                 if (!tripId) {
                     alert("Erro: A solicitação de 'Viagem Avulsa' não contém um ID de viagem. Aprovação falhou.");
                     return;
