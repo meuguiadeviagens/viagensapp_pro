@@ -656,7 +656,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2018 | 03/11/2025, 07:15</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2019 | 03/11/2025, 09:55</p>
             </main>
         </div>
 
@@ -782,9 +782,10 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-marked"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path><polyline points="10 2 10 10 14 7 18 10 18 2"></polyline></svg>
                         <span>Índice</span>
                     </button>
-                    <button onclick="scrollToSectionAndClose('spending-panel', null)" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
+                    <button id="expenses-menu-btn" onclick="toggleExpensesMenu()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-receipt-text"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M11 16H8"/></svg>
                         <span>Despesas</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
                     </button>
                     <button onclick="scrollToItinerary()" class="flex items-center gap-2 text-sm bg-cyan-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-cyan-400 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-collapse"><path d="m3 10 2.5-2.5L3 5"></path><path d="m3 19 2.5-2.5L3 14"></path><path d="M10 6h11"></path><path d="M10 12h11"></path><path d="M10 18h11"></path></svg>
@@ -993,9 +994,23 @@
             Verificar despesas por pessoa
         </button>
     </div>
+    </div>
+   </section>
+ </div>
 </div>
-            </section>
-        </div>  </div> <div id="checklist-view" class="hidden">
+        
+        <!-- INÍCIO: MENU DE DESPESAS MOVIDO PARA FORA DO HEADER -->
+        <div id="expenses-menu" class="hidden absolute w-56 bg-white rounded-md shadow-lg py-1 z-50">
+            <a href="javascript:void(0);" onclick="scrollToSectionAndClose('shared-expenses-panel', null); toggleExpensesMenu();" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                Despesas Gerais (Grupo)
+            </a>
+            <a href="javascript:void(0);" onclick="openMyExpensesModal(); toggleExpensesMenu();" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                Minhas Despesas (Privado)
+            </a>
+        </div>
+        <!-- FIM: MENU DE DESPESAS MOVIDO -->
+        
+        <div id="checklist-view" class="hidden">
             <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8 p-6 bg-white rounded-xl shadow-lg">
                 <div class="flex items-center gap-4">
                     <button onclick="showTripsView()" class="flex items-center justify-center w-12 h-12 bg-slate-200 text-slate-700 rounded-full hover:bg-slate-300 transition-colors" title="Voltar para Viagens">
@@ -1544,7 +1559,7 @@
         </div>
     </div>
     
-    <div id="confirm-delete-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+    <div id="confirm-delete-modal" class="fixed inset-0 z-[60] hidden items-center justify-center modal-backdrop">
         <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-sm m-4">
             <h3 class="text-xl font-semibold mb-4">Confirmar Exclusão</h3>
             <p id="confirm-delete-message" class="text-slate-600 mb-6">Você tem certeza que deseja excluir este item?</p>
@@ -1916,6 +1931,88 @@
     </div>
 </div>
 
+        <!-- INÍCIO: MODAL MINHAS DESPESAS -->
+        <div id="my-expenses-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-2xl m-4 flex flex-col max-h-[90vh]">
+                <h3 id="my-expenses-title" class="text-2xl font-semibold mb-2 text-slate-800">Minhas Despesas</h3>
+                <p id="my-expenses-trip-name" class="text-sm text-slate-500 mb-1"></p>
+                <p id="my-expenses-total" class="text-lg font-bold text-blue-700 mb-4">Total: R$ 0,00</p>
+
+                <!-- Formulário de Adição -->
+                <form id="add-my-expense-form" class="grid grid-cols-3 md:grid-cols-5 gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200 mb-4">
+                    
+                    <!-- 1. Descrição (Mobile: 100%, Desktop: 60%) -->
+                    <div class="col-span-3 md:col-span-3">
+                        <label for="my-expense-description" class="block text-xs font-medium text-slate-600">Descrição</label>
+                        <input type="text" id="my-expense-description" placeholder="Ex: Jantar" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required>
+                    </div>
+
+                    <!-- 2. Moeda (Mobile: 33%, Desktop: 20%) -->
+                    <div class="col-span-1 md:col-span-1">
+                        <label for="my-expense-currency" class="block text-xs font-medium text-slate-600">Moeda</label>
+                        <select id="my-expense-currency" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required></select>
+                    </div>
+
+                    <!-- 3. Valor (Mobile: 33%, Desktop: 20%) -->
+                    <div class="col-span-1 md:col-span-1">
+                        <label for="my-expense-amount" class="block text-xs font-medium text-slate-600">Valor</label>
+                        <input type="number" id="my-expense-amount" min="0.01" step="0.01" placeholder="120.00" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required>
+                    </div>
+                    
+                    <!-- 4. Botão (Mobile: 33%, Desktop: 100% na linha de baixo) -->
+                    <div class="col-span-1 md:col-span-5 flex flex-col">
+                        <!-- Label invisível para alinhar o botão com os inputs -->
+                        <label class="block text-xs font-medium text-slate-600">&nbsp;</label>
+                        <button type="submit" class="w-full bg-blue-600 text-white font-semibold px-4 py-1.5 rounded-lg shadow-md hover:bg-blue-700 transition-colors mt-1">
+                            Incluir
+                        </button>
+                    </div>
+
+                </form>
+
+                <!-- Lista de Despesas Pessoais -->
+                <div id="my-expenses-list-container" class="flex-grow mt-2 border-t pt-4 space-y-4 overflow-y-auto pr-2">
+                    <!-- As despesas serão injetadas aqui pelo JS -->
+                    <p class="text-center text-slate-500">Nenhuma despesa pessoal adicionada.</p>
+                </div>
+
+                <!-- Botão de Fechar -->
+                <div class="pt-6 flex justify-end border-t mt-6">
+                    <button type="button" onclick="closeModal('my-expenses-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Fechar</button>
+                </div>
+            </div>
+        </div>
+        <!-- FIM: MODAL MINHAS DESPESAS -->
+
+        <!-- INÍCIO: MODAL EDITAR MINHA DESPESA -->
+        <div id="edit-my-expense-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-lg m-4">
+                <h3 class="text-2xl font-semibold mb-6 text-slate-800">Editar Minha Despesa</h3>
+                <form id="edit-my-expense-form" class="space-y-4">
+                    <input type="hidden" id="edit-my-expense-id">
+                    <div>
+                        <label for="edit-my-expense-description" class="block text-sm font-medium text-slate-600">Descrição</label>
+                        <input type="text" id="edit-my-expense-description" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-my-expense-amount" class="block text-sm font-medium text-slate-600">Valor</label>
+                            <input type="number" id="edit-my-expense-amount" min="0.01" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
+                        </div>
+                        <div>
+                            <label for="edit-my-expense-currency" class="block text-sm font-medium text-slate-600">Moeda</label>
+                            <select id="edit-my-expense-currency" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required></select>
+                        </div>
+                    </div>
+                    <div class="pt-6 flex justify-end gap-3">
+                        <button type="button" onclick="closeModal('edit-my-expense-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- FIM: MODAL EDITAR MINHA DESPESA -->
+
 <div id="edit-profile-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
     <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4">
         <h3 class="text-2xl font-semibold mb-6">Alterar Meus Dados</h3>
@@ -2052,7 +2149,7 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
             reauthenticateWithCredential, // <-- ADICIONE
             updatePassword // <-- ADICIONE
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; 
-        import { getDatabase, ref, onValue, set, push, remove, update, get, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, push, remove, update, get, serverTimestamp, off } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         // Configuração do Firebase
         const firebaseConfig = {
@@ -2094,6 +2191,12 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
         let currentContextMenuDocumentId = null;
         let userChecklistData = []; // Armazena os dados do checklist
         let checklistRef; // Referência do Firebase para o checklist do usuário
+        let myExpensesRef = null; // Referência para o listener das despesas pessoais
+        let myExpensesData = []; // Cache local das despesas pessoais
+        let currentEditingMyExpenseId = null; // ID da despesa pessoal sendo editada
+
+        // Constante com as moedas permitidas
+        const MY_EXPENSE_CURRENCIES = ["BRL", "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "CNY", "CC/IOF"];
 
         
         // Variáveis de estado para reorganização
@@ -5138,6 +5241,13 @@ let dividerHtml = '';
                 deleteBtn.classList.add('bg-red-600', 'hover:bg-red-700');
                 deleteBtn.textContent = 'Excluir';
             }
+
+            if (modalId === 'my-expenses-modal' && myExpensesRef) {
+                // Esta é a função que "desliga" o listener onValue
+                off(myExpensesRef); 
+                myExpensesRef = null; // Limpa a referência
+                myExpensesData = []; // Limpa o cache de dados
+            }
         }
         
         window.scrollToItinerary = () => {
@@ -7900,7 +8010,326 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         // --- FIM: FUNÇÕES PARA EDITAR DOCUMENTOS ---
 
+        /**
+         * Mostra ou esconde o menu de despesas (Geral/Pessoal).
+         * VERSÃO ATUALIZADA: Calcula a posição do menu flutuante.
+         */
+        window.toggleExpensesMenu = () => {
+            const menu = document.getElementById('expenses-menu');
+            const button = document.getElementById('expenses-menu-btn');
+            
+            if (!menu || !button) return;
 
+            if (menu.classList.contains('hidden')) {
+                // O menu está escondido, vamos mostrá-lo
+                
+                // 1. Calcula a posição do botão na tela
+                const rect = button.getBoundingClientRect();
+                
+                // 2. Define a posição do menu flutuante
+                // rect.left = Posição X (horizontal) do botão
+                // rect.bottom = Posição Y (vertical) da base do botão
+                // window.scrollY = Quanto a página já foi rolada (para ajustar a posição Y)
+                menu.style.left = `${rect.left}px`;
+                menu.style.top = `${rect.bottom + window.scrollY + 5}px`; // 5px de espaço
+
+                // 3. Mostra o menu
+                menu.classList.remove('hidden');
+            } else {
+                // O menu está visível, vamos escondê-lo
+                menu.classList.add('hidden');
+            }
+        }
+
+        /**
+        * Popula um <select> com a lista de moedas para despesas pessoais.
+        */
+        function populateMyExpenseCurrencySelect(selectId, selectedCurrency = "BRL") {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            select.innerHTML = ''; // Limpa opções anteriores
+
+            MY_EXPENSE_CURRENCIES.forEach(currency => {
+                const option = document.createElement('option');
+                option.value = currency;
+                option.textContent = currency;
+                if (currency === selectedCurrency) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+
+        /**
+        * Configura o listener (onValue) para as despesas pessoais do usuário nesta viagem.
+        */
+        function setupMyExpensesListener(userId, tripId) {
+            // A referência ao Realtime Database (RTDB)
+            // Note o caminho: users/{userId}/myExpenses/{tripId}
+            const newRef = ref(db, `users/${userId}/myExpenses/${tripId}`);
+            
+            // Atualiza a referência global para que possamos usá-la ao adicionar/deletar
+            myExpensesRef = newRef; 
+
+            onValue(newRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    // Converte o objeto { key1: {...}, key2: {...} } em um array [{...}, {...}]
+                    const expensesObject = snapshot.val();
+                    myExpensesData = Object.keys(expensesObject).map(key => ({
+                        id: key, // Armazena a chave do Firebase como o ID
+                        ...expensesObject[key]
+                    }));
+                } else {
+                    myExpensesData = []; // Nenhum dado, array vazio
+                }
+                // Chama a função para redesenhar a lista na tela
+                renderMyExpensesList(myExpensesData);
+            });
+        }
+
+        /**
+        * Desenha a lista de despesas pessoais no modal, agrupada por moeda.
+        */
+        function renderMyExpensesList(expenses) {
+            const container = document.getElementById('my-expenses-list-container');
+            const totalDisplay = document.getElementById('my-expenses-total');
+            if (!container || !totalDisplay) return;
+            
+            container.innerHTML = '';
+
+            if (expenses.length === 0) {
+                container.innerHTML = '<p class="text-center text-slate-500">Nenhuma despesa pessoal adicionada.</p>';
+                totalDisplay.textContent = 'Total: R$ 0,00';
+                return;
+            }
+
+            // 1. Agrupar por moeda
+            const grouped = expenses.reduce((acc, exp) => {
+                const currency = exp.currency || 'BRL';
+                if (!acc[currency]) {
+                    acc[currency] = { items: [], total: 0 };
+                }
+                acc[currency].items.push(exp);
+                acc[currency].total += parseFloat(exp.amount) || 0;
+                return acc;
+            }, {});
+
+            // 2. Criar string de Total (Ex: "Total: R$ 50,00 | USD 20,00")
+            const sortedCurrencies = Object.keys(grouped).sort((a, b) => {
+                if (a === 'BRL') return -1; // BRL primeiro
+                if (b === 'BRL') return 1;
+                return a.localeCompare(b); // Outros em ordem alfabética
+            });
+            
+            const totalStrings = sortedCurrencies.map(currency => {
+                // Usamos a função formatCurrency existente, mas ela pode precisar de ajuste
+                // Se formatCurrency só formata BRL, usamos uma lógica simples:
+                let formattedTotal = grouped[currency].total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return `<strong>${currency} ${formattedTotal}</strong>`;
+            });
+            totalDisplay.innerHTML = `Total: ${totalStrings.join(' | ')}`;
+
+            // 3. Renderizar a lista agrupada
+            sortedCurrencies.forEach(currency => {
+                const group = grouped[currency];
+                
+                // Adiciona o cabeçalho da moeda
+                const currencyHeader = document.createElement('h4');
+                currencyHeader.className = 'text-base font-semibold text-slate-700 mt-3 first:mt-0';
+                currencyHeader.textContent = `${currency} (Total: ${group.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+                container.appendChild(currencyHeader);
+
+                // Ordena os itens por data (mais novo primeiro)
+                group.items.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                // Cria os elementos da lista
+                const listWrapper = document.createElement('div');
+                listWrapper.className = 'space-y-2';
+                
+                group.items.forEach(exp => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'flex justify-between items-center p-3 rounded-md bg-slate-50 border border-slate-200';
+                    
+                    const dateTime = new Date(exp.date).toLocaleString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    itemEl.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-slate-800">${exp.description}</p>
+                            <p class="text-sm text-slate-500">${dateTime} - ${currency} ${parseFloat(exp.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        </div>
+                        <div class="flex items-center gap-1 flex-shrink-0">
+                            <button onclick="openEditMyExpenseModal('${exp.id}')" title="Editar" class="text-slate-500 hover:text-green-600 p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                            <button onclick="deleteMyExpense('${exp.id}')" title="Excluir" class="text-slate-500 hover:text-red-600 p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
+                        </div>
+                    `;
+                    listWrapper.appendChild(itemEl);
+                });
+                container.appendChild(listWrapper);
+            });
+        }
+
+        /**
+        * Função principal para abrir o modal "Minhas Despesas".
+        */
+        window.openMyExpensesModal = () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            if (!trip) return;
+
+            // 1. Preenche o nome da viagem no modal
+            document.getElementById('my-expenses-trip-name').textContent = trip.name;
+            
+            // 2. Prepara o formulário de adição
+            document.getElementById('add-my-expense-form').reset();
+            populateMyExpenseCurrencySelect('my-expense-currency', 'BRL');
+
+            // 3. (MAIS IMPORTANTE) Inicia o listener do Firebase para este usuário/viagem
+            setupMyExpensesListener(currentUserId, currentTripId);
+
+            // 4. Abre o modal
+            openModal('my-expenses-modal');
+        }
+
+        /**
+        * Abre o modal para EDITAR uma despesa pessoal.
+        */
+        window.openEditMyExpenseModal = (expenseId) => {
+            currentEditingMyExpenseId = expenseId; // Guarda o ID
+            const expense = myExpensesData.find(e => e.id === expenseId);
+            if (!expense) return;
+
+            // Preenche o formulário de edição
+            document.getElementById('edit-my-expense-id').value = expense.id;
+            document.getElementById('edit-my-expense-description').value = expense.description;
+            document.getElementById('edit-my-expense-amount').value = expense.amount;
+            populateMyExpenseCurrencySelect('edit-my-expense-currency', expense.currency);
+            
+            openModal('edit-my-expense-modal');
+        }
+
+        /**
+        * Deleta uma despesa pessoal.
+        */
+        window.deleteMyExpense = async (expenseId) => {
+            // Pede confirmação
+            showConfirmDelete('Tem certeza que deseja excluir esta despesa pessoal?', async () => {
+                if (!myExpensesRef || !expenseId) return;
+                
+                // Cria a referência direta para o item a ser removido
+                // O caminho é users/{uid}/myExpenses/{tripId}/{expenseId}
+                const expenseToDeleteRef = ref(db, `users/${currentUserId}/myExpenses/${currentTripId}/${expenseId}`);
+                
+                try {
+                    await remove(expenseToDeleteRef);
+                } catch (error) {
+                    console.error("Erro ao excluir despesa pessoal:", error);
+                    alert("Não foi possível excluir a despesa.");
+                }
+                
+                closeModal('confirm-delete-modal');
+            });
+        }
+
+        // Listener para ADICIONAR nova despesa pessoal
+        document.getElementById('add-my-expense-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!myExpensesRef) return; // Garante que a referência do Firebase esteja pronta
+
+            const description = document.getElementById('my-expense-description').value;
+            const amount = parseFloat(document.getElementById('my-expense-amount').value);
+            const currency = document.getElementById('my-expense-currency').value;
+
+            if (!description || !amount || amount <= 0) {
+                alert("Por favor, preencha a descrição e um valor válido.");
+                return;
+            }
+
+            const newExpense = {
+                date: new Date().toISOString(), // Data e hora de agora
+                description: description,
+                amount: amount,
+                currency: currency
+            };
+
+            try {
+                // Cria um novo nó com ID único no Firebase
+                const newExpenseRef = push(myExpensesRef);
+                // Salva o item (o listener 'onValue' vai atualizar a tela)
+                await set(newExpenseRef, newExpense); // O ID único é a própria chave (newExpenseRef.key)
+                
+                // Limpa o formulário após o sucesso
+                e.target.reset();
+                populateMyExpenseCurrencySelect('my-expense-currency', 'BRL'); // Reseta o select
+            } catch (error) {
+                console.error("Erro ao adicionar despesa pessoal:", error);
+                alert("Não foi possível adicionar a despesa.");
+            }
+        });
+
+        // Listener para SALVAR a edição da despesa pessoal
+        document.getElementById('edit-my-expense-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const expenseId = document.getElementById('edit-my-expense-id').value;
+            if (!myExpensesRef || !expenseId) return;
+
+            const description = document.getElementById('edit-my-expense-description').value;
+            const amount = parseFloat(document.getElementById('edit-my-expense-amount').value);
+            const currency = document.getElementById('edit-my-expense-currency').value;
+
+            if (!description || !amount || amount <= 0) {
+                alert("Por favor, preencha a descrição e um valor válido.");
+                return;
+            }
+
+            // Pega a data original para não sobrescrevê-la
+            const originalExpense = myExpensesData.find(e => e.id === expenseId);
+            const originalDate = originalExpense ? originalExpense.date : new Date().toISOString();
+
+            const updatedExpense = {
+                date: originalDate, // Mantém a data original
+                description: description,
+                amount: amount,
+                currency: currency
+            };
+
+            try {
+                // Cria a referência direta para o item a ser atualizado
+                const expenseToUpdateRef = ref(db, `users/${currentUserId}/myExpenses/${currentTripId}/${expenseId}`);
+                // Atualiza o item
+                await update(expenseToUpdateRef, updatedExpense);
+                
+                closeModal('edit-my-expense-modal');
+                currentEditingMyExpenseId = null; // Limpa o ID de edição
+            } catch (error) {
+                console.error("Erro ao salvar despesa pessoal:", error);
+                alert("Não foi possível salvar as alterações.");
+            }
+        });
+
+        // Listener para fechar o menu de despesas se clicar fora
+        window.addEventListener('click', (e) => {
+            const menu = document.getElementById('expenses-menu');
+            const button = document.getElementById('expenses-menu-btn');
+
+            // Se o menu não existir ou estiver escondido, não faz nada
+            if (!menu || !button || menu.classList.contains('hidden')) {
+                return;
+            }
+
+            // Se o clique NÃO foi no botão E NÃO foi dentro do menu, fecha o menu
+            if (!button.contains(e.target) && !menu.contains(e.target)) {
+                menu.classList.add('hidden');
+            }
+        });
 
     </script>
 
