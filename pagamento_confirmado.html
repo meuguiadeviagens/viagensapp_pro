@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Obrigado pela Compra!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilo para o estado 'disabled' do botão */
+        button:disabled {
+            background-color: #94a3b8; /* slate-400 */
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-slate-100">
+
+    <div class="max-w-lg mx-auto mt-12 sm:mt-20 p-6 sm:p-8 bg-white rounded-lg shadow-lg">
+        
+        <div class="text-center mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle text-green-500 mx-auto">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <h1 class="text-3xl font-bold text-slate-800 mt-4">Pagamento Recebido!</h1>
+            <p class="text-lg text-slate-600">Falta só mais um passo.</p>
+        </div>
+
+        <div id="activation-container" class="space-y-4">
+            
+            <div id="status-message" class="p-4 rounded-md text-center bg-blue-50 text-blue-700">
+                Verificando sua autenticação...
+            </div>
+
+            <div id="plan-details" class="hidden text-center border p-4 rounded-lg">
+                <p class="text-sm text-slate-500">Você está prestes a ativar:</p>
+                <p id="plan-name-display" class="text-xl font-semibold text-slate-800"></p>
+            </div>
+
+            <div id="trip-selector-container" class="hidden space-y-2">
+                <label for="trip-select" class="block text-sm font-medium text-slate-700">
+                    Selecione a viagem que você deseja desbloquear:
+                </label>
+                <select id="trip-select" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Carregando suas viagens...</option>
+                </select>
+            </div>
+
+            <button id="solicitar-btn" 
+                    onclick="solicitarAtivacao()" 
+                    class="w-full px-4 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors" 
+                    disabled>
+                Solicitar Ativação
+            </button>
+
+            <div class="text-center mt-4">
+                <a href="app.html" class="text-sm text-blue-600 hover:underline">Voltar para o App</a>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getDatabase, ref, get, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+        //
+        // 🚨 IMPORTANTE: Cole sua configuração do Firebase aqui!
+        //
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1IYYMSYXBqfgvUQrp8DaX4Z5n7-4Wryw",
+            authDomain: "viagensappoficial.firebaseapp.com",
+            databaseURL: "https://viagensappoficial-default-rtdb.firebaseio.com",
+            projectId: "viagensappoficial",
+            storageBucket: "viagensappoficial.firebasestorage.app",
+            messagingSenderId: "344833861467",
+            appId: "1:344833861467:web:4fcd794a653fefcb68dc7e",
+            measurementId: "G-TN6TN0X5WR"
+        };
+
+        // --- INICIALIZAÇÃO DO FIREBASE ---
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        // --- VARIÁVEIS GLOBAIS ---
+        let currentUserId = null;
+        let currentUserEmail = null;
+        let planoComprado = null;
+
+        const statusMessage = document.getElementById('status-message');
+        const planDetails = document.getElementById('plan-details');
+        const planNameDisplay = document.getElementById('plan-name-display');
+        const tripSelectorContainer = document.getElementById('trip-selector-container');
+        const tripSelect = document.getElementById('trip-select');
+        const solicitarBtn = document.getElementById('solicitar-btn');
+
+        /**
+         * Converte a chave do plano (da URL) em um nome legível.
+         */
+        function getPlanName(planKey) {
+            switch(planKey) {
+                case 'anual': return 'Plano Anual';
+                case 'bianual': return 'Plano Bianual';
+                case 'avulsa': return 'Viagem Avulsa';
+                default: return 'Plano Desconhecido';
+            }
+        }
+
+        /**
+         * Busca as viagens do usuário e preenche o dropdown.
+         * Mostra apenas as viagens onde o usuário é o "dono".
+         */
+        async function loadUserTrips(userId) {
+            tripSelect.innerHTML = '<option value="">Buscando suas viagens...</option>';
+            
+            try {
+                const memberOfRef = ref(db, `users/${userId}/memberOf`);
+                const memberOfSnap = await get(memberOfRef);
+
+                if (!memberOfSnap.exists()) {
+                    tripSelect.innerHTML = '<option value="">Nenhuma viagem criada.</option>';
+                    return;
+                }
+
+                const tripIds = Object.keys(memberOfSnap.val());
+                const ownerTrips = [];
+
+                // Faz um loop para verificar cada viagem
+                for (const tripId of tripIds) {
+                    const tripRef = ref(db, `trips/${tripId}`);
+                    const tripSnap = await get(tripRef);
+
+                    if (tripSnap.exists()) {
+                        const tripData = tripSnap.val();
+                        // Verifica se o usuário é o 'owner' desta viagem
+                        if (tripData.members && tripData.members[userId] === 'owner') {
+                            ownerTrips.push({ id: tripId, name: tripData.name });
+                        }
+                    }
+                }
+
+                // Popula o dropdown com as viagens encontradas
+                if (ownerTrips.length > 0) {
+                    tripSelect.innerHTML = '<option value="">-- Selecione uma viagem para desbloquear --</option>';
+                    ownerTrips.forEach(trip => {
+                        const option = document.createElement('option');
+                        option.value = trip.id;
+                        option.textContent = trip.name;
+                        tripSelect.appendChild(option);
+                    });
+                    solicitarBtn.disabled = false; // Habilita o botão
+                } else {
+                    tripSelect.innerHTML = '<option value="">Nenhuma viagem (sua) encontrada.</option>';
+                    statusMessage.innerHTML = 'Você não possui nenhuma viagem criada por você. <br>Crie uma viagem no app primeiro e depois volte aqui para ativá-la.';
+                    statusMessage.className = 'p-4 rounded-md text-center bg-red-50 text-red-700';
+                }
+
+            } catch (error) {
+                console.error("Erro ao buscar viagens:", error);
+                tripSelect.innerHTML = '<option value="">Erro ao carregar viagens.</option>';
+            }
+        }
+
+        /**
+         * Ponto de entrada: Verifica a URL e o login do usuário.
+         */
+        function initializePage() {
+            const urlParams = new URLSearchParams(window.location.search);
+            planoComprado = urlParams.get('plano');
+
+            if (!planoComprado) {
+                statusMessage.textContent = 'Erro: Não foi possível identificar o plano comprado. Verifique o link.';
+                statusMessage.className = 'p-4 rounded-md text-center bg-red-50 text-red-700';
+                return;
+            }
+
+            // Exibe o nome do plano
+            planNameDisplay.textContent = getPlanName(planoComprado);
+            planDetails.classList.remove('hidden');
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    // --- USUÁRIO ESTÁ LOGADO ---
+                    currentUserId = user.uid;
+                    currentUserEmail = user.email;
+                    
+                    statusMessage.textContent = `Olá! Você está logado como ${user.email}.`;
+                    statusMessage.className = 'p-4 rounded-md text-center bg-green-50 text-green-700';
+
+                    if (planoComprado === 'avulsa') {
+                        // Precisa carregar as viagens antes de habilitar o botão
+                        tripSelectorContainer.classList.remove('hidden');
+                        loadUserTrips(user.uid);
+                    } else {
+                        // Para planos 'anual' ou 'bianual', pode habilitar direto
+                        solicitarBtn.disabled = false;
+                    }
+                } else {
+                    // --- USUÁRIO NÃO ESTÁ LOGADO ---
+                    statusMessage.innerHTML = '<strong>Ação necessária:</strong> Faça o login no app e depois volte para esta página para ativar sua licença.';
+                    statusMessage.className = 'p-4 rounded-md text-center bg-yellow-50 text-yellow-700';
+                    solicitarBtn.disabled = true;
+                }
+            });
+        }
+
+        /**
+         * Ação do botão: Envia a solicitação para o Firebase.
+         */
+        window.solicitarAtivacao = async () => {
+            if (!currentUserId || !planoComprado) {
+                alert("Erro: não foi possível identificar seu usuário ou seu plano. Tente recarregar a página.");
+                return;
+            }
+
+            solicitarBtn.disabled = true;
+            solicitarBtn.textContent = 'Enviando...';
+
+            let payload = {
+                plano: planoComprado,
+                email: currentUserEmail,
+                data: serverTimestamp(),
+                status: 'pendente'
+            };
+
+            // Se for 'avulsa', adiciona o ID da viagem ao payload
+            if (planoComprado === 'avulsa') {
+                const selectedTripId = tripSelect.value;
+                
+                if (!selectedTripId) {
+                    alert("Por favor, selecione uma viagem da lista para desbloquear.");
+                    solicitarBtn.disabled = false;
+                    solicitarBtn.textContent = 'Solicitar Ativação';
+                    return;
+                }
+                
+                const selectedTripName = tripSelect.options[tripSelect.selectedIndex].text;
+                payload.tripId = selectedTripId;
+                payload.tripName = selectedTripName; // Facilita para o admin ver
+            }
+
+            try {
+                // Escreve a solicitação usando o UID do usuário como chave.
+                // Isso garante que um usuário só pode ter UMA solicitação pendente por vez.
+                const solicitacaoRef = ref(db, `solicitacoes_upgrade/${currentUserId}`);
+                await set(solicitacaoRef, payload);
+
+                // Sucesso!
+                statusMessage.textContent = 'Solicitação enviada com sucesso! O administrador irá ativar sua licença em instantes.';
+                statusMessage.className = 'p-4 rounded-md text-center bg-green-50 text-green-700';
+                solicitarBtn.textContent = 'Solicitação Enviada!';
+                tripSelectorContainer.classList.add('hidden'); // Esconde o dropdown
+
+            } catch (error) {
+                console.error("Erro ao enviar solicitação:", error);
+                statusMessage.textContent = 'Ocorreu um erro ao enviar sua solicitação. Tente novamente ou contate o suporte.';
+                statusMessage.className = 'p-4 rounded-md text-center bg-red-50 text-red-700';
+                solicitarBtn.disabled = false;
+                solicitarBtn.textContent = 'Tentar Novamente';
+            }
+        }
+
+        // --- INICIA A PÁGINA ---
+        initializePage();
+
+    </script>
+</body>
+</html>
