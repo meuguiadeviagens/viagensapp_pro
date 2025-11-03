@@ -138,6 +138,48 @@
             #view-note-description {
                 white-space: pre-wrap !important;
             }
+
+            /* 9. Força o painel de ANOTAÇÕES a ser visível */
+            #notes-panel.collapsed #notes-content {
+                max-height: none !important;
+                opacity: 1 !important;
+                overflow: visible !important;
+                display: block !important;
+                visibility: visible !important;
+                margin-top: 1.5rem !important;
+                padding-top: 1rem !important;
+                padding-bottom: 1rem !important;
+            }
+
+            /* 10. Esconde o botão "Adicionar Anotação" */
+            #notes-content button[onclick*="add-note-modal"] {
+                display: none !important;
+            }
+
+            /* 11. (CORRIGIDO) Regra mais específica para vencer o ".hidden" */
+            .note-item-container .note-print-content {
+                display: block !important; /* Força a exibição */
+                
+                /* Adiciona espaçamento/borda que pode estar faltando */
+                margin-top: 0.75rem !important;
+                padding-top: 0.75rem !important;
+                border-top: 1px solid #e2e8f0 !important;
+            }
+
+            /* 12. (NOVA) Adiciona quebras de página ANTES de seções longas */
+                #daily-itinerary-panel,
+                #notes-panel,
+                #spending-panel,
+                #shared-expenses-panel {
+                    page-break-before: always !important;
+                    padding-top: 1rem !important; /* Garante um espaço no topo da nova página */
+                }
+
+            /* 13. (NOVA) Esconde a tela de Checklist da impressão */
+            #checklist-view {
+                display: none !important;
+            }
+
         }
 
 
@@ -394,6 +436,44 @@
         .paid-transaction {
             text-decoration: line-through;
             opacity: 0.6;
+        }
+
+        /* --- ESTILOS PARA CHECKLIST COLAPSÁVEL --- */
+        #checklist-view .checklist-section-content {
+            /* Animação suave de "abrir/fechar" */
+            transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out, 
+                        margin 0.4s ease-in-out, padding 0.4s ease-in-out;
+            max-height: 2000px; /* Um valor alto para "aberto" */
+            opacity: 1;
+            overflow: hidden; /* Importante para a animação de max-height */
+            will-change: max-height; /* Otimização para o navegador */
+        }
+
+        #checklist-view .checklist-section-item.collapsed .checklist-section-content {
+            /* Estado "fechado" */
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border-top: none !important; /* Esconde a borda do formulário */
+        }
+        
+        /* Oculta o formulário imediatamente para evitar quebra de layout */
+        #checklist-view .checklist-section-item.collapsed form {
+            display: none;
+        }
+        #checklist-view .checklist-section-item:not(.collapsed) form {
+            display: flex;
+        }
+
+        #checklist-view .chevron-icon {
+            transition: transform 0.3s ease-in-out;
+            flex-shrink: 0; /* Impede que o ícone seja esmagado */
+        }
+
+        #checklist-view .checklist-section-item.collapsed .chevron-icon {
+            transform: rotate(180deg); /* Gira o ícone */
         }
     </style>
 </head>
@@ -916,7 +996,7 @@
 </div>
             </section>
         </div>  </div> <div id="checklist-view" class="hidden">
-            <header class="flex items-center justify-between mb-8 p-6 bg-white rounded-xl shadow-lg">
+            <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8 p-6 bg-white rounded-xl shadow-lg">
                 <div class="flex items-center gap-4">
                     <button onclick="showTripsView()" class="flex items-center justify-center w-12 h-12 bg-slate-200 text-slate-700 rounded-full hover:bg-slate-300 transition-colors" title="Voltar para Viagens">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
@@ -4117,10 +4197,10 @@ window.addEventListener('popstate', (event) => {
             });
         }
 
-        // NOVO: Função para renderizar as anotações
+        // NOVO: Função para renderizar as anotações (com conteúdo para impressão)
         function renderNotes(trip) {
-            const userRole = (trip.members && currentUserId) ? trip.members[currentUserId] : 'editor'; // ADICIONE
-            const isReadOnly = (userRole === 'viewer'); // ADICIONE
+            const userRole = (trip.members && currentUserId) ? trip.members[currentUserId] : 'editor';
+            const isReadOnly = (userRole === 'viewer');
             
             const listElement = document.getElementById('notes-list');
             listElement.innerHTML = '';
@@ -4131,46 +4211,46 @@ window.addEventListener('popstate', (event) => {
                 return;
             }
 
-            // 1. Agrupa as anotações por autor
             const notesByAuthor = notes.reduce((acc, note) => {
                 const author = note.author ? note.author.trim() : 'Sem autor';
-                if (!acc[author]) {
-                    acc[author] = [];
-                }
+                if (!acc[author]) acc[author] = [];
                 acc[author].push(note);
                 return acc;
             }, {});
 
-            // 2. Obtém os nomes dos autores e os ordena alfabeticamente
             const sortedAuthors = Object.keys(notesByAuthor).sort((a, b) => a.localeCompare(b));
 
-            // 3. Itera sobre os autores ordenados e renderiza suas anotações
             sortedAuthors.forEach(author => {
                 const authorNotes = notesByAuthor[author];
                 
-                // Cria um cabeçalho para o autor
-                const authorHeader = document.createElement('div'); // Usamos div para mais flexibilidade
-                authorHeader.className = 'mt-4 mb-2'; // Apenas margens no container
-                // O <span> interno recebe o estilo de "tag" verde
+                const authorHeader = document.createElement('div');
+                authorHeader.className = 'mt-4 mb-2';
                 authorHeader.innerHTML = `<span class="inline-block bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-md">${author}</span>`;
                 listElement.appendChild(authorHeader);
 
-                // Renderiza cada anotação do autor
+                // --- INÍCIO DA LÓGICA ATUALIZADA ---
                 authorNotes.forEach(note => {
-                    const noteElement = document.createElement('div');
-                    noteElement.className = 'flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 border border-slate-200 cursor-pointer';
-                    
-                    noteElement.dataset.title = note.title;
-                    noteElement.dataset.author = note.author || 'Não especificado';
-                    noteElement.dataset.description = note.description || 'Sem descrição.';
-                    noteElement.dataset.link = note.link || '';
-                    noteElement.dataset.icon = note.icon || 'note_food'; 
-                    noteElement.onclick = () => openViewNoteModal(noteElement);
-
+                    const originalNoteIndex = notes.findIndex(n => n.id === note.id);
                     const iconSvg = ICONS[note.icon] || ICONS['note_food'];
-                    const originalNoteIndex = notes.findIndex(n => n.id === note.id); // Pega o índice original para reordenação
 
-                    noteElement.innerHTML = `
+                    // 1. O container principal (não é mais clicável)
+                    const noteContainer = document.createElement('div');
+                    noteContainer.className = 'note-item-container rounded-lg border border-slate-200 overflow-hidden mb-2';
+
+                    // 2. O cabeçalho (este sim é clicável)
+                    const headerElement = document.createElement('div');
+                    headerElement.className = 'flex items-center justify-between p-3 hover:bg-slate-50 cursor-pointer';
+                    
+                    // Adiciona os datasets ao cabeçalho para o modal
+                    headerElement.dataset.title = note.title;
+                    headerElement.dataset.author = note.author || 'Não especificado';
+                    headerElement.dataset.description = note.description || 'Sem descrição.';
+                    headerElement.dataset.link = note.link || '';
+                    headerElement.dataset.icon = note.icon || 'note_food'; 
+                    headerElement.onclick = () => openViewNoteModal(headerElement);
+
+                    // Insere o conteúdo do cabeçalho (título, ícone, botões)
+                    headerElement.innerHTML = `
                         <div class="flex items-center gap-3">
                             <div class="text-slate-500">
                                ${iconSvg.replace(/class="[^"]*"/, 'class="w-6 h-6"')}
@@ -4179,23 +4259,57 @@ window.addEventListener('popstate', (event) => {
                         </div>
                         ${isReadOnly ? '' : `
                         <div class="flex items-center gap-2">
-                            <button ${originalNoteIndex === 0 ? 'disabled' : ''} onclick="event.stopPropagation(); reorderNote('${note.id}', 'up')" class="p-1 disabled:opacity-30 disabled:cursor-not-allowed text-slate-400 hover:text-slate-700">
+                            <button ${originalNoteIndex === 0 ? 'disabled' : ''} onclick="event.stopPropagation(); reorderNote('${note.id}', 'up')" class="p-1 disabled:opacity-30 disabled:cursor-not-allowed text-slate-400 hover:text-slate-700" title="Mover para cima">
                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-up-circle"><circle cx="12" cy="12" r="10"></circle><path d="m16 12-4-4-4 4"></path><path d="M12 16V8"></path></svg>
                             </button>
-                            <button ${originalNoteIndex === notes.length - 1 ? 'disabled' : ''} onclick="event.stopPropagation(); reorderNote('${note.id}', 'down')" class="p-1 disabled:opacity-30 disabled:cursor-not-allowed text-slate-400 hover:text-slate-700">
+                            <button ${originalNoteIndex === notes.length - 1 ? 'disabled' : ''} onclick="event.stopPropagation(); reorderNote('${note.id}', 'down')" class="p-1 disabled:opacity-30 disabled:cursor-not-allowed text-slate-400 hover:text-slate-700" title="Mover para baixo">
                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-down-circle"><circle cx="12" cy="12" r="10"></circle><path d="m8 12 4 4 4-4"></path><path d="m12 8 v8"></path></svg>
                             </button>
-                            <button onclick="event.stopPropagation(); openEditNoteModal('${note.id}')" class="text-slate-400 hover:text-blue-600 p-1">
+                            <button onclick="event.stopPropagation(); openEditNoteModal('${note.id}')" class="text-slate-400 hover:text-blue-600 p-1" title="Editar">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
                             </button>
-                            <button onclick="event.stopPropagation(); deleteNote('${note.id}')" class="text-slate-400 hover:text-red-600 p-1">
+                            <button onclick="event.stopPropagation(); deleteNote('${note.id}')" class="text-slate-400 hover:text-red-600 p-1" title="Excluir">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
                             </button>
                         </div>
                         `}
                     `;
-                    listElement.appendChild(noteElement);
+
+                    // 3. O conteúdo (descrição e link) - ESCONDIDO POR PADRÃO
+                    const contentElement = document.createElement('div');
+                    contentElement.className = 'note-print-content hidden p-3 pt-0'; // <-- "hidden" aqui
+                    
+                    let contentHTML = '';
+                    if (note.description) {
+                        contentHTML += `<p class="text-sm text-slate-700" style="white-space: pre-wrap;">${note.description}</p>`;
+                    }
+                    if (note.link) {
+                        contentHTML += `
+                            <a href="${note.link}" target="_blank" rel="noopener noreferrer" 
+                               class="inline-flex items-center gap-2 text-xs bg-blue-100 text-blue-700 font-semibold px-3 py-1.5 rounded-md hover:bg-blue-200 transition-colors mt-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" x2="21" y1="14" y2="3"></line></svg>
+                                <span>Acessar Link de Referência</span>
+                            </a>
+                        `;
+                    }
+                    
+                    if (!note.description && !note.link) {
+                         contentHTML = `<p class="text-sm text-slate-400 italic">Sem descrição ou link.</p>`;
+                         // Adiciona uma borda para que o .note-print-content não fique invisível
+                         contentElement.classList.add('border-t', 'border-slate-100', 'pt-3', 'mt-3');
+                    } else if (note.description) {
+                         // Adiciona a borda apenas se houver conteúdo
+                         contentElement.classList.add('border-t', 'border-slate-200', 'pt-3', 'mt-3');
+                    }
+                    
+                    contentElement.innerHTML = contentHTML;
+
+                    // 4. Monta a estrutura final
+                    noteContainer.appendChild(headerElement);
+                    noteContainer.appendChild(contentElement);
+                    listElement.appendChild(noteContainer);
                 });
+                // --- FIM DA LÓGICA ATUALIZADA ---
             });
         }
         
@@ -4883,16 +4997,18 @@ let dividerHtml = '';
             currentTripId = null; 
             history.pushState({ view: 'trips' }, 'Todas as Viagens', '#');
 
-            // --- A LÓGICA CORRETA DE NAVEGAÇÃO ---
+            // --- A LÓGICA CORRETA DE NAVEGAÇÃO (COM CORREÇÃO) ---
             // Mostra o painel da lista de viagens
             document.getElementById('trips-view').classList.remove('hidden');
-            // Esconde o painel de detalhes
+
+            // Esconde os outros painéis
             document.getElementById('details-view').classList.add('hidden');
+            document.getElementById('checklist-view').classList.add('hidden'); // <-- ESTA É A LINHA QUE FALTAVA
 
             // Esconde o botão flutuante de "voltar"
             document.getElementById('back-to-trips-btn').classList.add('hidden');
-            
-            // --- NOVO: Rola a página para o topo ---
+
+            // Rola a página para o topo
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
@@ -7480,11 +7596,10 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             checklist.forEach((section, sectionIndex) => {
                 const sectionElement = document.createElement('div');
+                // O estado inicial é expandido (sem a classe .collapsed)
                 sectionElement.className = 'checklist-section-item bg-white p-4 sm:p-6 rounded-xl shadow-lg';
 
                 let itemsHtml = '';
-                
-                // CORREÇÃO: Usa um array vazio se 'section.items' não existir
                 const itemsArray = section.items || [];
                 
                 itemsArray.forEach((item, itemIndex) => {
@@ -7511,37 +7626,50 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     `;
                 });
 
+                // --- INÍCIO DA ATUALIZAÇÃO ---
                 sectionElement.innerHTML = `
-                    <div class="flex justify-between items-center mb-4">
+                    <div class="flex justify-between items-center mb-4 cursor-pointer" onclick="toggleChecklistSection(this)">
                         <h2 class="text-xl font-bold text-slate-800">${section.sectionTitle}</h2>
                         
                         <div class="flex items-center gap-3 flex-shrink-0">
-                            <button onclick="editSection(${sectionIndex})" class="text-slate-500 hover:text-blue-600 font-medium text-sm p-1 flex items-center gap-1" title="Editar nome da categoria">
+                            <button onclick="event.stopPropagation(); editSection(${sectionIndex})" class="text-slate-500 hover:text-blue-600 font-medium text-sm p-1 flex items-center gap-1" title="Editar nome da categoria">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></svg>
-                                <span></span>
                             </button>
-                            <button onclick="deleteSection(${sectionIndex})" class="text-red-500 hover:text-red-700 font-medium text-sm p-1 flex items-center gap-1" title="Excluir categoria">
+                            <button onclick="event.stopPropagation(); deleteSection(${sectionIndex})" class="text-red-500 hover:text-red-700 font-medium text-sm p-1 flex items-center gap-1" title="Excluir categoria">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                <span></span>
                             </button>
+                            
+                            <svg class="chevron-icon text-slate-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
                         </div>
-                        </div>
-                    <div class="space-y-2">
-                        ${itemsHtml}
                     </div>
-                    <form onsubmit="addItem(event, ${sectionIndex})" class="flex gap-2 mt-4 pt-4 border-t">
-                        <input type="text" placeholder="Adicionar novo item..." required
-                            class="flex-grow px-3 py-2 bg-slate-100 border border-slate-300 rounded-md shadow-sm text-sm">
-                        <button type="submit" class="bg-green-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
-                            Adicionar
-                        </button>
-                    </form>
+
+                    <div class="checklist-section-content">
+                        <div class="space-y-2">
+                            ${itemsHtml}
+                        </div>
+                        <form onsubmit="addItem(event, ${sectionIndex})" class="flex gap-2 mt-4 pt-4 border-t">
+                            <input type="text" placeholder="Adicionar novo item..." required
+                                class="flex-grow px-3 py-2 bg-slate-100 border border-slate-300 rounded-md shadow-sm text-sm">
+                            <button type="submit" class="bg-green-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
+                                Adicionar
+                            </button>
+                        </form>
+                    </div>
                 `;
+                // --- FIM DA ATUALIZAÇÃO ---
+
                 container.appendChild(sectionElement);
             });
 
             applyChecklistFilter();
         }
+
+        window.toggleChecklistSection = (headerElement) => {
+            const section = headerElement.closest('.checklist-section-item');
+            if (section) {
+                section.classList.toggle('collapsed');
+            }
+        };
 
         // 5. FUNÇÕES DE MANIPULAÇÃO (Handlers)
         // Estas funções são chamadas pelos botões (onclick)
