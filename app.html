@@ -1559,7 +1559,7 @@
         </div>
     </div>
     
-    <div id="confirm-delete-modal" class="fixed inset-0 z-[60] hidden items-center justify-center modal-backdrop">
+    <div id="confirm-delete-modal" class="fixed inset-0 z-[70] hidden items-center justify-center modal-backdrop">
         <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-sm m-4">
             <h3 class="text-xl font-semibold mb-4">Confirmar Exclusão</h3>
             <p id="confirm-delete-message" class="text-slate-600 mb-6">Você tem certeza que deseja excluir este item?</p>
@@ -1938,36 +1938,38 @@
                 <p id="my-expenses-trip-name" class="text-sm text-slate-500 mb-1"></p>
                 <p id="my-expenses-total" class="text-lg font-bold text-blue-700 mb-4">Total: R$ 0,00</p>
 
-                <!-- Formulário de Adição -->
-                <form id="add-my-expense-form" class="grid grid-cols-3 md:grid-cols-5 gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200 mb-4">
+                <!-- Formulário de Adição (Otimizado para Mobile: 2x2) -->
+                <form id="add-my-expense-form" class="grid grid-cols-4 md:grid-cols-7 gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200 mb-4">
                     
-                    <!-- 1. Descrição (Mobile: 100%, Desktop: 60%) -->
-                    <div class="col-span-3 md:col-span-3">
+                    <!-- 1. Descrição (Mobile: 50%, Desktop: 3/7) -->
+                    <div class="col-span-2 md:col-span-3">
                         <label for="my-expense-description" class="block text-xs font-medium text-slate-600">Descrição</label>
                         <input type="text" id="my-expense-description" placeholder="Ex: Jantar" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required>
                     </div>
 
-                    <!-- 2. Moeda (Mobile: 33%, Desktop: 20%) -->
-                    <div class="col-span-1 md:col-span-1">
+                    <!-- 2. Categoria (Mobile: 50%, Desktop: 1/7) -->
+                    <div class="col-span-2 md:col-span-1">
+                        <label for="my-expense-category" class="block text-xs font-medium text-slate-600">Categoria</label>
+                        <select id="my-expense-category" onchange="handleCategoryAction(this, 'add')" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required></select>
+                    </div>
+
+                    <!-- 3. Moeda (Mobile: 50%, Desktop: 1/7) -->
+                    <div class="col-span-2 md:col-span-1">
+                        <!-- A CORREÇÃO ESTÁ AQUI: </label> em vez de </a> -->
                         <label for="my-expense-currency" class="block text-xs font-medium text-slate-600">Moeda</label>
                         <select id="my-expense-currency" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required></select>
                     </div>
 
-                    <!-- 3. Valor (Mobile: 33%, Desktop: 20%) -->
-                    <div class="col-span-1 md:col-span-1">
+                    <!-- 4. Valor (Mobile: 50%, Desktop: 2/7) -->
+                    <div class="col-span-2 md:col-span-2">
                         <label for="my-expense-amount" class="block text-xs font-medium text-slate-600">Valor</label>
                         <input type="number" id="my-expense-amount" min="0.01" step="0.01" placeholder="120.00" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required>
                     </div>
                     
-                    <!-- 4. Botão (Mobile: 33%, Desktop: 100% na linha de baixo) -->
-                    <div class="col-span-1 md:col-span-5 flex flex-col">
-                        <!-- Label invisível para alinhar o botão com os inputs -->
-                        <label class="block text-xs font-medium text-slate-600">&nbsp;</label>
-                        <button type="submit" class="w-full bg-blue-600 text-white font-semibold px-4 py-1.5 rounded-lg shadow-md hover:bg-blue-700 transition-colors mt-1">
-                            Incluir
-                        </button>
-                    </div>
-
+                    <!-- Botão (Linha inteira) -->
+                    <button type="submit" class="col-span-4 md:col-span-7 w-full bg-blue-600 text-white font-semibold px-4 py-1.5 rounded-lg shadow-md hover:bg-blue-700 transition-colors mt-2">
+                        Incluir Despesa Pessoal
+                    </button>
                 </form>
 
                 <!-- Lista de Despesas Pessoais -->
@@ -1984,6 +1986,26 @@
         </div>
         <!-- FIM: MODAL MINHAS DESPESAS -->
 
+        <!-- INÍCIO: MODAL GERENCIAR CATEGORIAS -->
+        <div id="manage-categories-modal" class="fixed inset-0 z-[60] hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-sm m-4 flex flex-col max-h-[80vh]">
+                <h3 class="text-xl font-semibold mb-2 text-slate-800">Gerenciar Categorias</h3>
+                <p class="text-sm text-slate-500 mb-4">Você só pode gerenciar categorias personalizadas. "Geral" e "Particular" são fixas.</p>
+                
+                <!-- Lista de Categorias Personalizadas -->
+                <div id="category-manager-list" class="flex-grow overflow-y-auto space-y-2 border-t pt-4 pr-2">
+                    <!-- As categorias serão injetadas aqui pelo JS -->
+                    <p class="text-center text-slate-500">Nenhuma categoria personalizada foi criada.</p>
+                </div>
+
+                <!-- Botão de Fechar -->
+                <div class="pt-6 flex justify-end border-t mt-6">
+                    <button type="button" onclick="closeModal('manage-categories-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Fechar</button>
+                </div>
+            </div>
+        </div>
+        <!-- FIM: MODAL GERENCIAR CATEGORIAS -->
+
         <!-- INÍCIO: MODAL EDITAR MINHA DESPESA -->
         <div id="edit-my-expense-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
             <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-lg m-4">
@@ -1994,19 +2016,24 @@
                         <label for="edit-my-expense-description" class="block text-sm font-medium text-slate-600">Descrição</label>
                         <input type="text" id="edit-my-expense-description" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
                     </div>
+
+                    <!-- ADICIONE ESTE NOVO CAMPO 'div' -->
+                    <div>
+                        <label for="edit-my-expense-category" class="block text-sm font-medium text-slate-600">Categoria</label>
+                        <select id="edit-my-expense-category" onchange="handleCategoryAction(this, 'edit')" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required></select>
+                    </div>
+                    <!-- FIM DO NOVO CAMPO -->
+
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label for="edit-my-expense-amount" class="block text-sm font-medium text-slate-600">Valor</label>
-                            <input type="number" id="edit-my-expense-amount" min="0.01" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
+                            <!-- ... (campo Valor) ... -->
                         </div>
                         <div>
-                            <label for="edit-my-expense-currency" class="block text-sm font-medium text-slate-600">Moeda</label>
-                            <select id="edit-my-expense-currency" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required></select>
+                            <!-- ... (campo Moeda) ... -->
                         </div>
                     </div>
                     <div class="pt-6 flex justify-end gap-3">
-                        <button type="button" onclick="closeModal('edit-my-expense-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Salvar Alterações</button>
+                        <!-- ... (botões) ... -->
                     </div>
                 </form>
             </div>
@@ -2194,9 +2221,11 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
         let currentContextMenuDocumentId = null;
         let userChecklistData = []; // Armazena os dados do checklist
         let checklistRef; // Referência do Firebase para o checklist do usuário
-        let myExpensesRef = null; // Referência para o listener das despesas pessoais
-        let myExpensesData = []; // Cache local das despesas pessoais
-        let currentEditingMyExpenseId = null; // ID da despesa pessoal sendo editada
+        let myExpensesExpensesRef = null; // Referência para as DESPESAS
+        let myExpensesCategoriesRef = null; // Referência para as CATEGORIAS
+        let myExpensesData = []; // Cache local das despesas
+        let myExpensesCategories = []; // Cache local das categorias
+        let currentEditingMyExpenseId = null;
 
         // Constante com as moedas permitidas
         const MY_EXPENSE_CURRENCIES = ["BRL", "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "CNY", "CC/IOF"];
@@ -5237,11 +5266,15 @@ let dividerHtml = '';
         };
 
         window.closeModal = (modalId) => {
-            document.getElementById(modalId).classList.replace('flex', 'hidden');
-            const form = document.getElementById(modalId).querySelector('form');
-            if (form) form.reset();            
+            const modal = document.getElementById(modalId);
+            // Adiciona uma proteção caso o modal não exista
+            if (!modal) return; 
             
-            // Verificação específica para o modal de exclusão
+            modal.classList.replace('flex', 'hidden');
+            const form = modal.querySelector('form');
+            if (form) form.reset();          
+            
+            // Verificação específica para o modal de exclusão (lógica do timer)
             if (modalId === 'confirm-delete-modal') {
                 onConfirmAction = () => {};
 
@@ -5253,18 +5286,33 @@ let dividerHtml = '';
 
                 // E o botão de exclusão é resetado imediatamente
                 const deleteBtn = document.getElementById('confirm-delete-btn');
-                deleteBtn.disabled = false;
-                deleteBtn.classList.remove('bg-slate-400', 'cursor-not-allowed');
-                deleteBtn.classList.add('bg-red-600', 'hover:bg-red-700');
-                deleteBtn.textContent = 'Excluir';
+                if (deleteBtn) { // Adiciona verificação se o botão existe
+                    deleteBtn.disabled = false;
+                    deleteBtn.classList.remove('bg-slate-400', 'cursor-not-allowed');
+                    deleteBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                    deleteBtn.textContent = 'Excluir';
+                }
             }
 
-            if (modalId === 'my-expenses-modal' && myExpensesRef) {
-                // Esta é a função que "desliga" o listener onValue
-                off(myExpensesRef); 
-                myExpensesRef = null; // Limpa a referência
-                myExpensesData = []; // Limpa o cache de dados
+            // --- INÍCIO DA ATUALIZAÇÃO ---
+            // Desliga os listeners de Despesas Pessoais (Despesas E Categorias)
+            if (modalId === 'my-expenses-modal') {
+                
+                // 1. Desliga os dois listeners do Firebase
+                if (myExpensesExpensesRef) {
+                    off(myExpensesExpensesRef); 
+                }
+                if (myExpensesCategoriesRef) {
+                    off(myExpensesCategoriesRef);
+                }
+                
+                // 2. Limpa as referências e os dados em cache
+                myExpensesExpensesRef = null; 
+                myExpensesCategoriesRef = null;
+                myExpensesData = []; 
+                myExpensesCategories = []; // Limpa o cache de categorias também
             }
+            // --- FIM DA ATUALIZAÇÃO ---
         }
         
         window.scrollToItinerary = () => {
@@ -8078,34 +8126,49 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         }
 
         /**
-        * Configura o listener (onValue) para as despesas pessoais do usuário nesta viagem.
+        * Configura os listeners (onValue) para despesas E categorias.
         */
-        function setupMyExpensesListener(userId, tripId) {
-            // A referência ao Realtime Database (RTDB)
-            // Note o caminho: users/{userId}/myExpenses/{tripId}
-            const newRef = ref(db, `users/${userId}/myExpenses/${tripId}`);
-            
-            // Atualiza a referência global para que possamos usá-la ao adicionar/deletar
-            myExpensesRef = newRef; 
-
-            onValue(newRef, (snapshot) => {
+        function setupMyExpensesListeners(userId, tripId) {
+            // 1. Referência para as DESPESAS
+            myExpensesExpensesRef = ref(db, `users/${userId}/myExpenses/${tripId}/expenses`);
+            onValue(myExpensesExpensesRef, (snapshot) => {
                 if (snapshot.exists()) {
-                    // Converte o objeto { key1: {...}, key2: {...} } em um array [{...}, {...}]
                     const expensesObject = snapshot.val();
                     myExpensesData = Object.keys(expensesObject).map(key => ({
-                        id: key, // Armazena a chave do Firebase como o ID
+                        id: key,
                         ...expensesObject[key]
                     }));
                 } else {
-                    myExpensesData = []; // Nenhum dado, array vazio
+                    myExpensesData = [];
                 }
-                // Chama a função para redesenhar a lista na tela
+                // Re-renderiza a lista quando as despesas mudam
                 renderMyExpensesList(myExpensesData);
+            });
+
+            // 2. Referência para as CATEGORIAS
+            myExpensesCategoriesRef = ref(db, `users/${userId}/myExpenses/${tripId}/categories`);
+            onValue(myExpensesCategoriesRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const categoriesObject = snapshot.val();
+                    myExpensesCategories = Object.keys(categoriesObject).map(key => ({
+                        id: key,
+                        ...categoriesObject[key]
+                    }));
+                } else {
+                    myExpensesCategories = [];
+                }
+                // Re-popula os dropdowns quando as categorias mudam
+                // (Isso é útil se o usuário criar uma categoria e abrir o modal de edição em seguida)
+                populateMyExpenseCategorySelect('my-expense-category', 'geral');
+                if (!document.getElementById('edit-my-expense-modal').classList.contains('hidden')) {
+                    const expense = myExpensesData.find(e => e.id === currentEditingMyExpenseId);
+                    populateMyExpenseCategorySelect('edit-my-expense-category', expense?.categoryId || 'geral');
+                }
             });
         }
 
         /**
-        * Desenha a lista de despesas pessoais no modal, agrupada por moeda.
+        * Desenha a lista de despesas pessoais no modal, agrupada por moeda E categoria.
         */
         function renderMyExpensesList(expenses) {
             const container = document.getElementById('my-expenses-list-container');
@@ -8121,7 +8184,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
 
             // 1. Agrupar por moeda
-            const grouped = expenses.reduce((acc, exp) => {
+            const groupedByCurrency = expenses.reduce((acc, exp) => {
                 const currency = exp.currency || 'BRL';
                 if (!acc[currency]) {
                     acc[currency] = { items: [], total: 0 };
@@ -8132,117 +8195,146 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }, {});
 
             // 2. Criar string de Total (Ex: "Total: R$ 50,00 | USD 20,00")
-            const sortedCurrencies = Object.keys(grouped).sort((a, b) => {
-                if (a === 'BRL') return -1; // BRL primeiro
+            const sortedCurrencies = Object.keys(groupedByCurrency).sort((a, b) => {
+                if (a === 'BRL') return -1;
                 if (b === 'BRL') return 1;
-                return a.localeCompare(b); // Outros em ordem alfabética
+                return a.localeCompare(b);
             });
             
             const totalStrings = sortedCurrencies.map(currency => {
-                // Usamos a função formatCurrency existente, mas ela pode precisar de ajuste
-                // Se formatCurrency só formata BRL, usamos uma lógica simples:
-                let formattedTotal = grouped[currency].total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                let formattedTotal = groupedByCurrency[currency].total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 return `<strong>${currency} ${formattedTotal}</strong>`;
             });
             totalDisplay.innerHTML = `Total: ${totalStrings.join(' | ')}`;
 
             // 3. Renderizar a lista agrupada
             sortedCurrencies.forEach(currency => {
-                const group = grouped[currency];
+                const currencyGroup = groupedByCurrency[currency];
                 
-                // Adiciona o cabeçalho da moeda
+                // Adiciona o cabeçalho da MOEDA
                 const currencyHeader = document.createElement('h4');
-                currencyHeader.className = 'text-base font-semibold text-slate-700 mt-3 first:mt-0';
-                currencyHeader.textContent = `${currency} (Total: ${group.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+                currencyHeader.className = 'text-lg font-bold text-blue-800 bg-blue-50 px-3 py-1.5 rounded-md mt-4 first:mt-0';
+                currencyHeader.textContent = `${currency} (Total: ${currencyGroup.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
                 container.appendChild(currencyHeader);
 
-                // Ordena os itens por data (mais novo primeiro)
-                group.items.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                // Cria os elementos da lista
-                const listWrapper = document.createElement('div');
-                listWrapper.className = 'space-y-2';
-                
-                group.items.forEach(exp => {
-                    const itemEl = document.createElement('div');
-                    itemEl.className = 'flex justify-between items-center p-3 rounded-md bg-slate-50 border border-slate-200';
-                    
-                    const dateTime = new Date(exp.date).toLocaleString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
+                // 4. Agrupamento INTERNO por Categoria
+                const groupedByCategory = currencyGroup.items.reduce((acc, exp) => {
+                    const categoryId = exp.categoryId || 'geral'; // 'geral' é o fallback
+                    if (!acc[categoryId]) {
+                        acc[categoryId] = { items: [], total: 0 };
+                    }
+                    acc[categoryId].items.push(exp);
+                    acc[categoryId].total += parseFloat(exp.amount) || 0;
+                    return acc;
+                }, {});
 
-                    itemEl.innerHTML = `
-                        <div>
-                            <p class="font-semibold text-slate-800">${exp.description}</p>
-                            <p class="text-sm text-slate-500">${dateTime} - ${currency} ${parseFloat(exp.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        </div>
-                        <div class="flex items-center gap-1 flex-shrink-0">
-                            <button onclick="openEditMyExpenseModal('${exp.id}')" title="Editar" class="text-slate-500 hover:text-green-600 p-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                            </button>
-                            <button onclick="deleteMyExpense('${exp.id}')" title="Excluir" class="text-slate-500 hover:text-red-600 p-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                            </button>
-                        </div>
-                    `;
-                    listWrapper.appendChild(itemEl);
+                // 5. Renderizar cada categoria
+                const sortedCategories = Object.keys(groupedByCategory).sort((a, b) => {
+                    if (a === 'geral') return -1; // 'Geral' sempre primeiro
+                    if (b === 'geral') return 1;
+                    if (a === 'particular') return -1; // 'Particular' em segundo
+                    if (b === 'particular') return 1;
+                    return getCategoryNameById(a).localeCompare(getCategoryNameById(b)); // Outras em ordem alfabética
                 });
-                container.appendChild(listWrapper);
+
+                sortedCategories.forEach(categoryId => {
+                    const categoryGroup = groupedByCategory[categoryId];
+                    const categoryName = getCategoryNameById(categoryId);
+
+                    // Adiciona o cabeçalho da CATEGORIA
+                    const categoryHeader = document.createElement('h5');
+                    categoryHeader.className = 'text-base font-semibold text-slate-700 mt-3 mb-1 ml-1';
+                    categoryHeader.textContent = `${categoryName} (Total: ${categoryGroup.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+                    container.appendChild(categoryHeader);
+
+                    // Ordena os itens por data (mais novo primeiro)
+                    categoryGroup.items.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    
+                    const listWrapper = document.createElement('div');
+                    listWrapper.className = 'space-y-2 border-l-2 border-slate-200 pl-3 ml-1';
+                    
+                    categoryGroup.items.forEach(exp => {
+                        const itemEl = document.createElement('div');
+                        itemEl.className = 'flex justify-between items-center p-3 rounded-md bg-slate-50';
+                        
+                        const dateTime = new Date(exp.date).toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+
+                        itemEl.innerHTML = `
+                            <div>
+                                <p class="font-semibold text-slate-800">${exp.description}</p>
+                                <p class="text-sm text-slate-500">${dateTime} - ${currency} ${parseFloat(exp.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                            </div>
+                            <div class="flex items-center gap-1 flex-shrink-0">
+                                <button onclick="openEditMyExpenseModal('${exp.id}')" title="Editar" class="text-slate-500 hover:text-green-600 p-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                </button>
+                                <button onclick="deleteMyExpense('${exp.id}')" title="Excluir" class="text-slate-500 hover:text-red-600 p-1">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                </button>
+                            </div>
+                        `;
+                        listWrapper.appendChild(itemEl);
+                    });
+                    container.appendChild(listWrapper);
+                });
             });
         }
 
         /**
-        * Função principal para abrir o modal "Minhas Despesas".
+        * Função principal para abrir o modal "Minhas Despesas". (MODIFICADA)
         */
         window.openMyExpensesModal = () => {
             const trip = tripsData.find(t => t.id === currentTripId);
             if (!trip) return;
 
-            // 1. Preenche o nome da viagem no modal
             document.getElementById('my-expenses-trip-name').textContent = trip.name;
-            
-            // 2. Prepara o formulário de adição
             document.getElementById('add-my-expense-form').reset();
+            
+            // Popula os selects do formulário de ADIÇÃO
             populateMyExpenseCurrencySelect('my-expense-currency', 'BRL');
+            populateMyExpenseCategorySelect('my-expense-category', 'geral'); // MODIFICADO
 
-            // 3. (MAIS IMPORTANTE) Inicia o listener do Firebase para este usuário/viagem
-            setupMyExpensesListener(currentUserId, currentTripId);
+            // Inicia os listeners
+            setupMyExpensesListeners(currentUserId, currentTripId); // MODIFICADO
 
-            // 4. Abre o modal
             openModal('my-expenses-modal');
         }
 
         /**
-        * Abre o modal para EDITAR uma despesa pessoal.
+        * Abre o modal para EDITAR uma despesa pessoal. (MODIFICADA)
         */
         window.openEditMyExpenseModal = (expenseId) => {
-            currentEditingMyExpenseId = expenseId; // Guarda o ID
+            currentEditingMyExpenseId = expenseId;
             const expense = myExpensesData.find(e => e.id === expenseId);
             if (!expense) return;
 
-            // Preenche o formulário de edição
             document.getElementById('edit-my-expense-id').value = expense.id;
             document.getElementById('edit-my-expense-description').value = expense.description;
             document.getElementById('edit-my-expense-amount').value = expense.amount;
+            
+            // Popula e seleciona a moeda
             populateMyExpenseCurrencySelect('edit-my-expense-currency', expense.currency);
+            // Popula e seleciona a categoria
+            populateMyExpenseCategorySelect('edit-my-expense-category', expense.categoryId || 'geral');
             
             openModal('edit-my-expense-modal');
         }
 
         /**
-        * Deleta uma despesa pessoal.
+        * Deleta uma despesa pessoal. (MODIFICADA)
         */
         window.deleteMyExpense = async (expenseId) => {
-            // Pede confirmação
             showConfirmDelete('Tem certeza que deseja excluir esta despesa pessoal?', async () => {
-                if (!myExpensesRef || !expenseId) return;
+                // USA A NOVA REFERÊNCIA para despesas
+                if (!myExpensesExpensesRef || !expenseId) return;
                 
-                // Cria a referência direta para o item a ser removido
-                // O caminho é users/{uid}/myExpenses/{tripId}/{expenseId}
-                const expenseToDeleteRef = ref(db, `users/${currentUserId}/myExpenses/${currentTripId}/${expenseId}`);
+                // Cria a referência direta para o item
+                const expenseToDeleteRef = ref(db, `users/${currentUserId}/myExpenses/${currentTripId}/expenses/${expenseId}`);
                 
                 try {
                     await remove(expenseToDeleteRef);
@@ -8255,77 +8347,88 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             });
         }
 
-        // Listener para ADICIONAR nova despesa pessoal
+        // Listener para ADICIONAR nova despesa pessoal (SIMPLIFICADO)
         document.getElementById('add-my-expense-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!myExpensesRef) return; // Garante que a referência do Firebase esteja pronta
+            if (!myExpensesExpensesRef) return; 
 
             const description = document.getElementById('my-expense-description').value;
             const amount = parseFloat(document.getElementById('my-expense-amount').value);
             const currency = document.getElementById('my-expense-currency').value;
+            const categoryId = document.getElementById('my-expense-category').value; // Apenas pega o valor
 
             if (!description || !amount || amount <= 0) {
                 alert("Por favor, preencha a descrição e um valor válido.");
                 return;
             }
+            
+            // Verifica se o usuário não deixou uma ação pendente
+            if (categoryId.startsWith('[')) {
+                alert("Por favor, selecione uma categoria válida.");
+                return;
+            }
 
             const newExpense = {
-                date: new Date().toISOString(), // Data e hora de agora
+                date: new Date().toISOString(),
                 description: description,
                 amount: amount,
-                currency: currency
+                currency: currency,
+                categoryId: categoryId 
             };
 
             try {
-                // Cria um novo nó com ID único no Firebase
-                const newExpenseRef = push(myExpensesRef);
-                // Salva o item (o listener 'onValue' vai atualizar a tela)
-                await set(newExpenseRef, newExpense); // O ID único é a própria chave (newExpenseRef.key)
+                const newExpenseRef = push(myExpensesExpensesRef);
+                await set(newExpenseRef, newExpense);
                 
-                // Limpa o formulário após o sucesso
                 e.target.reset();
-                populateMyExpenseCurrencySelect('my-expense-currency', 'BRL'); // Reseta o select
+                populateMyExpenseCurrencySelect('my-expense-currency', 'BRL');
+                populateMyExpenseCategorySelect('my-expense-category', 'geral'); 
             } catch (error) {
                 console.error("Erro ao adicionar despesa pessoal:", error);
                 alert("Não foi possível adicionar a despesa.");
             }
         });
 
-        // Listener para SALVAR a edição da despesa pessoal
+        // Listener para SALVAR a edição da despesa pessoal (SIMPLIFICADO)
         document.getElementById('edit-my-expense-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const expenseId = document.getElementById('edit-my-expense-id').value;
-            if (!myExpensesRef || !expenseId) return;
+            if (!myExpensesExpensesRef || !expenseId) return;
 
             const description = document.getElementById('edit-my-expense-description').value;
             const amount = parseFloat(document.getElementById('edit-my-expense-amount').value);
             const currency = document.getElementById('edit-my-expense-currency').value;
+            const categoryId = document.getElementById('edit-my-expense-category').value; // Apenas pega o valor
 
             if (!description || !amount || amount <= 0) {
                 alert("Por favor, preencha a descrição e um valor válido.");
                 return;
             }
 
-            // Pega a data original para não sobrescrevê-la
+            // Verifica se o usuário não deixou uma ação pendente
+            if (categoryId.startsWith('[')) {
+                alert("Por favor, selecione uma categoria válida.");
+                return;
+            }
+
             const originalExpense = myExpensesData.find(e => e.id === expenseId);
             const originalDate = originalExpense ? originalExpense.date : new Date().toISOString();
 
             const updatedExpense = {
-                date: originalDate, // Mantém a data original
+                date: originalDate,
                 description: description,
                 amount: amount,
-                currency: currency
+                currency: currency,
+                categoryId: categoryId
             };
 
             try {
-                // Cria a referência direta para o item a ser atualizado
-                const expenseToUpdateRef = ref(db, `users/${currentUserId}/myExpenses/${currentTripId}/${expenseId}`);
-                // Atualiza o item
+                const expenseToUpdateRef = ref(db, `users/${currentUserId}/myExpenses/${currentTripId}/expenses/${expenseId}`);
                 await update(expenseToUpdateRef, updatedExpense);
                 
                 closeModal('edit-my-expense-modal');
-                currentEditingMyExpenseId = null; // Limpa o ID de edição
+                currentEditingMyExpenseId = null;
             } catch (error) {
                 console.error("Erro ao salvar despesa pessoal:", error);
                 alert("Não foi possível salvar as alterações.");
@@ -8347,6 +8450,199 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 menu.classList.add('hidden');
             }
         });
+
+        /**
+         * Popula o <select> de categorias com as opções padrão e personalizadas. (MODIFICADA)
+         * @param {string} selectId - O ID do elemento <select>
+         * @param {string} selectedCategoryId - O ID da categoria que deve vir selecionada (ex: 'geral')
+         */
+        function populateMyExpenseCategorySelect(selectId, selectedCategoryId = 'geral') {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            select.innerHTML = ''; // Limpa opções
+
+            // 1. Adiciona as opções padrão
+            select.innerHTML += `
+                <option value="geral" ${selectedCategoryId === 'geral' ? 'selected' : ''}>Geral</option>
+                <option value="particular" ${selectedCategoryId === 'particular' ? 'selected' : ''}>Particular</option>
+            `;
+
+            // 2. Adiciona as categorias personalizadas salvas
+            myExpensesCategories.sort((a, b) => a.name.localeCompare(b.name));
+            myExpensesCategories.forEach(cat => {
+                // Não adiciona se o ID for 'geral' ou 'particular' (segurança)
+                if (cat.id !== 'geral' && cat.id !== 'particular') {
+                    select.innerHTML += `
+                        <option value="${cat.id}" ${selectedCategoryId === cat.id ? 'selected' : ''}>
+                            ${cat.name}
+                        </option>
+                    `;
+                }
+            });
+
+            // 3. Adiciona as opções de ação
+            select.innerHTML += `
+                <option value="[create_new]" class="font-semibold text-blue-600 pt-2 border-t">
+                    [ + Criar nova categoria... ]
+                </option>
+                <option value="[manage_existing]" class="font-semibold text-red-600">
+                    [ - Gerenciar/Excluir... ]
+                </option>
+            `;
+            
+            // 4. Garante que o valor selecionado seja redefinido
+            select.value = selectedCategoryId;
+        }
+
+        /**
+        * Retorna o nome de exibição de uma categoria com base em seu ID.
+        * @param {string} categoryId - O ID da categoria (ex: 'geral' ou um ID do Firebase)
+        * @returns {string} O nome de exibição (ex: 'Geral')
+        */
+        function getCategoryNameById(categoryId) {
+            if (!categoryId || categoryId === 'geral') {
+                return 'Geral';
+            }
+            if (categoryId === 'particular') {
+                return 'Particular';
+            }
+            const category = myExpensesCategories.find(cat => cat.id === categoryId);
+            return category ? category.name : 'Outras'; // 'Outras' como fallback
+        }
+
+        /**
+         * Abre o modal de gerenciamento de categorias.
+         */
+        window.openCategoryManager = () => {
+            const list = document.getElementById('category-manager-list');
+            list.innerHTML = '';
+            
+            if (myExpensesCategories.length === 0) {
+                list.innerHTML = '<p class="text-sm text-slate-500 text-center">Nenhuma categoria personalizada criada.</p>';
+            } else {
+                myExpensesCategories.sort((a, b) => a.name.localeCompare(b.name));
+                myExpensesCategories.forEach(cat => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'flex justify-between items-center p-2 bg-slate-50 rounded-md';
+                    
+                    // Escapa aspas no nome da categoria para o prompt
+                    const safeName = cat.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
+                    itemEl.innerHTML = `
+                        <span class="font-semibold text-slate-700">${cat.name}</span>
+                        <div class="flex items-center gap-1 flex-shrink-0">
+                            <button onclick="renameCategory('${cat.id}', '${safeName}')" title="Renomear" class="text-slate-500 hover:text-blue-600 p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                            <button onclick="deleteCategory('${cat.id}', '${safeName}')" title="Excluir" class="text-slate-500 hover:text-red-600 p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            </button>
+                        </div>
+                    `;
+                    list.appendChild(itemEl);
+                });
+            }
+            openModal('manage-categories-modal');
+        }
+
+        /**
+         * Renomeia uma categoria personalizada.
+         */
+        window.renameCategory = async (categoryId, oldName) => {
+            const newName = prompt(`Digite o novo nome para "${oldName}":`, oldName);
+            
+            if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
+                // Referência direta ao campo 'name' da categoria
+                const categoryNameRef = ref(db, `users/${currentUserId}/myExpenses/${currentTripId}/categories/${categoryId}/name`);
+                try {
+                    await set(categoryNameRef, newName.trim());
+                    // O listener 'onValue' vai atualizar 'myExpensesCategories'
+                    // Apenas re-renderizamos a lista no modal que já está aberto
+                    openCategoryManager(); 
+                } catch (error) {
+                    console.error("Erro ao renomear categoria:", error);
+                    alert("Não foi possível renomear a categoria.");
+                }
+            }
+        }
+
+        /**
+         * Exclui uma categoria personalizada.
+         * Move todas as despesas associadas para 'Geral'.
+         */
+        window.deleteCategory = (categoryId, categoryName) => {
+            const message = `Tem certeza que deseja excluir a categoria "${categoryName}"?\n\nTodas as despesas nesta categoria serão movidas para "Geral".`;
+            
+            showConfirmDelete(message, async () => {
+                // 1. Encontra todas as despesas que usam este categoryId
+                const expensesToUpdate = myExpensesData.filter(exp => exp.categoryId === categoryId);
+                
+                const updates = {};
+                
+                // 2. Prepara as atualizações para mover as despesas
+                expensesToUpdate.forEach(exp => {
+                    updates[`users/${currentUserId}/myExpenses/${currentTripId}/expenses/${exp.id}/categoryId`] = 'geral';
+                });
+                
+                // 3. Prepara a exclusão da categoria
+                updates[`users/${currentUserId}/myExpenses/${currentTripId}/categories/${categoryId}`] = null; // null = delete
+
+                try {
+                    // 4. Envia todas as atualizações de uma vez
+                    await update(ref(db), updates);
+                    
+                    // 5. Atualiza a lista no modal
+                    openCategoryManager(); 
+                    closeModal('confirm-delete-modal');
+                } catch (error) {
+                    console.error("Erro ao excluir categoria:", error);
+                    alert("Não foi possível excluir a categoria.");
+                    closeModal('confirm-delete-modal');
+                }
+            });
+        }
+
+        /**
+         * Lida com as ações do dropdown de categoria (Criar, Gerenciar).
+         * @param {HTMLSelectElement} selectElement - O <select> que foi alterado.
+         * @param {string} formType - 'add' ou 'edit', para saber qual dropdown resetar.
+         */
+        window.handleCategoryAction = async (selectElement, formType) => {
+            const selectedValue = selectElement.value;
+            let originalCategoryId = 'geral';
+
+            // Se for o form de 'edit', descobre qual era a categoria original
+            if (formType === 'edit' && currentEditingMyExpenseId) {
+                const expense = myExpensesData.find(e => e.id === currentEditingMyExpenseId);
+                originalCategoryId = expense?.categoryId || 'geral';
+            }
+
+            if (selectedValue === '[create_new]') {
+                const newCategoryName = prompt("Digite o nome da nova categoria:");
+                if (newCategoryName && newCategoryName.trim() !== "") {
+                    try {
+                        const newCategoryRef = push(myExpensesCategoriesRef);
+                        await set(newCategoryRef, { name: newCategoryName.trim() });
+                        // O listener 'onValue' vai recarregar o select e selecionar a nova categoria
+                        // Mas precisamos forçar a seleção aqui
+                        populateMyExpenseCategorySelect(selectElement.id, newCategoryRef.key);
+                    } catch (error) {
+                        console.error("Erro ao criar categoria:", error);
+                        alert("Não foi possível criar a categoria.");
+                        // Reseta para a seleção original
+                        selectElement.value = originalCategoryId;
+                    }
+                } else {
+                    // Usuário cancelou, reseta para a seleção original
+                    selectElement.value = originalCategoryId;
+                }
+            } else if (selectedValue === '[manage_existing]') {
+                // Abre o modal de gerenciamento
+                openCategoryManager();
+                // Reseta o dropdown para a seleção original
+                selectElement.value = originalCategoryId;
+            }
+        }
 
     </script>
 
