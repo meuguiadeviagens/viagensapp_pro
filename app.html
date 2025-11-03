@@ -80,6 +80,13 @@
             display: none !important;
         }
 
+        #app:has(#checklist-view:not(.hidden)) #trips-view {
+            display: none !important;
+        }
+        #app:has(#checklist-view:not(.hidden)) #details-view {
+            display: none !important;
+        }
+
         .hidden {
             display: none !important;
         }
@@ -451,6 +458,7 @@
                                 <span>Notificações</span>
                                 <span id="notification-menu-badge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span>
                             </a>
+                            <a href="#" onclick="showChecklistView(event)" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Checklist de Viagem</a>
                             <a href="#" onclick="openLicenseModal()" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Minha licença</a>
                             <a href="#" id="upgrade-plan-btn" class="hidden block px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-100" onclick="event.preventDefault(); openModal('upgrade-plan-modal'); userMenuDropdown.classList.add('hidden');">
                                 Adquirir um Plano
@@ -741,7 +749,7 @@
             <button class="panel-toggle-btn text-slate-500 hover:text-slate-800 p-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"></path></svg>
             </button>
-        </div>
+        </div>       
         
         <div id="add-expense-content" class="px-4 pb-4">
             <form id="add-expense-form" class="space-y-4 border-t pt-4">
@@ -816,6 +824,26 @@
     </div>
 </div>
             </section>
+        </div>  </div> <div id="checklist-view" class="hidden">
+            <header class="flex items-center justify-between mb-8 p-6 bg-white rounded-xl shadow-lg">
+                <div class="flex items-center gap-4">
+                    <button onclick="showTripsView()" class="flex items-center justify-center w-12 h-12 bg-slate-200 text-slate-700 rounded-full hover:bg-slate-300 transition-colors" title="Voltar para Viagens">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                    </button>
+                    <div>
+                        <h1 class="text-3xl font-bold text-slate-900">Meu Checklist de Viagem</h1>
+                        <p class="text-slate-500">Seu checklist pessoal, salvo na sua conta.</p>
+                    </div>
+                </div>
+                <button onclick="addChecklistSection()" class="flex items-center gap-2 bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Nova Categoria</span>
+                </button>
+            </header>
+
+            <main id="checklist-container" class="space-y-6">
+                <p classid="checklist-loading" class="text-center text-slate-500">Carregando seu checklist...</p>
+            </main>
         </div>
     </div>
 
@@ -1886,6 +1914,8 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
         let suggestedItinerariesData = {};
         let currentContextMenuActivityId = null;
         let currentContextMenuDocumentId = null;
+        let userChecklistData = []; // Armazena os dados do checklist
+        let checklistRef; // Referência do Firebase para o checklist do usuário
 
         
         // Variáveis de estado para reorganização
@@ -3024,6 +3054,7 @@ window.addEventListener('popstate', (event) => {
                 setupIconPickers();
                 setupNotificationListener(user.uid);
                 setupFavoritesListener(user.uid);
+                setupChecklistListener(user.uid);
 
             } else {
                 currentUserId = null; // Limpa o ID quando o usuário sai
@@ -3035,6 +3066,9 @@ window.addEventListener('popstate', (event) => {
                 loginView.classList.remove('hidden');
                 signupView.classList.add('hidden');
                 appView.classList.add('hidden');
+
+                userChecklistData = [];
+                checklistRef = null;
             }
         });
 
@@ -4726,6 +4760,25 @@ let dividerHtml = '';
             } else {
                 console.warn(`Âncora para a cidade "${cityName}" não encontrada.`);
             }
+        };
+        
+        window.showChecklistView = (event) => {
+            if (event) event.preventDefault();
+            
+            // Esconde o menu de usuário
+            userMenuDropdown.classList.add('hidden');
+            
+            // Esconde outras telas
+            document.getElementById('trips-view').classList.add('hidden');
+            document.getElementById('details-view').classList.add('hidden');
+            
+            // Mostra a tela de checklist
+            document.getElementById('checklist-view').classList.remove('hidden');
+
+            // Rola para o topo
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // (O listener do Firebase (onValue) cuidará de chamar a renderização)
         };
         
         window.showTripsView = () => {
@@ -7241,6 +7294,235 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             // Abre em nova guia
             window.open(searchUrl, '_blank');
         }
+
+        // ===============================================
+        // INÍCIO - LÓGICA DO CHECKLIST DE VIAGEM
+        // ===============================================
+
+        // 1. FUNÇÃO PRINCIPAL DE ESCUTA
+        // Esta função é chamada uma vez quando o usuário faz login
+        function setupChecklistListener(userId) {
+            checklistRef = ref(db, `users/${userId}/checklist`);
+            
+            onValue(checklistRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    // CORREÇÃO: Converte o objeto {0:..., 1:...} do Firebase de volta para um Array
+                    userChecklistData = Object.values(snapshot.val());
+                } else {
+                    // Se o usuário não tem um checklist, cria um padrão
+                    userChecklistData = createDefaultChecklist();
+                    saveChecklist(); // Salva o checklist padrão no Firebase
+                }
+                // Renderiza na tela
+                renderChecklist(userChecklistData);
+            });
+        }
+
+        // 2. SALVA O CHECKLIST NO FIREBASE
+        // Função central para salvar. Simplesmente envia o objeto inteiro.
+        async function saveChecklist() {
+            if (!checklistRef) return;
+            try {
+                await set(checklistRef, userChecklistData);
+            } catch (error) {
+                console.error("Erro ao salvar o checklist:", error);
+                alert("Erro ao salvar seu checklist. Tente novamente.");
+            }
+        }
+
+        // 3. CRIA O CHECKLIST PADRÃO
+        function createDefaultChecklist() {
+            return [
+                {
+                    sectionTitle: "🕝 Itens de última hora",
+                    items: [
+                        { name: "Passaporte", isChecked: false },
+                        { name: "Download de mapa offline", isChecked: false },
+                        { name: "Chip de Telefone", isChecked: false }
+                    ]
+                },
+                {
+                    sectionTitle: "🧳 Itens da mala",
+                    items: [
+                        { name: "Pijama", isChecked: false },
+                        { name: "Camisetas", isChecked: false }
+                    ]
+                },
+                {
+                    sectionTitle: "👜 Higiene",
+                    items: [
+                        { name: "Shampoo", isChecked: false },
+                        { name: "Condicionador", isChecked: false },
+                        { name: "Desodorante", isChecked: false }
+                    ]
+                }
+            ];
+        }
+
+        // 4. FUNÇÃO DE RENDERIZAÇÃO (A MAIS IMPORTANTE)
+        // Pega os dados do 'userChecklistData' e constrói o HTML
+        function renderChecklist(checklist) {
+            const container = document.getElementById('checklist-container');
+            container.innerHTML = ''; // Limpa o container
+            
+            if (!checklist || checklist.length === 0) {
+                 container.innerHTML = `<p class="text-center text-slate-500">Seu checklist está vazio. Adicione uma categoria para começar.</p>`;
+                 return;
+            }
+
+            checklist.forEach((section, sectionIndex) => {
+                const sectionElement = document.createElement('div');
+                sectionElement.className = 'bg-white p-4 sm:p-6 rounded-xl shadow-lg';
+
+                let itemsHtml = '';
+                
+                // CORREÇÃO: Usa um array vazio se 'section.items' não existir
+                const itemsArray = section.items || [];
+                
+                itemsArray.forEach((item, itemIndex) => {
+                    const isChecked = item.isChecked;
+                    itemsHtml += `
+                        <div class="flex items-center justify-between p-2 rounded-md hover:bg-slate-50">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="toggleItem(${sectionIndex}, ${itemIndex})"
+                                    class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-slate-400">
+                                <span class="text-slate-700 ${isChecked ? 'line-through text-slate-400' : ''}">
+                                    ${item.name}
+                                </span>
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <button onclick="editItem(${sectionIndex}, ${itemIndex})" class="text-slate-400 hover:text-blue-600 p-1" title="Editar item">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                                </button>
+                                <button onclick="deleteItem(${sectionIndex}, ${itemIndex})" class="text-slate-400 hover:text-red-600 p-1" title="Excluir item">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                sectionElement.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-slate-800">${section.sectionTitle}</h2>
+                        
+                        <div class="flex items-center gap-3 flex-shrink-0">
+                            <button onclick="editSection(${sectionIndex})" class="text-slate-500 hover:text-blue-600 font-medium text-sm p-1 flex items-center gap-1" title="Editar nome da categoria">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></svg>
+                                <span>Editar</span>
+                            </button>
+                            <button onclick="deleteSection(${sectionIndex})" class="text-red-500 hover:text-red-700 font-medium text-sm p-1 flex items-center gap-1" title="Excluir categoria">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                <span>Excluir</span>
+                            </button>
+                        </div>
+                        </div>
+                    <div class="space-y-2">
+                        ${itemsHtml}
+                    </div>
+                    <form onsubmit="addItem(event, ${sectionIndex})" class="flex gap-2 mt-4 pt-4 border-t">
+                        <input type="text" placeholder="Adicionar novo item..." required
+                            class="flex-grow px-3 py-2 bg-slate-100 border border-slate-300 rounded-md shadow-sm text-sm">
+                        <button type="submit" class="bg-green-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
+                            Adicionar
+                        </button>
+                    </form>
+                `;
+                container.appendChild(sectionElement);
+            });
+        }
+
+        // 5. FUNÇÕES DE MANIPULAÇÃO (Handlers)
+        // Estas funções são chamadas pelos botões (onclick)
+
+        // Adiciona uma nova categoria (seção)
+        window.addChecklistSection = () => {
+            const newSectionName = prompt("Qual o nome da nova categoria? (Ex: Roupas, Eletrônicos)");
+            if (newSectionName && newSectionName.trim() !== "") {
+                userChecklistData.push({
+                    sectionTitle: newSectionName.trim(),
+                    items: []
+                });
+                saveChecklist(); // Salva e o onValue vai recarregar a tela
+            }
+        };
+
+        // Adiciona um novo item a uma categoria
+        window.addItem = (event, sectionIndex) => {
+            event.preventDefault();
+            const input = event.target.querySelector('input[type="text"]');
+            const itemName = input.value.trim();
+            if (itemName) {
+                
+                // CORREÇÃO: Se section.items não existir, cria o array
+                if (!userChecklistData[sectionIndex].items) {
+                    userChecklistData[sectionIndex].items = [];
+                }
+                
+                userChecklistData[sectionIndex].items.push({
+                    name: itemName,
+                    isChecked: false
+                });
+                saveChecklist(); // Salva
+                input.value = ''; // Limpa o input (o onValue recarrega, mas isso é mais rápido)
+            }
+        };
+
+        // Marca/Desmarca um item
+        window.toggleItem = (sectionIndex, itemIndex) => {
+            // Acessa o objeto no array e inverte o booleano
+            const currentState = userChecklistData[sectionIndex].items[itemIndex].isChecked;
+            userChecklistData[sectionIndex].items[itemIndex].isChecked = !currentState;
+            saveChecklist(); // Salva
+        };
+
+        // Deleta um item
+        window.deleteItem = (sectionIndex, itemIndex) => {
+            const item = userChecklistData[sectionIndex].items[itemIndex];
+            if (confirm(`Tem certeza que deseja excluir o item "${item.name}"?`)) {
+                userChecklistData[sectionIndex].items.splice(itemIndex, 1); // Remove o item do array
+                saveChecklist(); // Salva
+            }
+        };
+
+        // Edita um item
+        window.editItem = (sectionIndex, itemIndex) => {
+            const currentItem = userChecklistData[sectionIndex].items[itemIndex];
+            const newName = prompt("Qual o novo nome para este item?", currentItem.name);
+
+            // Verifica se o usuário clicou "OK" (newName não é null) e se o nome não está vazio
+            if (newName && newName.trim() !== "") {
+                userChecklistData[sectionIndex].items[itemIndex].name = newName.trim();
+                saveChecklist(); // Salva a mudança no Firebase
+            }
+            // Se o usuário cancelar (newName é null), nada acontece.
+        };
+
+        // Edita o nome de uma categoria
+        window.editSection = (sectionIndex) => {
+            const currentTitle = userChecklistData[sectionIndex].sectionTitle;
+            const newTitle = prompt("Qual o novo nome para esta categoria?", currentTitle);
+
+            // Verifica se o usuário clicou "OK" (newTitle não é null) e se o nome não está vazio
+            if (newTitle && newTitle.trim() !== "") {
+                userChecklistData[sectionIndex].sectionTitle = newTitle.trim();
+                saveChecklist(); // Salva a mudança no Firebase
+            }
+            // Se o usuário cancelar (newTitle é null), nada acontece.
+        };
+
+        // Deleta uma categoria
+        window.deleteSection = (sectionIndex) => {
+            const section = userChecklistData[sectionIndex];
+            if (confirm(`Tem certeza que deseja excluir a categoria "${section.sectionTitle}" e todos os seus itens?`)) {
+                userChecklistData.splice(sectionIndex, 1); // Remove a seção do array
+                saveChecklist(); // Salva
+            }
+        };
+
+        // ===============================================
+        // FIM - LÓGICA DO CHECKLIST DE VIAGEM
+        // ===============================================
 
         // Listener para o botão no modal "Adicionar Atividade"
         document.getElementById('search-image-btn-add').addEventListener('click', () => {
