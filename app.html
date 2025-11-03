@@ -831,8 +831,8 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
                     </button>
                     <div>
-                        <h1 class="text-3xl font-bold text-slate-900">Meu Checklist de Viagem</h1>
-                        <p class="text-slate-500">Seu checklist pessoal, salvo na sua conta.</p>
+                        <h1 class="text-3xl font-bold text-slate-900">Checklist</h1>
+                        <p class="text-slate-500">Seu checklist pessoal</p>
                     </div>
                 </div>
                 <button onclick="addChecklistSection()" class="flex items-center gap-2 bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
@@ -7382,14 +7382,15 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 itemsArray.forEach((item, itemIndex) => {
                     const isChecked = item.isChecked;
                     itemsHtml += `
-                        <div class="flex items-center justify-between p-2 rounded-md hover:bg-slate-50">
+                        <div class="flex items-center justify-between p-2 rounded-md hover:bg-slate-50 ${isChecked ? '' : 'bg-yellow-100'}">
                             <label class="flex items-center gap-3 cursor-pointer">
                                 <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="toggleItem(${sectionIndex}, ${itemIndex})"
-                                    class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-slate-400">
-                                <span class="text-slate-700 ${isChecked ? 'line-through text-slate-400' : ''}">
+                                    class="h-5 w-5 rounded text-blue-600 focus:ring-green-500 border-slate-400">
+                                
+                                <span class="${isChecked ? 'text-slate-500 line-through' : 'font-bold text-red-700'}">
                                     ${item.name}
                                 </span>
-                            </label>
+                                </label>
                             <div class="flex items-center gap-2">
                                 <button onclick="editItem(${sectionIndex}, ${itemIndex})" class="text-slate-400 hover:text-blue-600 p-1" title="Editar item">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
