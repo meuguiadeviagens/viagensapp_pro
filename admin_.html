@@ -67,6 +67,10 @@
                 <button onclick="switchAdminView('suggestions')" id="tab-suggestions" class="admin-tab whitespace-nowrap py-4 px-1 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-400">
                     Roteiros Sugeridos
                 </button>
+                <button onclick="switchAdminView('upgrades')" id="tab-upgrades" class="admin-tab relative whitespace-nowrap py-4 px-1 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-400">
+                    Solicitações
+                    <span id="upgrades-badge" class="hidden absolute top-3 -right-3 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center"></span>
+                </button>
             </nav>
         </div>
 
@@ -135,6 +139,14 @@
                 </table>
             </div>
         </main>
+
+        <div id="upgrades-management-view" class="hidden bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl sm:text-2xl font-semibold text-slate-800 mb-4">Solicitações de Upgrade Pendentes</h2>
+            <div id="upgrade-requests-list" class="space-y-4">
+                <p class="text-center text-sm text-slate-400 py-4">Carregando solicitações...</p>
+            </div>
+        </div>
+        <div id="suggestions-management-view" class="hidden bg-white p-4 sm:p-6 rounded-xl shadow-lg">
 
   <!-- PAINEL DE GERENCIAMENTO DE ROTEIROS SUGERIDOS -->
         <div id="suggestions-management-view" class="hidden bg-white p-4 sm:p-6 rounded-xl shadow-lg">
@@ -468,6 +480,7 @@
                     setupSuggestionIconPicker();
                     setupCityFilter();
                     setupCountrySuggestions();
+                    loadUpgradeRequests();
                 } else {
                     alert("Acesso negado. Privilégios de administrador necessários.");
                     signOut(auth);
@@ -482,8 +495,11 @@
         window.switchAdminView = (view) => {
             document.getElementById('users-management-view').classList.toggle('hidden', view !== 'users');
             document.getElementById('suggestions-management-view').classList.toggle('hidden', view !== 'suggestions');
+            document.getElementById('upgrades-management-view').classList.toggle('hidden', view !== 'upgrades'); // <-- ADICIONE ESTA LINHA
+
             document.getElementById('tab-users').classList.toggle('active', view === 'users');
             document.getElementById('tab-suggestions').classList.toggle('active', view === 'suggestions');
+            document.getElementById('tab-upgrades').classList.toggle('active', view === 'upgrades'); // <-- ADICIONE ESTA LINHA
         };
 
         // --- 2. LÓGICA DE LOGIN/LOGOUT ---
@@ -1598,8 +1614,170 @@
             });
         }
 
+        // --- 5. LÓGICA DE SOLICITAÇÕES DE UPGRADE ---
+        // (Sua seção 5 era o Histórico, esta pode ser a nova 5, e a de Histórico vira 6, etc.)
+
+        /**
+         * Escuta o nó 'solicitacoes_upgrade' e chama a renderização.
+         */
+        function loadUpgradeRequests() {
+            const requestsRef = ref(db, 'solicitacoes_upgrade');
+            onValue(requestsRef, (snapshot) => {
+                const requests = snapshot.val() || {};
+                renderUpgradeRequests(requests);
+            });
+        }
+
+        /**
+         * Desenha os cards de solicitação pendente na tela.
+         */
+        function renderUpgradeRequests(requests) {
+            const listContainer = document.getElementById('upgrade-requests-list');
+            const badge = document.getElementById('upgrades-badge');
+            listContainer.innerHTML = '';
+            
+            // Converte o objeto {uid: data} em um array [[uid, data], ...]
+            const requestEntries = Object.entries(requests);
+
+            // Atualiza o "sino" de notificação
+            if (requestEntries.length > 0) {
+                badge.textContent = requestEntries.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+                listContainer.innerHTML = '<p class="text-center text-sm text-slate-500 py-4">Nenhuma solicitação pendente.</p>';
+                return;
+            }
+
+            // Ordena pelos mais antigos primeiro
+            requestEntries.sort(([, a], [, b]) => a.data - b.data);
+
+            requestEntries.forEach(([uid, request]) => {
+                const card = document.createElement('div');
+                card.className = 'border border-blue-200 bg-blue-50 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-start gap-4';
+                
+                const requestDate = new Date(request.data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                
+                let planDetailsHtml = '';
+                // Mostra detalhes diferentes se for 'avulsa'
+                if (request.plano === 'avulsa') {
+                    planDetailsHtml = `
+                        <p class="font-semibold text-lg text-blue-800">Plano: Viagem Avulsa</p>
+                        <p class="text-sm text-slate-700 mt-1"><strong>Viagem:</strong> ${request.tripName || 'Nome não encontrado'}</p>
+                        <p class="text-xs text-slate-500 font-mono"><strong>ID:</strong> ${request.tripId || 'ID não encontrado'}</p>
+                    `;
+                } else {
+                    planDetailsHtml = `
+                        <p class="font-semibold text-lg text-blue-800">Plano: ${request.plano === 'anual' ? 'Anual' : 'Bianual'}</p>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="flex-grow">
+                        <p class="font-bold text-slate-900">${request.email}</p>
+                        <p class="text-sm text-slate-500">Data Pedido: ${requestDate}</p>
+                        <div class="mt-2 p-3 bg-white rounded shadow-sm border">
+                            ${planDetailsHtml}
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0 w-full sm:w-auto">
+                        <button onclick='approveUpgrade("${uid}", ${JSON.stringify(request)})' class="w-full sm:w-auto px-6 py-2 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700">
+                            Aprovar Licença
+                        </button>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
+        }
+
+        /**
+         * Função chamada pelo botão "Aprovar Licença".
+         * Atualiza a licença do usuário e apaga a solicitação.
+         */
+        window.approveUpgrade = async (uid, request) => {
+            const { plano, tripId } = request;
+            
+            if (!uid || !plano) {
+                alert("Erro: UID do usuário ou Plano não encontrado na solicitação.");
+                return;
+            }
+
+            // 1. Obter a licença ATUAL do usuário (importante para o plano avulso)
+            const userLicenseRef = ref(db, `users/${uid}/license`);
+            let currentLicenseData = { type: 'gratuito', purchasedTrips: {} }; // Padrão
+            try {
+                const snapshot = await get(userLicenseRef);
+                if (snapshot.exists()) {
+                    currentLicenseData = snapshot.val();
+                }
+            } catch (error) {
+                alert("Erro ao ler a licença atual do usuário. A aprovação falhou.");
+                return;
+            }
+
+            // 2. Preparar a NOVA licença
+            let newLicenseData = { ...currentLicenseData }; // Copia a licença atual
+            const today = new Date();
+            // Pega o início do dia de hoje (sem horas/minutos)
+            const todayTimestamp = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+            const adminEmail = auth.currentUser ? auth.currentUser.email : 'unknown_admin';
+
+            if (plano === 'anual' || plano === 'bianual') {
+                // Define a data de expiração
+                const expirationDate = new Date(today);
+                const yearsToAdd = (plano === 'anual') ? 1 : 2;
+                expirationDate.setFullYear(expirationDate.getFullYear() + yearsToAdd);
+                
+                newLicenseData.type = plano;
+                newLicenseData.dataAquisicao = todayTimestamp;
+                newLicenseData.expires = expirationDate.getTime();
+                newLicenseData.purchasedTrips = newLicenseData.purchasedTrips || {}; // Mantém viagens avulsas se houver
+            
+            } else if (plano === 'avulsa') {
+                if (!tripId) {
+                    alert("Erro: A solicitação de 'Viagem Avulsa' não contém um ID de viagem. Aprovação falhou.");
+                    return;
+                }
+                // Adiciona a viagem ao objeto, sem sobrescrever
+                if (!newLicenseData.purchasedTrips) {
+                    newLicenseData.purchasedTrips = {};
+                }
+                newLicenseData.purchasedTrips[tripId] = true;
+                // Mantém o tipo de licença atual (ex: 'gratuito')
+            
+            } else {
+                alert("Erro: Tipo de plano desconhecido: " + plano);
+                return;
+            }
+
+            // 3. Preparar as atualizações (Atomicamente)
+            const updates = {};
+            updates[`/users/${uid}/license`] = newLicenseData; // Atualiza a licença
+            updates[`/solicitacoes_upgrade/${uid}`] = null; // Remove a solicitação
+
+            // 4. Salvar log de admin (copiado da sua função de salvar licença)
+            const logEntry = {
+                timestamp: serverTimestamp(),
+                admin: adminEmail,
+                action: "Aprovação de Pagamento (Automática)",
+                oldValue: currentLicenseData,
+                newValue: newLicenseData
+            };
+            const logRef = push(ref(db, `users/${uid}/adminHistory`));
+            updates[`/users/${uid}/adminHistory/${logRef.key}`] = logEntry;
+
+            // 5. Executar a transação
+            try {
+                await update(ref(db), updates);
+                alert(`Licença '${plano}' para ${request.email} foi aprovada com sucesso!`);
+            } catch (error) {
+                console.error("Erro ao aprovar licença:", error);
+                alert("Ocorreu um erro ao salvar as alterações. Verifique o console.");
+            }
+        }
+
     </script>
-<br><center><p>V. 1.2007 - 25/10/2025 08:37</p></center><br>
+<br><center><p>V. 1.2008 - 03/11/2025 18:15</p></center><br>
 
 </body>
 </html>
