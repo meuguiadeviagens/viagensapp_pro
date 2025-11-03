@@ -492,11 +492,17 @@
                 <label for="password" class="block text-sm font-medium text-slate-600">Senha</label>
                 <input type="password" id="password" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
             </div>
-            <div class="flex items-center">
-                <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded">
-                <label for="remember-me" class="ml-2 block text-sm text-slate-700">
-                    Lembrar-me
-                </label>
+            
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded">
+                    <label for="remember-me" class="ml-2 block text-sm text-slate-700">
+                        Lembrar-me
+                    </label>
+                </div>
+                <button type="button" onclick="promptForPasswordReset()" class="text-sm text-blue-600 hover:underline">
+                    Esqueci minha senha
+                </button>
             </div>
             <div class="flex flex-col gap-3 pt-2">
                 <button id="login-btn" type="submit" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Entrar</button>
@@ -505,10 +511,7 @@
         </div>
 
         <div class="text-center mt-4">
-            <button type="button" onclick="promptForPasswordReset()" class="text-sm text-blue-600 hover:underline">
-                Esqueci minha senha
-            </button>
-        </div>
+            </div>
 
     </form>
 
