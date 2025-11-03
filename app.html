@@ -651,7 +651,7 @@
                 </div>
 
                 <div id="past-trips-container" class="mt-10">
-                    <h2 class="text-2xl font-bold text-slate-800 mb-4">Viagens já Realizadas</h2>
+                    <h2 class="text-2xl font-bold text-slate-800 mb-4">Viagens Já Realizadas</h2>
                     <div id="past-trips-content">
                         </div>
                 </div>
@@ -2145,9 +2145,12 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
             createUserWithEmailAndPassword,
             signOut,
             sendPasswordResetEmail,
-            EmailAuthProvider,          // <-- ADICIONE
-            reauthenticateWithCredential, // <-- ADICIONE
-            updatePassword // <-- ADICIONE
+            EmailAuthProvider,      
+            reauthenticateWithCredential, 
+            updatePassword,
+            setPersistence,
+            browserLocalPersistence,
+            browserSessionPersistence 
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"; 
         import { getDatabase, ref, onValue, set, push, remove, update, get, serverTimestamp, off } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
@@ -3353,24 +3356,38 @@ window.addEventListener('popstate', (event) => {
             }
         });
 
-         // Ação do botão de LOGIN
         // Ação do formulário de LOGIN
-        document.getElementById('login-form').addEventListener('submit', (e) => {
+        document.getElementById('login-form').addEventListener('submit', async (e) => { // Adicionado 'async'
             e.preventDefault(); // Impede o recarregamento da página
 
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('remember-me').checked; // Pega o estado do checkbox
 
             if (!email || !password) {
                 alert('Por favor, preencha os campos de e-mail e senha.');
                 return; 
             }
 
-            signInWithEmailAndPassword(auth, email, password)
-                .catch((error) => {
-                    console.error("Erro no login:", error.code);
-                    alert("Falha no login. Verifique seu e-mail e senha.");
-                });
+            // --- INÍCIO DA NOVA LÓGICA ---
+            // Define o tipo de persistência ANTES de fazer o login
+            const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
+            
+            try {
+                // 1. Define como o Firebase deve "lembrar" (ou não)
+                await setPersistence(auth, persistenceType);
+                
+                // 2. Agora, faz o login
+                await signInWithEmailAndPassword(auth, email, password);
+                
+                // O onAuthStateChanged vai cuidar de mostrar o app
+                
+            } catch (error) {
+                // O 'catch' agora pega erros de persistência E de login
+                console.error("Erro no login ou persistência:", error.code);
+                alert("Falha no login. Verifique seu e-mail e senha.");
+            }
+            // --- FIM DA NOVA LÓGICA ---
         });
 
         // Ação do botão de CADASTRO (agora só abre o painel)
