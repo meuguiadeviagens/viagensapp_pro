@@ -1169,6 +1169,41 @@
             openModal('user-details-modal');
         };
 
+        /**
+         * NOVO: Formata os campos de data dentro dos objetos de log para exibição.
+         * Converte timestamps 'dataAquisicao', 'expires' e 'data' em strings legíveis.
+         */
+        function formatLicenseDataForDisplay(logData) {
+            // Se o dado não for um objeto (ex: null), retorna como está
+            if (!logData || typeof logData !== 'object' || Array.isArray(logData)) {
+                return logData;
+            }
+
+            // Cria uma cópia para não alterar o objeto original
+            const displayData = JSON.parse(JSON.stringify(logData));
+
+            const formatOptions = { dateStyle: 'short', timeStyle: 'short' };
+
+            // Função interna para formatar o timestamp
+            const formatField = (obj, fieldName) => {
+                // Verifica se o campo existe e é um número (um timestamp)
+                if (obj[fieldName] && typeof obj[fieldName] === 'number') {
+                    const originalValue = obj[fieldName];
+                    const date = new Date(originalValue);
+                    
+                    // Substitui o número pela data formatada + o timestamp original
+                    obj[fieldName] = `${date.toLocaleString('pt-BR', formatOptions)} (TS: ${originalValue})`;
+                }
+            };
+
+            // Lista de campos que queremos formatar (você pode adicionar mais se precisar)
+            const fieldsToFormat = ['dataAquisicao', 'expires', 'data'];
+            
+            fieldsToFormat.forEach(field => formatField(displayData, field));
+
+            return displayData; // Retorna o objeto modificado
+        }
+
           // --- 5. LÓGICA DO HISTÓRICO ---
         // NOVO: Função para abrir e popular o modal de histórico
         window.openHistoryModal = async (uid) => {
@@ -1204,11 +1239,11 @@
                     const logElement = document.createElement('div');
                     logElement.className = 'border rounded-lg p-3 bg-white shadow-sm';
                     
-                    const date = new Date(log.timestamp).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+                    const date = new Date(log.timestamp).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });                    
                     
-                    // Formata os objetos JSON para exibição
-                    const oldJson = log.oldValue ? JSON.stringify(log.oldValue, null, 2) : 'N/A';
-                    const newJson = log.newValue ? JSON.stringify(log.newValue, null, 2) : 'N/A';
+                    // Formata os objetos JSON para exibição, usando a nova função helper
+                    const oldJson = log.oldValue ? JSON.stringify(formatLicenseDataForDisplay(log.oldValue), null, 2) : 'N/A';
+                    const newJson = log.newValue ? JSON.stringify(formatLicenseDataForDisplay(log.newValue), null, 2) : 'N/A';
 
                     logElement.innerHTML = `
                         <div class="flex justify-between items-center mb-2 pb-2 border-b">
@@ -1831,7 +1866,7 @@
         };
 
     </script>
-<br><center><p>V. 1.2008 - 03/11/2025 18:15</p></center><br>
+<br><center><p>V. 1.2009 - 04/11/2025 07:35</p></center><br>
 
 </body>
 </html>
