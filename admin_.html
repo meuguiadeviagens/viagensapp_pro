@@ -1815,7 +1815,26 @@
             const logRef = push(ref(db, `users/${uid}/adminHistory`));
             updates[`/users/${uid}/adminHistory/${logRef.key}`] = logEntry;
 
-            // 5. Executar a transação
+            
+            // 5. (NOVO) Criar a notificação para o usuário
+            const notificationRef = push(ref(db, `users/${uid}/notifications`));
+            let notificationTitle = "Plano Aprovado!";
+            let notificationMessage = `Sua solicitação do ${plano === 'anual' ? 'Plano Anual' : 'Plano Bianual'} foi aprovada e já está ativa. Aproveite!`;
+
+            if (plano === 'avulsa') {
+                notificationTitle = "Viagem Liberada!";
+                notificationMessage = `Sua compra da viagem '${request.tripName || 'viagem'}' foi aprovada. Você já pode acessá-la.`;
+            }
+
+            updates[`/users/${uid}/notifications/${notificationRef.key}`] = {
+                timestamp: serverTimestamp(),
+                type: "success", // Tipo da notificação (para o app saber qual ícone usar)
+                title: notificationTitle,
+                message: notificationMessage,
+                isRead: false // O app do usuário deve mudar para 'true' quando ele ler
+            };   
+            
+            // 6. Executar a transação
             try {
                 await update(ref(db), updates);
                 alert(`Licença '${plano}' para ${request.email} foi aprovada com sucesso!`);
@@ -1855,7 +1874,27 @@
             // 4. Remove a solicitação da fila de 'solicitacoes_upgrade'
             updates[`/solicitacoes_upgrade/${uid}`] = null;
 
-            // 5. Executa as atualizações
+            // 5. (NOVO) Criar a notificação de rejeição para o usuário
+            const notificationRef = push(ref(db, `users/${uid}/notifications`));
+            
+            // Personaliza a mensagem se for avulsa ou plano
+            let rejectedItem = `Plano ${plano === 'anual' ? 'Anual' : 'Bianual'}`;
+            if (plano === 'avulsa') {
+                rejectedItem = `Viagem Avulsa (${request.tripName || 'viagem'})`;
+            }
+
+            updates[`/users/${uid}/notifications/${notificationRef.key}`] = {
+                timestamp: serverTimestamp(),
+                type: "error", // Tipo 'erro' para destacar
+                title: "Solicitação Rejeitada",
+                message: `Sua solicitação de pagamento para '${rejectedItem}' não foi aprovada. Por favor, entre em contato conosco para mais detalhes.`,
+                isRead: false
+            };
+
+            // Remove a solicitação da fila ... (Mude o comentário para "5.")
+            updates[`/solicitacoes_upgrade/${uid}`] = null;
+            
+            // 7. Executa as atualizações
             try {
                 await update(ref(db), updates);
                 alert(`Solicitação para ${email} foi rejeitada e removida da lista.`);
