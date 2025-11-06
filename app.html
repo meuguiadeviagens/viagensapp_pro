@@ -644,6 +644,9 @@
                                 Adquirir um Plano
                             </a>
                             <a href="https://youtu.be/taDKKjWjJWk" target="_blank" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Como criar uma viagem?</a>
+                            <a href="#" id="admin-open-trip-btn" onclick="adminOpenTripById()" class="hidden block px-4 py-2 text-sm text-yellow-600 font-bold border-t hover:bg-slate-100">
+                                Abrir Viagem por ID (Admin)
+                            </a>
                             <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-slate-100">Sair</a>
                         </div>
                     </div>
@@ -665,7 +668,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2021 | 05/11/2025, 18:11</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2022 | 06/11/2025, 11:25</p>
             </main>
         </div>
 
@@ -2634,6 +2637,15 @@ window.addEventListener('popstate', (event) => {
          * se o usuário atual for apenas um "visualizador".
          */
         function applyReadOnlyMode(tripId) {
+
+            // --- INÍCIO DA MODIFICAÇÃO DE ADMIN (v3 - A CORRETA) ---
+            // Agora checa o tipo de licença, que é muito melhor!
+            if (currentUserLicense && currentUserLicense.type === 'admin') {
+                console.log("Acesso de ADMIN concedido.");
+                return; // Sai da função imediatamente
+            }
+            // --- FIM DA MODIFICAÇÃO DE ADMIN (v3 - A CORRETA) ---
+
             const trip = tripsData.find(t => t.id === tripId);
             if (!trip || !currentUserId || !trip.members) return;
 
@@ -3254,7 +3266,6 @@ window.addEventListener('popstate', (event) => {
             if (user) {
 
                 currentUserId = user.uid; // Guarda o ID do usuário logado
-
               
                 // 1. USUÁRIO ESTÁ LOGADO
                 //console.log("Usuário logado:", user.uid);
@@ -3273,7 +3284,8 @@ window.addEventListener('popstate', (event) => {
                             document.getElementById('user-menu-name').textContent = firstName;
                         } else {
                             document.getElementById('user-menu-name').textContent = "Perfil";
-                        }
+                        }                       
+
                     });
 
                 // NOVO: Carregar a licença do usuário
@@ -3297,6 +3309,18 @@ window.addEventListener('popstate', (event) => {
                         currentUserLicense = { type: 'gratuito', expires: null, purchasedTrips: {} };
                         set(licenseRef, currentUserLicense);
                     }
+
+                    // --- INÍCIO DA VERIFICAÇÃO DE ADMIN (v3 - A CORRETA) ---
+                    // Agora checamos a licença AQUI, depois que ela foi carregada.
+                    const adminBtn = document.getElementById('admin-open-trip-btn');
+                    if (adminBtn) {
+                        if (currentUserLicense.type === 'admin') {
+                            adminBtn.classList.remove('hidden');
+                        } else {
+                            adminBtn.classList.add('hidden');
+                        }
+                    }
+                    // --- FIM DA VERIFICAÇÃO DE ADMIN (v3 - A CORRETA) ---
 
                     // Mostra ou esconde o botão de "Adquirir Plano"
                     updateUIAfterLicenseLoad();
@@ -8650,6 +8674,46 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 openCategoryManager();
                 // Reseta o dropdown para a seleção original
                 selectElement.value = originalCategoryId;
+            }
+        }
+
+        // NOVA FUNÇÃO DE ADMIN PARA CARREGAR VIAGEM POR ID
+        window.adminOpenTripById = async function() {
+            const tripId = prompt("Digite o ID da viagem que deseja abrir (ex: -NqX...):");
+            
+            if (!tripId || tripId.trim() === "") {
+                return; // Usuário cancelou ou não digitou nada
+            }
+
+            try {
+                // 1. Busca a viagem diretamente do Firebase
+                const tripRef = ref(db, `trips/${tripId.trim()}`);
+                const snapshot = await get(tripRef);
+
+                if (!snapshot.exists()) {
+                    alert("Erro: Viagem não encontrada com este ID.");
+                    return;
+                }
+
+                const tripData = { id: snapshot.key, ...snapshot.val() };
+
+                // 2. Adiciona (ou atualiza) esta viagem na sua lista local 'tripsData'
+                const existingIndex = tripsData.findIndex(t => t.id === tripData.id);
+                if (existingIndex > -1) {
+                    tripsData[existingIndex] = tripData; // Atualiza se já existia
+                } else {
+                    tripsData.push(tripData); // Adiciona se for nova
+                }
+
+                // 3. Agora que a viagem está nos dados locais, chama a função normal
+                showTripDetails(tripData.id);
+                
+                // Fecha o menu de usuário
+                userMenuDropdown.classList.add('hidden');
+
+            } catch (error) {
+                console.error("Erro ao buscar viagem de admin:", error);
+                alert("Ocorreu um erro ao tentar carregar a viagem.");
             }
         }
 
