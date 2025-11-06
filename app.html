@@ -668,7 +668,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2022 | 06/11/2025, 11:25</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2023 | 06/11/2025, 11:55</p>
             </main>
         </div>
 
@@ -5753,6 +5753,21 @@ let dividerHtml = '';
         
         window.deleteTrip = async (event, tripId) => {
             event.stopPropagation();
+
+            // --- INÍCIO DA MODIFICAÇÃO ---
+            // 1. Verifica se a viagem está na lista de viagens avulsas compradas
+            // A variável global 'currentUserLicense' já contém essa informação.
+            if (currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[tripId]) {
+                
+                // 2. Se for uma viagem avulsa, impede a exclusão e avisa o usuário
+                alert("Esta viagem foi adquirida em um plano avulso e não pode ser excluída.");
+                
+                // 3. Para a execução da função imediatamente
+                return; 
+            }
+            // --- FIM DA MODIFICAÇÃO ---
+
+
             showConfirmDelete('Tem certeza que deseja excluir esta viagem?', async () => {
                 // 1. Encontra a viagem que será excluída para obter a lista de membros.
                 const tripToDelete = tripsData.find(t => t.id === tripId);
