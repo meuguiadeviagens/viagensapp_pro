@@ -88,39 +88,41 @@
 
         <main id="users-management-view" class="bg-white p-4 sm:p-6 rounded-xl shadow-lg">
             <h2 class="text-xl sm:text-2xl font-semibold text-slate-800 mb-4">Gerenciamento de Usuários</h2>
-            <div class="mb-4 p-4 border rounded-lg bg-slate-50">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                    <div>
-                        <label for="filter-type" class="block text-sm font-medium text-slate-600">Filtrar por</label>
-                        <select id="filter-type" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
-                            <option value="name_email" selected>Nome ou E-mail</option>
-                            <option value="last_login">Data de Último Login</option>
-                            <option value="expired">Planos Expirados</option>
-                        </select>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end"> <div>
+                    <label for="filter-type" class="block text-sm font-medium text-slate-600">Filtrar por</label>
+                    <select id="filter-type" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
+                        <option value="name_email" selected>Nome ou E-mail</option>
+                        <option value="last_login">Data de Último Login</option>
+                        <option value="expired">Planos Expirados</option>
+                    </select>
+                </div>
+
+                <div id="filter-inputs-container" class="md:col-span-2"> <div id="filter-name-email-group">
+                        <label for="search-user" class="block text-sm font-medium text-slate-600">Termo de busca</label>
+                        <input type="text" id="search-user" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base" placeholder="Digite para buscar...">
                     </div>
 
-                    <!-- Container para os campos de filtro -->
-                    <div id="filter-inputs-container" class="md:col-span-2">
-                        <!-- Filtro por Nome/Email (visível por padrão) -->
-                        <div id="filter-name-email-group">
-                            <label for="search-user" class="block text-sm font-medium text-slate-600">Termo de busca</label>
-                            <input type="text" id="search-user" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base" placeholder="Digite para buscar...">
-                        </div>
-
-                        <!-- Filtro por Data de Último Login (escondido) -->
-                        <div id="filter-last-login-group" class="hidden">
-                            <label class="block text-sm font-medium text-slate-600">Período</label>
-                            <div class="flex items-center gap-2 mt-1">
-                                <input type="date" id="login-start-date" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
-                                <span class="text-slate-500">até</span>
-                                <input type="date" id="login-end-date" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
-                            </div>
+                    <div id="filter-last-login-group" class="hidden">
+                        <label class="block text-sm font-medium text-slate-600">Período</label>
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="date" id="login-start-date" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
+                            <span class="text-slate-500">até</span>
+                            <input type="date" id="login-end-date" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
                         </div>
                     </div>
                 </div>
-                <div class="mt-3 text-right">
-                    <button id="clear-filters-btn" class="text-sm text-blue-600 hover:underline">Limpar filtros</button>
+
+                <div>
+                    <label for="sort-by" class="block text-sm font-medium text-slate-600">Ordenar por</label>
+                    <select id="sort-by" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
+                        <option value="name_az">Nome (A-Z)</option>
+                        <option value="date_desc" selected>Data Cadastro (Mais Novas)</option> <option value="date_asc">Data Cadastro (Mais Antigas)</option>
+                        <option value="login_desc">Último Login (Mais Recente)</option>
+                    </select>
                 </div>
+                </div>
+            <div class="mt-3 text-right">
+                <button id="clear-filters-btn" class="text-sm text-blue-600 hover:underline">Limpar filtros</button>
             </div>
             <div class="table-responsive-wrapper border rounded-lg">
                 <table class="min-w-full min-w-table divide-y divide-slate-200">
@@ -578,7 +580,7 @@
                         AccountDateAdded: profile.AccountDateAdded || null
                     });
                 });
-                allUsersData.sort((a, b) => a.name.localeCompare(b.name));
+                
                 // Renderiza a tabela inicial e atualiza o contador
                 applyFilters();
             }, (error) => {
@@ -627,7 +629,46 @@
                 );
             }
             
-            renderUsersTable(filteredUsers);
+            // --- INÍCIO DA NOVA LÓGICA DE ORDENAÇÃO ---
+            const sortKey = document.getElementById('sort-by').value;
+
+            if (sortKey === 'date_asc') {
+                // Mais Antigas (N/A primeiro, conforme solicitado)
+                filteredUsers.sort((a, b) => {
+                    const dateA = a.AccountDateAdded;
+                    const dateB = b.AccountDateAdded;
+                    if (dateA === null && dateB === null) return 0;
+                    if (dateA === null) return -1; // N/A (null) é o mais antigo, vem primeiro
+                    if (dateB === null) return 1;
+                    return dateA - dateB; // Compara os timestamps (mais antigo é menor)
+                });
+            } else if (sortKey === 'date_desc') {
+                // Mais Novas (N/A por último)
+                filteredUsers.sort((a, b) => {
+                    const dateA = a.AccountDateAdded;
+                    const dateB = b.AccountDateAdded;
+                    if (dateA === null && dateB === null) return 0;
+                    if (dateA === null) return 1; // N/A é o mais antigo, vem por último
+                    if (dateB === null) return -1;
+                    return dateB - dateA; // Compara os timestamps (mais novo é maior)
+                });
+            } else if (sortKey === 'login_desc') {
+                // Último Login Mais Recente (N/A por último)
+                filteredUsers.sort((a, b) => {
+                    const dateA = a.LastLogin;
+                    const dateB = b.LastLogin;
+                    if (dateA === null && dateB === null) return 0;
+                    if (dateA === null) return 1; // N/A (nunca logou) vem por último
+                    if (dateB === null) return -1;
+                    return dateB - dateA; // Mais recente é maior
+                });
+            } else { 
+                // Padrão é 'name_az' (Nome A-Z)
+                filteredUsers.sort((a, b) => a.name.localeCompare(b.name));
+            }
+            // --- FIM DA NOVA LÓGICA DE ORDENAÇÃO ---
+
+            renderUsersTable(filteredUsers); // Agora renderiza a lista ordenada        
         }
 
         function setupCountrySuggestions() {
@@ -701,6 +742,7 @@
             const startDateInput = document.getElementById('login-start-date');
             const endDateInput = document.getElementById('login-end-date');
             const clearBtn = document.getElementById('clear-filters-btn');
+            const sortBySelect = document.getElementById('sort-by');
 
             // Evento para trocar o tipo de filtro
             filterTypeSelect.addEventListener('change', () => {
@@ -714,6 +756,7 @@
             searchInput.addEventListener('input', applyFilters);
             startDateInput.addEventListener('change', applyFilters);
             endDateInput.addEventListener('change', applyFilters);
+            sortBySelect.addEventListener('change', applyFilters);
 
             // Evento para limpar todos os filtros
             clearBtn.addEventListener('click', () => {
@@ -1907,7 +1950,7 @@
         };
 
     </script>
-<br><center><p>V. 1.2011 - 05/11/2025 18:11</p></center><br>
+<br><center><p>V. 1.2012 - 06/11/2025 10:16</p></center><br>
 
 </body>
 </html>
