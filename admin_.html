@@ -446,6 +446,10 @@
         let tempPurchasedTrips = {};
         let currentEditingOldLicenseData = null; 
 
+         //notifications
+        let previousRequestCount = 0; // Guarda a contagem anterior
+        let isFirstLoad = true; // Para não tocar o som na primeira vez que a página carrega
+
         // Variáveis para a nova aba de sugestões
         let suggestedItinerariesData = {};
         let selectedCityId = null;
@@ -1705,15 +1709,30 @@
         }
 
         // --- 5. LÓGICA DE SOLICITAÇÕES DE UPGRADE ---
-        // (Sua seção 5 era o Histórico, esta pode ser a nova 5, e a de Histórico vira 6, etc.)
-
         /**
          * Escuta o nó 'solicitacoes_upgrade' e chama a renderização.
+         * MODIFICADO: Agora também toca um som se uma nova solicitação chegar.
          */
         function loadUpgradeRequests() {
             const requestsRef = ref(db, 'solicitacoes_upgrade');
+            
             onValue(requestsRef, (snapshot) => {
                 const requests = snapshot.val() || {};
+                const newRequestCount = Object.keys(requests).length; // Pega a nova contagem
+
+                // --- LÓGICA DO SOM ---
+                // 1. Não é a primeira carga da página
+                // 2. A nova contagem é MAIOR que a contagem anterior
+                if (!isFirstLoad && newRequestCount > previousRequestCount) {
+                    playNotificationSound(); // Toca o som!
+                }
+                // ---------------------
+
+                // Atualiza as variáveis de controle para a próxima verificação
+                previousRequestCount = newRequestCount;
+                isFirstLoad = false;
+                
+                // O resto da sua função original continua normalmente
                 renderUpgradeRequests(requests);
             });
         }
@@ -1949,8 +1968,31 @@
             }
         };
 
+        /**
+         * NOVO: Carrega e toca o som de notificação.
+         * O arquivo de som (ex: notification.mp3) deve estar na pasta do projeto.
+         */
+        const notificationSound = new Audio('notification.mp3'); // <-- PERSONALIZE O SOM AQUI
+
+        function playNotificationSound() {
+            notificationSound.currentTime = 0; // Reinicia o som caso já esteja tocando
+            
+            const playPromise = notificationSound.play();
+
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    // Áudio tocou com sucesso
+                    console.log("Tocando som de notificação.");
+                }).catch(error => {
+                    // O navegador pode bloquear o áudio se o usuário não tiver
+                    // interagido com a página (clicado, etc.)
+                    console.warn("Não foi possível tocar o som:", error);
+                });
+            }
+        }
+
     </script>
-<br><center><p>V. 1.2012 - 06/11/2025 10:16</p></center><br>
+<br><center><p>V. 1.2012 - 07/11/2025 10:16</p></center><br>
 
 </body>
 </html>
