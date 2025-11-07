@@ -1968,28 +1968,73 @@
             }
         };
 
-        /**
-         * NOVO: Carrega e toca o som de notificação.
-         * O arquivo de som (ex: notification.mp3) deve estar na pasta do projeto.
-         */
-        const notificationSound = new Audio('notification.mp3'); // <-- PERSONALIZE O SOM AQUI
+        // --- INÍCIO DO NOVO CÓDIGO DE ÁUDIO ---
 
+        // 1. Variáveis de controle
+        const notificationSound = new Audio('notification.mp3'); // <-- Verifique se este caminho está certo!
+        let isAudioReady = false; // Flag para controlar se o áudio foi "destravado"
+
+        /**
+         * Função para "destravar" o áudio no navegador.
+         * É chamada no primeiro clique do usuário na página.
+         */
+        function primeAudioOnFirstClick() {
+            if (isAudioReady) return; // Se já foi destravado, não faz nada
+
+            // Toca um "silêncio" (volume 0) para o navegador dar permissão
+            notificationSound.volume = 0;
+            const playPromise = notificationSound.play();
+
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    // Deu certo! Pausa imediatamente
+                    notificationSound.pause();
+                    notificationSound.currentTime = 0;
+                    notificationSound.volume = 1.0; // Restaura o volume
+                    isAudioReady = true;
+                    console.log("Permissão de áudio concedida pelo navegador.");
+                    
+                    // Remove este "listener" para não rodar de novo em outros cliques
+                    document.body.removeEventListener('click', primeAudioOnFirstClick);
+                
+                }).catch(error => {
+                    // Isso pode falhar se o clique for "roubado" por outro script
+                    console.warn("Tentativa de destravar áudio falhou:", error);
+                });
+            }
+        }
+
+        // 2. Adiciona o "listener" que espera pelo primeiro clique do usuário
+        // Assim que o script carregar, ele fica esperando o primeiro clique.
+        document.body.addEventListener('click', primeAudioOnFirstClick);
+
+
+        /**
+         * Função que toca o som de notificação (Modificada)
+         */
         function playNotificationSound() {
-            notificationSound.currentTime = 0; // Reinicia o som caso já esteja tocando
+            // Se o áudio ainda não foi "destravado" (usuário não clicou)
+            if (!isAudioReady) {
+                console.warn("Nova notificação! Áudio não será tocado pois o usuário ainda não clicou na página.");
+                return; // Não tenta tocar
+            }
+
+            notificationSound.volume = 1.0; // Garante o volume
+            notificationSound.currentTime = 0; // Reinicia o som
             
             const playPromise = notificationSound.play();
 
             if (playPromise !== undefined) {
                 playPromise.then(() => {
-                    // Áudio tocou com sucesso
                     console.log("Tocando som de notificação.");
                 }).catch(error => {
-                    // O navegador pode bloquear o áudio se o usuário não tiver
-                    // interagido com a página (clicado, etc.)
-                    console.warn("Não foi possível tocar o som:", error);
+                    // Mesmo com o "prime", algo raro pode dar errado
+                    console.error("Erro ao tocar som (mesmo após destravar):", error);
                 });
             }
         }
+
+        // --- FIM DO NOVO CÓDIGO DE ÁUDIO ---
 
     </script>
 <br><center><p>V. 1.2012 - 07/11/2025 10:16</p></center><br>
