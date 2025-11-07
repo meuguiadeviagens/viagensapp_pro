@@ -417,6 +417,17 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
+        // --- INÍCIO: GERAR FAVICON DE NOTIFICAÇÃO ---
+        // Garante que o link do favicon exista
+        getOrCreateFaviconLink(); 
+        
+        // Gera e armazena o ícone com o "badge" assim que a página carregar
+        createNotifiedFavicon((dataUrl) => {
+            notifiedFaviconHref = dataUrl;
+            console.log("Favicon de notificação gerado e pronto para uso.");
+        });
+        // --- FIM: GERAR FAVICON DE NOTIFICAÇÃO ---
+
         // --- ICONS (COPIADO DE viagens_pro.html) ---
         const ICONS = {
             passeio: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
@@ -445,6 +456,12 @@
         let currentEditingUid = null;
         let tempPurchasedTrips = {};
         let currentEditingOldLicenseData = null; 
+
+        // --- INÍCIO: NOVAS VARIÁVEIS DO FAVICON ---
+        let originalFaviconHref = 'favicon.png'; // O ícone original do seu app
+        let notifiedFaviconHref = null; // O ícone com o "badge" (será gerado)
+        let faviconLinkElement = document.querySelector("link[rel='icon']");
+        // --- FIM: NOVAS VARIÁVEIS DO FAVICON ---
 
          //notifications
         let previousRequestCount = 0; // Guarda a contagem anterior
@@ -1739,21 +1756,39 @@
 
         /**
          * Desenha os cards de solicitação pendente na tela.
+         * MODIFICADO: Agora também atualiza o ícone (favicon) da aba.
          */
         function renderUpgradeRequests(requests) {
             const listContainer = document.getElementById('upgrade-requests-list');
             const badge = document.getElementById('upgrades-badge');
             listContainer.innerHTML = '';
             
-            // Converte o objeto {uid: data} em um array [[uid, data], ...]
             const requestEntries = Object.entries(requests);
 
-            // Atualiza o "sino" de notificação
+            // Atualiza o "sino" de notificação E O FAVICON
             if (requestEntries.length > 0) {
                 badge.textContent = requestEntries.length;
                 badge.classList.remove('hidden');
+
+                // --- NOVO: Mudar o Favicon ---
+                // Só muda se o ícone já foi gerado e o atual não for ele
+                const link = getOrCreateFaviconLink();
+                if (notifiedFaviconHref && link.href !== notifiedFaviconHref) {
+                    link.href = notifiedFaviconHref;
+                }
+                // --- FIM DA MUDANÇA ---
+
             } else {
                 badge.classList.add('hidden');
+                
+                // --- NOVO: Reverter o Favicon ---
+                // Volta ao ícone original
+                const link = getOrCreateFaviconLink();
+                if (link.href !== originalFaviconHref) {
+                    link.href = originalFaviconHref;
+                }
+                // --- FIM DA REVERSÃO ---
+
                 listContainer.innerHTML = '<p class="text-center text-sm text-slate-500 py-4">Nenhuma solicitação pendente.</p>';
                 return;
             }
@@ -2033,8 +2068,73 @@
                 });
             }
         }
-
         // --- FIM DO NOVO CÓDIGO DE ÁUDIO ---
+
+        /**
+         * NOVO: Encontra ou cria a tag <link rel="icon"> no <head> do HTML.
+         * Isso é essencial para podermos controlar o ícone da aba.
+         */
+        function getOrCreateFaviconLink() {
+            if (faviconLinkElement) return faviconLinkElement;
+
+            // Se não existir, cria um
+            faviconLinkElement = document.createElement('link');
+            faviconLinkElement.rel = 'icon';
+            faviconLinkElement.type = 'image/png';
+            faviconLinkElement.href = originalFaviconHref; // Define o ícone padrão
+            document.getElementsByTagName('head')[0].appendChild(faviconLinkElement);
+            
+            console.log("Tag do favicon criada e inserida no <head>.");
+            return faviconLinkElement;
+        }
+
+        /**
+         * NOVO: Desenha a notificação (círculo vermelho) sobre o favicon original.
+         * Usa um Canvas para criar uma nova imagem dinamicamente.
+         */
+        function createNotifiedFavicon(callback) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32; // Tamanho padrão (32x32)
+            canvas.height = 32;
+            const context = canvas.getContext('2d');
+            
+            const originalIcon = new Image();
+            // Garante que o navegador não use cache antigo
+            originalIcon.src = originalFaviconHref + '?' + new Date().getTime(); 
+            
+            originalIcon.onload = () => {
+                // 1. Desenha o ícone original
+                context.drawImage(originalIcon, 0, 0, 32, 32);
+                
+                // 2. Prepara o "badge" vermelho
+                const radius = 8;
+                const x = canvas.width - radius; // Canto superior direito
+                const y = radius;
+                
+                context.beginPath();
+                context.arc(x, y, radius, 0, 2 * Math.PI, false);
+                context.fillStyle = '#e11d48'; // Um vermelho forte (Tailwind rose-600)
+                context.fill();
+                
+                // 3. (Opcional) Borda branca para destacar
+                context.strokeStyle = 'white';
+                context.lineWidth = 2;
+                context.stroke();
+
+                // 4. Retorna a imagem como um Data URL (texto base64)
+                callback(canvas.toDataURL('image/png'));
+            };
+            
+            originalIcon.onerror = () => {
+                // Fallback: Se o 'favicon.png' não for encontrado, desenha só um círculo vermelho
+                console.warn("Não foi possível carregar 'favicon.png'. Usando fallback.");
+                context.beginPath();
+                context.arc(16, 16, 14, 0, 2 * Math.PI, false);
+                context.fillStyle = '#e11d48';
+                context.fill();
+                callback(canvas.toDataURL('image/png'));
+            };
+        }
 
     </script>
 <br><center><p>V. 1.2012 - 07/11/2025 10:16</p></center><br>
