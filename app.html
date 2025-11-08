@@ -8985,10 +8985,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const logEntries = Object.values(trip.activityLog);
 
             // 4. Usa .some() para checar se PELO MENOS UM item é mais novo que o carimbo
-            const hasNewItems = logEntries.some(entry => 
-                entry.timestamp > lastViewedTimestamp && // É novo
-                entry.userId !== currentUserId            // E não é meu
-            );
+            const hasNewItems = logEntries.some(entry => entry.timestamp > lastViewedTimestamp);
 
             // 5. Mostra ou esconde o badge
             if (hasNewItems) {
