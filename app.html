@@ -2190,6 +2190,13 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
         </div>
     </div>
 
+    <div id="update-popup" class="hidden fixed bottom-4 right-4 z-[1000] bg-slate-800 text-white p-4 rounded-lg shadow-2xl flex items-center gap-4">
+            <span>Uma nova versão do app está disponível!</span>
+            <button id="reload-app-btn" class="px-3 py-1 bg-blue-600 font-semibold rounded-md hover:bg-blue-700">
+                Recarregar
+            </button>
+        </div>
+
 
     <script type="module">
         // Importações do Firebase
@@ -2275,6 +2282,65 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
             "BRL", "USD", "EUR", "JPY", "GBP", "AUD", 
             "CAD", "CHF", "CNY", "CC/IOF"
         ];
+
+        // ===============================================
+        // INÍCIO: LÓGICA DE DETECÇÃO DE ATUALIZAÇÃO DO PWA
+        // ===============================================
+
+        let newWorker; // Variável para guardar o novo Service Worker
+
+        function showUpdateBar() {
+            const popup = document.getElementById('update-popup');
+            if (popup) popup.classList.remove('hidden');
+        }
+
+        // 1. Registra o Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js') // <-- CONFIRME O NOME DO SEU ARQUIVO
+                .then(registration => {
+                    console.log('Service Worker registrado com sucesso.');
+
+                    // 2. Escuta por um novo Service Worker "esperando"
+                    registration.addEventListener('updatefound', () => {
+                        console.log('Atualização encontrada. Novo Service Worker sendo instalado.');
+                        newWorker = registration.installing;
+
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed') {
+                                // 3. Se um novo SW foi instalado e está esperando, mostra o pop-up
+                                if (navigator.serviceWorker.controller) {
+                                    console.log('Novo Service Worker está instalado e esperando.');
+                                    showUpdateBar();
+                                }
+                            }
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Falha ao registrar o Service Worker:', error);
+                });
+        }
+
+        // 4. Ação do botão "Recarregar"
+        document.getElementById('reload-app-btn').addEventListener('click', () => {
+            if (newWorker) {
+                // 5. Envia a mensagem para o SW
+                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                
+                // Esconde o pop-up
+                document.getElementById('update-popup').classList.add('hidden');
+            }
+        });
+        
+        // 6. Recarrega a página DEPOIS que o novo SW assumir o controle
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            console.log('Novo Service Worker assumiu o controle. Recarregando a página.');
+            window.location.reload();
+        });
+
+        // ===============================================
+        // FIM: LÓGICA DE DETECÇÃO DE ATUALIZAÇÃO
+        // ===============================================
 
 
         /**
