@@ -668,7 +668,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2023 | 06/11/2025, 11:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2024 | 08/11/2025, 08:24</p>
             </main>
         </div>
 
@@ -806,6 +806,10 @@
                     <button onclick="window.print()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-printer"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
                         <span>PDF Offline</span>
+                    </button>
+                    <button onclick="openActivityLogModal()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-history"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M12 8v4l4 2"/></svg>
+                        <span>Novidades</span>
                     </button>
                     <button id="custom-link-btn" style="display: none;" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
@@ -2172,6 +2176,20 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
           </div>
         </div>
 
+    <div id="activity-log-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-2xl m-4 flex flex-col max-h-[80vh]">
+            <h3 class="text-2xl font-semibold mb-4 text-slate-800">Novidades da Viagem</h3>
+            
+            <div id="activity-log-list" class="flex-grow overflow-y-auto pr-2 space-y-4 border-t pt-4">
+                <p class="text-center text-slate-500">Carregando histórico de atividades...</p>
+            </div>
+
+            <div class="pt-6 flex justify-end">
+                <button type="button" onclick="closeModal('activity-log-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Fechar</button>
+            </div>
+        </div>
+    </div>
+
 
     <script type="module">
         // Importações do Firebase
@@ -2257,6 +2275,127 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
             "BRL", "USD", "EUR", "JPY", "GBP", "AUD", 
             "CAD", "CHF", "CNY", "CC/IOF"
         ];
+
+
+        /**
+         * Salva uma nova entrada no log de atividades da viagem.
+         * @param {string} actionMessage - A descrição da ação (ex: "adicionou o voo: ...")
+         */
+        async function logTripActivity(actionMessage) {
+            // Verifica se temos todas as informações necessárias
+            if (!currentTripId || !currentUserId || !currentUserProfile || !currentUserProfile.fullName) {
+                console.warn("Log não salvo: Faltando dados do usuário ou da viagem.");
+                return;
+            }
+
+            // Pega apenas o primeiro nome do usuário para um log mais limpo
+            const userName = currentUserProfile.fullName.split(' ')[0];
+
+            const logEntry = {
+                timestamp: serverTimestamp(), // Usa a hora do servidor Firebase
+                userId: currentUserId,
+                userName: userName,
+                action: actionMessage
+            };
+
+            // Define o caminho para o log dentro da viagem
+            const logRef = ref(db, `trips/${currentTripId}/activityLog`);
+            
+            // push() cria uma nova chave única e cronológica
+            const newLogRef = push(logRef);
+            
+            try {
+                await set(newLogRef, logEntry);
+            } catch (error) {
+                console.error("Erro ao salvar log de atividade:", error);
+            }
+        }
+
+        /**
+         * Abre o modal "Novidades" e renderiza o log de atividades.
+         * AGORA TAMBÉM: Destaca novas entradas e atualiza o carimbo de "visto".
+         */
+        window.openActivityLogModal = () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const logList = document.getElementById('activity-log-list');
+
+            // 1. Pega o carimbo da última vez que ESTE usuário viu o log
+            // Se não existir (|| 0), será a primeira vez, então o carimbo é 0.
+            const lastViewedTimestamp = (trip.userViewTimestamps && trip.userViewTimestamps[currentUserId])
+                                        ? trip.userViewTimestamps[currentUserId]
+                                        : 0;
+            
+            if (!trip || !trip.activityLog) {
+                logList.innerHTML = '<p class="text-center text-slate-500">Nenhuma atividade registrada para esta viagem ainda.</p>';
+            } else {
+                logList.innerHTML = ''; // Limpa o "Carregando..."
+                
+                // O log é salvo como um objeto { key1: entry1, key2: entry2 }
+                // Precisamos convertê-lo em um array, ordenar pela data, e reverter (mais novo primeiro)
+                const logEntries = Object.values(trip.activityLog)
+                                       .sort((a, b) => a.timestamp - b.timestamp) // Ordena do mais antigo para o mais novo
+                                       .reverse(); // Reverte para mostrar o mais novo no topo
+
+                let hasNewItems = false;
+                
+                logEntries.forEach(entry => {
+                    const date = new Date(entry.timestamp);
+                    const formattedDate = date.toLocaleString('pt-BR', {
+                        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+                    });
+
+                    // 2. Compara o carimbo do log com o carimbo da última visualização
+                    const isNew = entry.timestamp > lastViewedTimestamp;
+                    if (isNew) hasNewItems = true;
+
+                    // 3. Monta o texto da ação, aplicando <strong> se for novo
+                    const actionText = `${entry.userName} ${entry.action}`;
+                    const styledAction = isNew 
+                        ? `<strong class="text-slate-900">${actionText}</strong>` 
+                        : actionText;
+
+                    const logElement = document.createElement('div');
+                    // Estiliza cada entrada do log
+                    logElement.className = 'flex items-start gap-3 pb-3 border-b border-slate-100 last:border-b-0';
+                    logElement.innerHTML = `
+                        <div class="flex-shrink-0 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-semibold text-xs" title="${entry.userName}">
+                            ${entry.userName.substring(0, 3)}
+                        </div>
+                        <div>
+                            <p class="text-sm ${isNew ? 'text-slate-800' : 'text-slate-700'}">
+                                ${styledAction} </p>
+                            <p class="text-xs ${isNew ? 'text-blue-600 font-medium' : 'text-slate-400'} mt-0.5">
+                                ${formattedDate} ${isNew ? ' (Novo)' : ''} </p>
+                        </div>
+                    `;
+                    logList.appendChild(logElement);
+                });
+            }
+            
+            openModal('activity-log-modal');
+
+            // 4. CHAMA A FUNÇÃO para atualizar o carimbo DEPOIS de abrir o modal
+            updateLastViewedTimestamp();
+        }
+
+        /**
+         * Atualiza o timestamp da última vez que o usuário visualizou o log.
+         * Isso "marca como lido" todas as entradas atuais para este usuário.
+         */
+        async function updateLastViewedTimestamp() {
+            if (!currentTripId || !currentUserId) return;
+            
+            // Define o caminho para o carimbo específico deste usuário nesta viagem
+            const timestampRef = ref(db, `trips/${currentTripId}/userViewTimestamps/${currentUserId}`);
+            
+            try {
+                // Salva a hora atual do servidor no Firebase
+                await set(timestampRef, serverTimestamp());
+            } catch (error) {
+                console.error("Erro ao atualizar 'lastViewed' timestamp:", error);
+            }
+        }
+
 
         // --- INÍCIO DO CÓDIGO PARA CONTROLE DE HISTÓRICO ---
 
@@ -5747,6 +5886,14 @@ let dividerHtml = '';
             const newItemRef = push(categoryRef);
             await set(newItemRef, newItem);
 
+            // Bloco de Log
+            let logMsg = '';
+            if (category === 'flights') logMsg = `adicionou o voo: ${newItem.company} (${newItem.origin} → ${newItem.destination})`;
+            else if (category === 'transport') logMsg = `adicionou o transporte: ${newItem.type} (${newItem.from} → ${newItem.to})`;
+            else if (category === 'lodging') logMsg = `adicionou a hospedagem: ${newItem.name}`;
+            if (logMsg) await logTripActivity(logMsg);
+            // Fim do Bloco de Log
+
             let modalIdToClose = category === 'flights' ? 'add-flight-modal' : (category === 'transport' ? 'add-transport-modal' : 'add-lodging-modal');
             if (modalIdToClose) closeModal(modalIdToClose);
         }
@@ -6273,7 +6420,7 @@ let dividerHtml = '';
 
                 // Use update to potentially save as an array or object depending on original structure
                 await update(ref(db, `trips/${currentTripId}`), { activities: activitiesToSave });
-
+                await logTripActivity(`importou ${activitiesToImport.length} atividades sugeridas para ${formatDate(targetDate)}`);
 
                 const selectedDayText = document.getElementById('import-target-day-select').options[document.getElementById('import-target-day-select').selectedIndex].text;
                 alert(`${activitiesToImport.length} atividade(s) importada(s) para "${selectedDayText}"!`);
@@ -6633,9 +6780,10 @@ let dividerHtml = '';
             if (!trip) return;
 
             let daysArray = getDaysArray(trip);
-            daysArray.splice(index, 0, { date: 'new', activities: [] });
+            daysArray.splice(index, 0, { date: 'new', activities: [] });            
 
             await remapAndSaveDays(currentTripId, daysArray);
+            await logTripActivity(`inseriu um novo dia no roteiro (no dia ${index + 1})`);
         };
         
         window.deleteDay = async (dayKey) => {
@@ -6826,7 +6974,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             try {
                 await set(newTripRef, newTripData);
-                await set(ref(db, `users/${user.uid}/memberOf/${newTripId}`), true);
+                await set(ref(db, `users/${user.uid}/memberOf/${newTripId}`), true);                
                 
                 closeModal('add-trip-modal');
             } catch (error) {
@@ -6856,6 +7004,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const updatedDocuments = [...currentDocuments, newDocument];
             const updates = { [`/${currentTripId}/documents`]: updatedDocuments };
             await update(ref(db, 'trips'), updates);
+            await logTripActivity(`adicionou o documento: "${docName}"`);
 
             input.value = '';
         });
@@ -6929,6 +7078,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             const tripToUpdateRef = ref(db, `trips/${currentTripId}`);
             await update(tripToUpdateRef, updates);
+            await logTripActivity('editou os dados gerais da viagem.');
 
             // 1. Atualiza os dados na variável local...
             const tripIndex = tripsData.findIndex(t => t.id === currentTripId);
@@ -6962,6 +7112,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             };
             const itemRef = ref(db, `trips/${currentTripId}/flights/${currentEditingItemId}`);
             await update(itemRef, updatedFlight);
+            await logTripActivity(`editou o voo: ${updatedFlight.company} (${updatedFlight.origin} → ${updatedFlight.destination})`);
             closeModal('edit-flight-modal');
             currentEditingItemId = null;
         });
@@ -6976,6 +7127,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             };
             const itemRef = ref(db, `trips/${currentTripId}/transport/${currentEditingItemId}`);
             await update(itemRef, updatedTransport);
+            await logTripActivity(`editou o transporte: ${updatedTransport.type} (${updatedTransport.from} → ${updatedTransport.to})`);
             closeModal('edit-transport-modal');
             currentEditingItemId = null;
         });
@@ -6990,6 +7142,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             };
             const itemRef = ref(db, `trips/${currentTripId}/lodging/${currentEditingItemId}`);
             await update(itemRef, updatedLodging);
+            await logTripActivity(`editou a hospedagem: ${updatedLodging.name}`);
             closeModal('edit-lodging-modal');
             currentEditingItemId = null;
         });
@@ -7066,6 +7219,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const updates = { [`${currentTripId}/notes`]: currentNotes };
             
             await update(ref(db, 'trips'), updates);
+            await logTripActivity(`adicionou a anotação: "${newNote.title}"`);
             
             closeModal('add-note-modal');
         });
@@ -7091,6 +7245,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 };
                 const updates = { [`${currentTripId}/notes`]: trip.notes };
                 await update(ref(db, 'trips'), updates);
+                await logTripActivity(`editou a anotação: "${trip.notes[noteIndex].title}"`);
             }
             closeModal('edit-note-modal');
         });
@@ -8110,6 +8265,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 
                 try {
                     await update(ref(db, 'trips'), updates);
+                    await logTripActivity(`renomeou um documento para: "${newName}"`);
                     closeModal('edit-document-modal');
                 } catch (error) {
                     console.error("Erro ao atualizar documento:", error);
