@@ -668,7 +668,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2024 | 08/11/2025, 08:24</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.1 | 08/11/2025, 10:24</p>
             </main>
         </div>
 
@@ -807,9 +807,10 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-printer"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
                         <span>PDF Offline</span>
                     </button>
-                    <button onclick="openActivityLogModal()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
+                    <button onclick="openActivityLogModal()" class="relative flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-history"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M12 8v4l4 2"/></svg>
                         <span>Novidades</span>
+                        <span id="activity-log-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
                     </button>
                     <button id="custom-link-btn" style="display: none;" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
@@ -2382,6 +2383,10 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
          * AGORA TAMBÉM: Destaca novas entradas e atualiza o carimbo de "visto".
          */
         window.openActivityLogModal = () => {
+            // Esconde a bolinha vermelha imediatamente ao abrir
+            const badge = document.getElementById('activity-log-badge');
+            if (badge) badge.classList.add('hidden'); // <-- ADICIONE ESTA LINHA
+
             const trip = tripsData.find(t => t.id === currentTripId);
             const logList = document.getElementById('activity-log-list');
 
@@ -4351,6 +4356,8 @@ window.addEventListener('popstate', (event) => {
 
             const userRole = (trip.members && currentUserId) ? trip.members[currentUserId] : 'editor';
             const isReadOnly = (userRole === 'viewer');
+
+            updateActivityLogBadge(trip);
 
             // Atualiza o contador de anotações no botão do Índice Rápido
             const notesCount = trip.notes ? trip.notes.length : 0;
@@ -8951,6 +8958,40 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             } catch (error) {
                 console.error("Erro ao buscar viagem de admin:", error);
                 alert("Ocorreu um erro ao tentar carregar a viagem.");
+            }
+        }
+
+        /**
+         * Verifica se há novas atividades no log e mostra/esconde a bolinha de notificação.
+         * @param {object} trip - O objeto da viagem atual.
+         */
+        function updateActivityLogBadge(trip) {
+            const badge = document.getElementById('activity-log-badge');
+            if (!badge) return;
+            
+
+            // 1. Pega o carimbo da última vez que ESTE usuário viu o log
+            const lastViewedTimestamp = (trip.userViewTimestamps && trip.userViewTimestamps[currentUserId])
+                                        ? trip.userViewTimestamps[currentUserId]
+                                        : 0;
+            
+            // 2. Verifica se o log de atividades existe
+            if (!trip.activityLog) {
+                badge.classList.add('hidden');
+                return;
+            }
+
+            // 3. Converte o objeto de log em um array de valores
+            const logEntries = Object.values(trip.activityLog);
+
+            // 4. Usa .some() para checar se PELO MENOS UM item é mais novo que o carimbo
+            const hasNewItems = logEntries.some(entry => entry.timestamp > lastViewedTimestamp);
+
+            // 5. Mostra ou esconde o badge
+            if (hasNewItems) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
             }
         }
 
