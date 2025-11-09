@@ -668,7 +668,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.1 | 08/11/2025, 10:24</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.2 | 09/11/2025, 08:30</p>
             </main>
         </div>
 
@@ -7241,6 +7241,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             currentActivities.push(newActivity);
             const updates = { [`/${currentTripId}/activities`]: currentActivities };
             await update(ref(db, 'trips'), updates);
+            await logTripActivity(`adicionou a atividade: "${newActivity.name}" no dia ${formatDate(newActivity.date)}`);
             closeModal('add-activity-modal');
         });
 
@@ -7265,6 +7266,8 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 };
                 const updates = { [`/${currentTripId}/activities`]: currentActivities };
                 await update(ref(db, 'trips'), updates);
+                const updatedActivity = currentActivities[activityIndex];
+                await logTripActivity(`editou a atividade: "${updatedActivity.name}"`);
             }
             closeModal('edit-activity-modal');
         });
