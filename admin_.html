@@ -71,6 +71,9 @@
                     Solicitações
                     <span id="upgrades-badge" class="hidden absolute top-3 -right-3 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center"></span>
                 </button>
+                <button onclick="switchAdminView('tools')" id="tab-tools" class="admin-tab whitespace-nowrap py-4 px-1 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-400">
+                    Ferramentas
+                </button>
             </nav>
         </div>
 
@@ -92,6 +95,7 @@
                     <label for="filter-type" class="block text-sm font-medium text-slate-600">Filtrar por</label>
                     <select id="filter-type" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
                         <option value="name_email" selected>Nome ou E-mail</option>
+                        <option value="plano">Plano</option>
                         <option value="last_login">Data de Último Login</option>
                         <option value="expired">Planos Expirados</option>
                     </select>
@@ -109,6 +113,17 @@
                             <span class="text-slate-500">até</span>
                             <input type="date" id="login-end-date" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
                         </div>
+                    </div>
+
+                    <div id="filter-plano-group" class="hidden">
+                        <label for="filter-plano-select" class="block text-sm font-medium text-slate-600">Tipo de Plano</label>
+                        <select id="filter-plano-select" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
+                            <option value="todos">Todos</option>
+                            <option value="gratuito">Gratuito</option>
+                            <option value="anual">Anual / Bianual</option>
+                            <option value="cortesia">Cortesia</option>
+                            <option value="admin">Admin</option>
+                        </select>
                     </div>
                 </div>
 
@@ -190,6 +205,43 @@
                 </div>
             </div>
         </div>
+
+        <div id="tools-management-view" class="hidden bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl sm:text-2xl font-semibold text-slate-800 mb-6">Ferramentas de Admin</h2>
+
+            <div class="border rounded-lg p-4 max-w-2xl mx-auto">
+                <h3 class="text-lg font-semibold text-slate-700 mb-4">Enviar Notificação em Massa</h3>
+                <p class="text-sm text-slate-500 mb-4">
+                    A mensagem será enviada como uma notificação "info" (ícone de informação) para todos os usuários que correspondem ao filtro selecionado. LIMITE DE APROX. 1.000 USUÁRIOS, se for mais que isso, tem que usar o Firebase Cloud Function ou um Backend
+                </p>
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="bulk-target-select" class="block text-sm font-medium text-slate-600">Enviar para:</label>
+                        <select id="bulk-target-select" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base">
+                            <option value="all">Todos os Usuários</option>
+                            <option value="gratuito">Apenas Plano Gratuito</option>
+                            <option value="anual">Apenas Plano Anual (inclui Bianual)</option>
+                            <option value="cortesia">Apenas Plano Cortesia</option>
+                            <option value="admin">Apenas Admins</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="bulk-message-text" class="block text-sm font-medium text-slate-600">Mensagem:</label>
+                        <textarea id="bulk-message-text" rows="5" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base" placeholder="Digite sua mensagem aqui..."></textarea>
+                    </div>
+
+                    <div>
+                        <button id="send-bulk-message-btn" class="w-full px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">
+                            Enviar Notificação
+                        </button>
+                    </div>
+
+                    <p id="bulk-status-message" class="text-sm text-center text-slate-600"></p>
+                </div>
+            </div>
+            </div>
 
     </div>        
 
@@ -343,6 +395,18 @@
                     <div id="user-trips-list-container" class="hidden mt-2 border rounded bg-slate-50 p-3 max-h-40 overflow-y-auto">
                         {/* Lista de viagens do usuário será inserida aqui */}
                     </div>
+
+                </div>
+
+                <div class="border-t pt-4 mt-4">
+                    <label for="custom-notification-message" class="block text-sm font-medium text-slate-600 mb-2">
+                        Enviar Notificação Personalizada
+                    </label>
+                    <textarea id="custom-notification-message" rows="3" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-base" placeholder="Digite uma mensagem curta para o usuário..."></textarea>
+                    
+                    <button type="button" id="send-notification-btn" class="mt-2 w-full sm:w-auto px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded hover:bg-purple-700 transition-colors">
+                        Enviar Notificação ao Usuário
+                    </button>
                 </div>
 
                 <div class="pt-6 flex flex-col sm:flex-row justify-end gap-3 border-t">
@@ -522,10 +586,12 @@
             document.getElementById('users-management-view').classList.toggle('hidden', view !== 'users');
             document.getElementById('suggestions-management-view').classList.toggle('hidden', view !== 'suggestions');
             document.getElementById('upgrades-management-view').classList.toggle('hidden', view !== 'upgrades'); // <-- ADICIONE ESTA LINHA
+            document.getElementById('tools-management-view').classList.toggle('hidden', view !== 'tools');
 
             document.getElementById('tab-users').classList.toggle('active', view === 'users');
             document.getElementById('tab-suggestions').classList.toggle('active', view === 'suggestions');
             document.getElementById('tab-upgrades').classList.toggle('active', view === 'upgrades'); // <-- ADICIONE ESTA LINHA
+            document.getElementById('tab-tools').classList.toggle('active', view === 'tools');
         };
 
         // --- 2. LÓGICA DE LOGIN/LOGOUT ---
@@ -613,7 +679,7 @@
 
         function applyFilters() {
             const filterType = document.getElementById('filter-type').value;
-            let filteredUsers = [...allUsersData]; // Começa com uma cópia de todos os usuários
+            let filteredUsers = [...allUsersData]; 
 
             if (filterType === 'name_email') {
                 const query = document.getElementById('search-user').value.toLowerCase().trim();
@@ -624,11 +690,22 @@
                         user.uid.toLowerCase().includes(query)
                     );
                 }
+            } else if (filterType === 'plano') { // NOVO BLOCO PARA FILTRAR POR PLANO
+                const selectedPlano = document.getElementById('filter-plano-select').value;
+                if (selectedPlano !== 'todos') {
+                    filteredUsers = allUsersData.filter(user => {
+                        // Nota: O seu sistema salva "bianual" como "anual" na licença.
+                        // Esta lógica trata os dois casos corretamente.
+                        if (selectedPlano === 'anual') {
+                            return user.licenseType === 'anual' || user.licenseType === 'bianual';
+                        }
+                        return user.licenseType === selectedPlano;
+                    });
+                }
             } else if (filterType === 'last_login') {
                 const startDateStr = document.getElementById('login-start-date').value;
                 const endDateStr = document.getElementById('login-end-date').value;
 
-                // Converte as datas para timestamps no início e fim do dia para uma comparação precisa
                 const startTime = startDateStr ? new Date(startDateStr + 'T00:00:00').getTime() : 0;
                 const endTime = endDateStr ? new Date(endDateStr + 'T23:59:59').getTime() : Infinity;
 
@@ -650,47 +727,42 @@
                     todayTimestamp > user.expiresTimestamp
                 );
             }
-            
-            // --- INÍCIO DA NOVA LÓGICA DE ORDENAÇÃO ---
+
+            // A lógica de ordenação continua a mesma e será aplicada após o filtro
             const sortKey = document.getElementById('sort-by').value;
 
             if (sortKey === 'date_asc') {
-                // Mais Antigas (N/A primeiro, conforme solicitado)
                 filteredUsers.sort((a, b) => {
                     const dateA = a.AccountDateAdded;
                     const dateB = b.AccountDateAdded;
                     if (dateA === null && dateB === null) return 0;
-                    if (dateA === null) return -1; // N/A (null) é o mais antigo, vem primeiro
+                    if (dateA === null) return -1;
                     if (dateB === null) return 1;
-                    return dateA - dateB; // Compara os timestamps (mais antigo é menor)
+                    return dateA - dateB;
                 });
             } else if (sortKey === 'date_desc') {
-                // Mais Novas (N/A por último)
                 filteredUsers.sort((a, b) => {
                     const dateA = a.AccountDateAdded;
                     const dateB = b.AccountDateAdded;
                     if (dateA === null && dateB === null) return 0;
-                    if (dateA === null) return 1; // N/A é o mais antigo, vem por último
+                    if (dateA === null) return 1;
                     if (dateB === null) return -1;
-                    return dateB - dateA; // Compara os timestamps (mais novo é maior)
+                    return dateB - dateA;
                 });
             } else if (sortKey === 'login_desc') {
-                // Último Login Mais Recente (N/A por último)
                 filteredUsers.sort((a, b) => {
                     const dateA = a.LastLogin;
                     const dateB = b.LastLogin;
                     if (dateA === null && dateB === null) return 0;
-                    if (dateA === null) return 1; // N/A (nunca logou) vem por último
+                    if (dateA === null) return 1;
                     if (dateB === null) return -1;
-                    return dateB - dateA; // Mais recente é maior
+                    return dateB - dateA;
                 });
             } else { 
-                // Padrão é 'name_az' (Nome A-Z)
                 filteredUsers.sort((a, b) => a.name.localeCompare(b.name));
             }
-            // --- FIM DA NOVA LÓGICA DE ORDENAÇÃO ---
 
-            renderUsersTable(filteredUsers); // Agora renderiza a lista ordenada        
+            renderUsersTable(filteredUsers);      
         }
 
         function setupCountrySuggestions() {
@@ -759,34 +831,38 @@
             const filterTypeSelect = document.getElementById('filter-type');
             const nameEmailGroup = document.getElementById('filter-name-email-group');
             const lastLoginGroup = document.getElementById('filter-last-login-group');
-            
+            const planoGroup = document.getElementById('filter-plano-group'); // NOVO: Pega o novo grupo
+
             const searchInput = document.getElementById('search-user');
             const startDateInput = document.getElementById('login-start-date');
             const endDateInput = document.getElementById('login-end-date');
             const clearBtn = document.getElementById('clear-filters-btn');
             const sortBySelect = document.getElementById('sort-by');
+            const planoSelect = document.getElementById('filter-plano-select'); // NOVO: Pega o novo select
 
             // Evento para trocar o tipo de filtro
             filterTypeSelect.addEventListener('change', () => {
                 const selected = filterTypeSelect.value;
                 nameEmailGroup.classList.toggle('hidden', selected !== 'name_email');
                 lastLoginGroup.classList.toggle('hidden', selected !== 'last_login');
+                planoGroup.classList.toggle('hidden', selected !== 'plano'); // NOVO: Adiciona a lógica de visibilidade
                 applyFilters(); // Aplica o filtro ao trocar
             });
 
-            // Eventos para aplicar o filtro ao digitar ou mudar a data
+            // Eventos para aplicar o filtro
             searchInput.addEventListener('input', applyFilters);
             startDateInput.addEventListener('change', applyFilters);
             endDateInput.addEventListener('change', applyFilters);
             sortBySelect.addEventListener('change', applyFilters);
+            planoSelect.addEventListener('change', applyFilters); // NOVO: Adiciona o listener para o novo select
 
             // Evento para limpar todos os filtros
             clearBtn.addEventListener('click', () => {
                 searchInput.value = '';
                 startDateInput.value = '';
                 endDateInput.value = '';
+                planoSelect.value = 'todos'; // NOVO: Reseta o select de plano
                 filterTypeSelect.value = 'name_email';
-                // Dispara o evento de 'change' para esconder os campos de data e aplicar o filtro
                 filterTypeSelect.dispatchEvent(new Event('change')); 
             });
         }
@@ -932,6 +1008,48 @@
             return `${yyyy}-${mm}-${dd}`;
         }
 
+        // ======== INÍCIO DO LISTENER PARA ENVIAR NOTIFICAÇÃO ========
+        // ======== INÍCIO DO LISTENER PARA ENVIAR NOTIFICAÇÃO (CORRIGIDO) ========
+        document.getElementById('send-notification-btn').addEventListener('click', async () => {
+            // 1. Pega o UID do usuário que está sendo editado
+            const uid = document.getElementById('edit-user-id').value;
+            if (!uid) {
+                alert("Erro: UID do usuário não encontrado. Abra o modal novamente.");
+                return;
+            }
+
+            // 2. Pega a mensagem do textarea
+            const messageInput = document.getElementById('custom-notification-message');
+            const message = messageInput.value.trim();
+            if (!message) {
+                alert("Por favor, digite uma mensagem para enviar.");
+                return;
+            }
+
+            // 3. Monta o objeto da notificação
+            const notification = {
+                timestamp: serverTimestamp(),
+                type: "info", // Você pode usar "info", "success", "error"
+                title: "Mensagem do Administrador", // Um título padrão
+                message: message,
+                isRead: false
+            };
+
+            // 4. Define o caminho no Firebase e faz o "push"
+            const userNotificationsRef = ref(db, `users/${uid}/notifications`);
+            const newNotificationRef = push(userNotificationsRef);
+
+            try {
+                await set(newNotificationRef, notification);
+                alert("Notificação enviada com sucesso!");
+                messageInput.value = ''; // Limpa o campo de texto
+            } catch (error) { // <-- A CHAVE ESTÁ AQUI
+                console.error("Erro ao enviar notificação:", error);
+                alert("Falha ao enviar notificação. Verifique o console.");
+            }
+        });
+        // ======== FIM DO LISTENER PARA ENVIAR NOTIFICAÇÃO ========
+
         document.getElementById('edit-license-type').addEventListener('change', toggleExpiresField);
         function toggleExpiresField() {
             const typeSelect = document.getElementById('edit-license-type');
@@ -946,6 +1064,8 @@
             }
         }
 
+        
+        
         async function renderPurchasedTripsList() {
             const listContainer = document.getElementById('purchased-trips-list');
             // Mostra um indicador de carregamento
@@ -2137,8 +2257,95 @@
             };
         }
 
+        // --- INÍCIO: LÓGICA DE NOTIFICAÇÃO EM MASSA ---
+
+        // Adiciona o listener ao botão que acabamos de criar no HTML
+        document.getElementById('send-bulk-message-btn').addEventListener('click', sendBulkNotification);
+
+        /**
+         * Envia uma notificação em massa para um grupo de usuários.
+         */
+        async function sendBulkNotification() {
+            const target = document.getElementById('bulk-target-select').value;
+            const message = document.getElementById('bulk-message-text').value.trim();
+            
+            const statusEl = document.getElementById('bulk-status-message');
+            const btn = document.getElementById('send-bulk-message-btn');
+
+            if (!message) {
+                statusEl.textContent = 'Por favor, digite uma mensagem.';
+                statusEl.className = 'text-sm text-center text-red-600';
+                return;
+            }
+
+            // Filtra os usuários com base na seleção
+            let targetUsers = [];
+            if (target === 'all') {
+                targetUsers = allUsersData;
+            } else if (target === 'anual') {
+                // Consistente com seu filtro de tabela, pega 'anual' e 'bianual'
+                targetUsers = allUsersData.filter(user => user.licenseType === 'anual' || user.licenseType === 'bianual');
+            } else {
+                targetUsers = allUsersData.filter(user => user.licenseType === target);
+            }
+
+            if (targetUsers.length === 0) {
+                statusEl.textContent = 'Nenhum usuário encontrado para este filtro.';
+                statusEl.className = 'text-sm text-center text-slate-600';
+                return;
+            }
+
+            // Confirmação MUITO IMPORTANTE
+            if (!confirm(`Confirmar envio da mensagem para ${targetUsers.length} usuário(s) do grupo "${target}"?`)) {
+                return;
+            }
+
+            // Desabilita UI
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+            statusEl.textContent = `Preparando para enviar para ${targetUsers.length} usuários...`;
+            statusEl.className = 'text-sm text-center text-blue-600 animate-pulse';
+
+            // Cria o objeto de notificação padrão
+            const notification = {
+                timestamp: serverTimestamp(),
+                type: "info", // Tipo "info" (ícone de informação)
+                title: "Comunicado Importante",
+                message: message,
+                isRead: false
+            };
+
+            // Constrói um único objeto de 'updates' para uma escrita atômica
+            const updates = {};
+            targetUsers.forEach(user => {
+                // Gera uma nova chave única para a notificação
+                const newNotificationKey = push(ref(db, `users/${user.uid}/notifications`)).key;
+                // Adiciona a notificação ao objeto de updates
+                updates[`/users/${user.uid}/notifications/${newNotificationKey}`] = notification;
+            });
+
+            try {
+                // Envia todas as notificações de uma vez
+                await update(ref(db), updates);
+
+                statusEl.textContent = `Mensagem enviada com sucesso para ${targetUsers.length} usuários!`;
+                statusEl.className = 'text-sm text-center text-green-600';
+                document.getElementById('bulk-message-text').value = ''; // Limpa a caixa de texto
+
+            } catch (error) {
+                console.error("Erro ao enviar notificações em massa:", error);
+                statusEl.textContent = 'Erro ao enviar. Verifique o console.';
+                statusEl.className = 'text-sm text-center text-red-600';
+            } finally {
+                // Reabilita UI
+                btn.disabled = false;
+                btn.textContent = 'Enviar Notificação';
+            }
+        }
+        // --- FIM: LÓGICA DE NOTIFICAÇÃO EM MASSA ---
+
     </script>
-<br><center><p>V. 1.2012 - 07/11/2025 10:16</p></center><br>
+<br><center><p>V. 1.2013 - 10/11/2025 11:52</p></center><br>
 
 </body>
 </html>
