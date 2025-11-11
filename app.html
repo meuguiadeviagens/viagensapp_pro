@@ -698,7 +698,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.10 | 11/11/2025, 18:00</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.11 | 11/11/2025, 18:05</p>
             </main>
         </div>
 
@@ -2221,12 +2221,15 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
         </div>
     </div>
 
-    <div id="update-popup" class="hidden fixed bottom-4 right-4 z-[1000] bg-slate-800 text-white p-4 rounded-lg shadow-2xl flex items-center gap-4">
-            <span>Uma nova versão do app está disponível!</span>
-            <button id="reload-app-btn" class="px-3 py-1 bg-blue-600 font-semibold rounded-md hover:bg-blue-700">
-                Recarregar
+    <div id="force-update-modal" class="fixed inset-0 z-[999] hidden items-center justify-center modal-backdrop">
+        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-sm m-4 text-center">
+            <h3 class="text-xl font-semibold mb-4">Atualização Necessária</h3>
+            <p class="text-slate-600 mb-6">Uma nova versão do aplicativo está pronta. Você precisa atualizar para continuar usando.</p>
+            <button id="force-reload-btn" class="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">
+                Atualizar Agora
             </button>
         </div>
+    </div>
 
 
     <script type="module">
@@ -2320,10 +2323,7 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
 
         let newWorker; // Variável para guardar o novo Service Worker
 
-        function showUpdateBar() {
-            const popup = document.getElementById('update-popup');
-            if (popup) popup.classList.remove('hidden');
-        }
+        // (A função showUpdateBar() não é mais necessária)
 
         // 1. Registra o Service Worker
         if ('serviceWorker' in navigator) {
@@ -2338,10 +2338,11 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
 
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed') {
-                                // 3. Se um novo SW foi instalado e está esperando, mostra o pop-up
+                                // 3. Se um novo SW foi instalado, ABRE O MODAL FORÇADO
                                 if (navigator.serviceWorker.controller) {
-                                    console.log('Novo Service Worker está instalado e esperando.');
-                                    showUpdateBar();
+                                    console.log('Novo Service Worker está instalado e esperando. FORÇANDO ATUALIZAÇÃO.');
+                                    // A função openModal() já existe no seu código
+                                    openModal('force-update-modal'); 
                                 }
                             }
                         });
@@ -2352,14 +2353,12 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
                 });
         }
 
-        // 4. Ação do botão "Recarregar"
-        document.getElementById('reload-app-btn').addEventListener('click', () => {
+        // 4. Ação do botão "Atualizar Agora" (do modal forçado)
+        document.getElementById('force-reload-btn').addEventListener('click', () => {
             if (newWorker) {
                 // 5. Envia a mensagem para o SW
                 newWorker.postMessage({ type: 'SKIP_WAITING' });
-                
-                // Esconde o pop-up
-                document.getElementById('update-popup').classList.add('hidden');
+                // Não é preciso fechar o modal, a página vai recarregar.
             }
         });
         
