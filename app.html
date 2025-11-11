@@ -698,7 +698,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.8 | 10/11/2025, 22:00</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.9 | 11/11/2025, 11:00</p>
             </main>
         </div>
 
@@ -1125,7 +1125,7 @@
                     <input type="text" id="trip-name" placeholder="Ex: Férias na Itália" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500" required="">
                 </div>
                 <div>
-                    <label for="trip-destination" class="block text-sm font-medium text-slate-600">Resumo</label>
+                    <label for="trip-destination" class="block text-sm font-medium text-slate-600">Resumo (Opcional)</label>
                     <input type="text" id="trip-destination" placeholder="Descrição" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500" >
                 </div>
                 <div class="flex items-center gap-4">
@@ -1571,7 +1571,7 @@
                 </div>
                 </div>                
              <div class="border-t pt-4 mt-2">
-                    <label class="block text-sm font-medium text-slate-600 mb-1">Link Personalizado (Opcional)</label>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Botão de Link Personalizado (Opcional)</label>
                     <div>
                         <label for="edit-trip-link-text" class="block text-xs font-medium text-slate-500">Texto do Botão</label>
                         <input type="text" id="edit-trip-link-text" placeholder="Ex: Reservas" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm">
@@ -2606,6 +2606,16 @@ window.addEventListener('popstate', (event) => {
             if (startDate) {
                 document.getElementById('trip-end-date').value = startDate;
             }
+        });
+
+        document.getElementById('flight-departure-date').addEventListener('change', function() {
+            document.getElementById('flight-arrival-date').value = this.value;
+        });
+        document.getElementById('transport-departure-date').addEventListener('change', function() {
+            document.getElementById('transport-arrival-date').value = this.value;
+        });
+        document.getElementById('lodging-checkin-date').addEventListener('change', function() {
+            document.getElementById('lodging-checkout-date').value = this.value;
         });
         // --- FIM: REPLICAR DATA DE INÍCIO NA DATA DE FIM ---
         
@@ -4309,20 +4319,20 @@ window.addEventListener('popstate', (event) => {
             tripCard.className = 'trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative';
             tripCard.onclick = () => showTripDetails(trip.id);
             
-            const isOwner = currentUserId && trip.members && trip.members[currentUserId] === 'owner';
+            // --- INÍCIO DA LÓGICA ATUALIZADA ---
+            
+            // 1. Pega o papel (role) do usuário atual nesta viagem
+            const userRole = (currentUserId && trip.members) ? trip.members[currentUserId] : null;
+
+            // --- FIM DA LÓGICA ATUALIZADA ---
 
             // --- INÍCIO DA LÓGICA PARA ENCONTRAR O NOME DO DONO ---
             let ownerDisplayName = 'Carregando...';
-            // Garante que a viagem tenha as informações necessárias
             if (trip.members && trip.travelers) {
-                // 1. Encontra o ID do usuário que é o "owner"
                 const ownerUid = Object.keys(trip.members).find(uid => trip.members[uid] === 'owner');
-                
                 if (ownerUid) {
-                    // 2. Encontra o objeto do viajante que corresponde ao ID do dono
                     const ownerTraveler = trip.travelers.find(traveler => traveler.uid === ownerUid);
                     if (ownerTraveler && ownerTraveler.name) {
-                         // 3. Pega o primeiro nome do dono para exibir
                         ownerDisplayName = ownerTraveler.name.split(' ')[0];
                     } else {
                         ownerDisplayName = "Dono não encontrado";
@@ -4335,31 +4345,37 @@ window.addEventListener('popstate', (event) => {
 
             // --- INÍCIO: LÓGICA DO ÍCONE DE VISUALIZAÇÃO ---
             let viewOnlyIconHtml = '';
-            // Verifica se o usuário atual tem um papel definido nesta viagem
-            if (currentUserId && trip.members && trip.members[currentUserId]) {
-                const userRole = trip.members[currentUserId];
-                // Se o papel for 'viewer', prepara o HTML do ícone
-                if (userRole === 'viewer') {
-                    viewOnlyIconHtml = `
-                        <div class="absolute bottom-3 right-3 z-10" title="Apenas visualização">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 bg-white/70 backdrop-blur-sm p-1 rounded-full">
-                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                        </div>
-                    `;
-                }
+            if (userRole === 'viewer') { // Lógica simplificada
+                viewOnlyIconHtml = `
+                    <div class="absolute bottom-3 right-3 z-10" title="Apenas visualização">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 bg-white/70 backdrop-blur-sm p-1 rounded-full">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </div>
+                `;
             }
             // --- FIM: LÓGICA DO ÍCONE DE VISUALIZAÇÃO ---
 
+            // --- INÍCIO DA LÓGICA ATUALIZADA DO BOTÃO "EXCLUIR / SAIR" ---
             let deleteButtonHtml = '';
-            if (isOwner) {
+
+            if (userRole === 'owner') {
+                // Dono: Botão vermelho "Excluir Viagem" com ícone de lixeira
                 deleteButtonHtml = `
                     <button onclick="deleteTrip(event, '${trip.id}')" title="Excluir Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                     </button>
                 `;
+            } else if (userRole === 'editor' || userRole === 'viewer') {
+                // Membro: Botão laranja "Sair da Viagem" com ícone de saída
+                deleteButtonHtml = `
+                    <button onclick="deleteTrip(event, '${trip.id}')" title="Sair da Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                    </button>
+                `;
             }
+            // --- FIM DA LÓGICA ATUALIZADA DO BOTÃO ---
 
             let imageContainerClasses = 'h-48';
             let textContainerClasses = 'p-6';
@@ -5118,6 +5134,13 @@ window.addEventListener('popstate', (event) => {
                     activeTripListeners = {};
                     renderCurrentView();
                 }
+
+                // 4. Se a lista mudou (uma viagem foi removida) E a lista NÃO está vazia,
+                //    força a renderização para atualizar a tela principal.
+                else if (listChanged) {
+                    renderCurrentView(); 
+                }
+
             });
         }
 
@@ -5533,6 +5556,21 @@ let dividerHtml = '';
             
             modal.classList.replace('hidden', 'flex');
 
+            // --- INÍCIO DA NOVA LÓGICA (ADICIONE AQUI) ---
+            if (modalId === 'add-trip-modal') {
+                // Cria a data de hoje no formato YYYY-MM-DD
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = (today.getMonth() + 1).toString().padStart(2, '0');
+                const day = today.getDate().toString().padStart(2, '0');
+                const todayString = `${year}-${month}-${day}`;
+
+                // Preenche os campos de data
+                document.getElementById('trip-start-date').value = todayString;
+                document.getElementById('trip-end-date').value = todayString;
+            }
+            // --- FIM DA NOVA LÓGICA ---
+
             // --- INÍCIO DA LÓGICA CORRIGIDA ---
             // Se o modal que estamos abrindo é o de notificações, marque-as como lidas.
             if (modalId === 'notifications-modal') {
@@ -5560,16 +5598,21 @@ let dividerHtml = '';
             if (currentTripId) {
                 const trip = tripsData.find(t => t.id === currentTripId);
                 if (trip && trip.startDate) {
-                    const tripStartDate = trip.startDate;
+                    
+                    // 1. CONVERTE o timestamp da viagem para 'YYYY-MM-DD'
+                    const isoStartDate = timestampToISODate(trip.startDate); 
                     
                     if (modalId === 'add-flight-modal') {
-                        document.getElementById('flight-date').value = tripStartDate;
+                        // 2. CORRIGE os IDs e define AMBAS as datas (partida e chegada)
+                        document.getElementById('flight-departure-date').value = isoStartDate;
+                        document.getElementById('flight-arrival-date').value = isoStartDate; 
                     } else if (modalId === 'add-transport-modal') {
-                        document.getElementById('transport-departure-date').value = tripStartDate;
-                        document.getElementById('transport-arrival-date').value = tripStartDate;
+                        document.getElementById('transport-departure-date').value = isoStartDate;
+                        document.getElementById('transport-arrival-date').value = isoStartDate;
                     } else if (modalId === 'add-lodging-modal') {
-                        document.getElementById('lodging-checkin-date').value = tripStartDate;
-                        document.getElementById('lodging-checkout-date').value = tripStartDate;
+                        document.getElementById('lodging-checkin-date').value = isoStartDate;
+                        // 3. DEFINE a data de checkout também, como solicitado
+                        document.getElementById('lodging-checkout-date').value = isoStartDate;
                     }
                 }
             }
@@ -6038,54 +6081,107 @@ let dividerHtml = '';
         
         window.deleteTrip = async (event, tripId) => {
             event.stopPropagation();
+            if (!currentUserId) return; // Garante que temos um usuário logado
 
-            // --- INÍCIO DA MODIFICAÇÃO ---
-            // 1. Verifica se a viagem está na lista de viagens avulsas compradas
-            // A variável global 'currentUserLicense' já contém essa informação.
-            if (currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[tripId]) {
-                
-                // 2. Se for uma viagem avulsa, impede a exclusão e avisa o usuário
-                alert("Esta viagem foi adquirida em um plano avulso e não pode ser excluída.");
-                
-                // 3. Para a execução da função imediatamente
-                return; 
+            // 1. Pega a viagem e o papel (role) do usuário atual
+            const tripToDelete = tripsData.find(t => t.id === tripId);
+            if (!tripToDelete) {
+                console.error("Viagem não encontrada para excluir/sair:", tripId);
+                return;
             }
-            // --- FIM DA MODIFICAÇÃO ---
+            
+            const userRole = (tripToDelete.members && tripToDelete.members[currentUserId]) 
+                           ? tripToDelete.members[currentUserId] 
+                           : null;
 
-
-            showConfirmDelete('Tem certeza que deseja excluir esta viagem?', async () => {
-                // 1. Encontra a viagem que será excluída para obter a lista de membros.
-                const tripToDelete = tripsData.find(t => t.id === tripId);
-                if (!tripToDelete) {
-                    console.error("Não foi possível encontrar a viagem para exclusão.");
-                    alert("Ocorreu um erro ao tentar excluir a viagem.");
-                    closeModal('confirm-delete-modal');
-                    return;
-                }
-
-                const updates = {};
+            if (userRole === 'owner') {
+                // --- LÓGICA 1: O USUÁRIO É O DONO (EXCLUIR VIAGEM) ---
                 
-                // 2. Prepara a exclusão da viagem principal.
-                updates[`/trips/${tripId}`] = null;
-
-                // 3. Prepara a exclusão da referência "memberOf" para todos os membros.
-                if (tripToDelete.members) {
-                    const memberUids = Object.keys(tripToDelete.members);
-                    memberUids.forEach(uid => {
-                        updates[`/users/${uid}/memberOf/${tripId}`] = null;
-                    });
+                if (currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[tripId]) {
+                    alert("Esta viagem foi adquirida em um plano avulso e não pode ser excluída.");
+                    return; 
                 }
 
-                // 4. Executa todas as exclusões de uma vez (atomicamente).
-                try {
-                    await update(ref(db), updates);
-                } catch (error) {
-                    console.error("Erro ao excluir a viagem e suas referências:", error);
-                    alert("Ocorreu um erro ao excluir a viagem.");
-                } finally {
-                    closeModal('confirm-delete-modal');
-                }
-            });
+                showConfirmDelete('Tem certeza que deseja EXCLUIR esta viagem? (Esta ação é permanente e afetará todos os membros)', async () => {
+                    const updates = {};
+                    
+                    updates[`/trips/${tripId}`] = null;
+
+                    if (tripToDelete.members) {
+                        const memberUids = Object.keys(tripToDelete.members);
+                        memberUids.forEach(uid => {
+                            updates[`/users/${uid}/memberOf/${tripId}`] = null;
+                        });
+                    }
+                    
+                    updates[`/users/${currentUserId}/favoriteTrips/${tripId}`] = null;
+
+                    try {
+                        await update(ref(db), updates);
+                    } catch (error) {
+                        console.error("Erro ao excluir a viagem e suas referências:", error);
+                        alert("Ocorreu um erro ao excluir a viagem.");
+                    } finally {
+                        closeModal('confirm-delete-modal');
+                    }
+                });
+
+            } else if (userRole === 'editor' || userRole === 'viewer') {
+                // --- LÓGICA 2: O USUÁRIO É UM MEMBRO (SAIR DA VIAGEM) ---
+                
+                showConfirmDelete('Tem certeza que deseja SAIR desta viagem? (Ela não aparecerá mais para você)', async () => {
+                    
+                    // --- INÍCIO DA NOVA CORREÇÃO ATÔMICA ---
+                    
+                    // 1. PREPARA A ATUALIZAÇÃO DE SAÍDA (A que contém 'null')
+                    const updates = {};
+                    updates[`/trips/${tripId}/members/${currentUserId}`] = null;
+                    updates[`/users/${currentUserId}/memberOf/${tripId}`] = null;
+                    const currentTravelers = tripToDelete.travelers || [];
+                    const updatedTravelers = currentTravelers.filter(t => t.uid !== currentUserId);
+                    updates[`/trips/${tripId}/travelers`] = updatedTravelers;
+                    updates[`/users/${currentUserId}/favoriteTrips/${tripId}`] = null;
+
+                    // 2. PREPARA A ATUALIZAÇÃO DO LOG (MANUALMENTE)
+                    // Pega o primeiro nome do usuário
+                    const userName = (currentUserProfile && currentUserProfile.fullName) 
+                                   ? currentUserProfile.fullName.split(' ')[0] 
+                                   : 'Viajante';
+
+                    // Cria o objeto do log
+                    const logEntry = {
+                        timestamp: serverTimestamp(), // Pede a hora do servidor
+                        userId: currentUserId,
+                        userName: userName,
+                        action: 'saiu da viagem.'
+                    };
+
+                    // Pega uma nova chave ÚNICA para o log
+                    const newLogKey = push(ref(db, `trips/${currentTripId}/activityLog`)).key;
+                    
+                    // 3. ADICIONA O LOG AO MESMO OBJETO 'updates'
+                    updates[`/trips/${tripId}/activityLog/${newLogKey}`] = logEntry;
+
+                    // 4. EXECUTA A ESCRITA ATÔMICA
+                    try {
+                        // Agora, o log e a saída são enviados JUNTOS.
+                        // Como 'updates' contém um 'null', a regra '.validate' será ignorada!
+                        await update(ref(db), updates); 
+                        
+                        // A tela atualiza (como antes)
+                        tripsData = tripsData.filter(t => t.id !== tripId);
+                        renderTripLists(); 
+
+                    } catch (error) {
+                        // Se falhar agora, o problema é na regra .write (o que é improvável)
+                        console.error("Erro ao sair da viagem (operação atômica):", error);
+                        alert("Ocorreu um erro ao tentar sair da viagem. Verifique suas regras de segurança .write em /trips/$tripId.");
+                    } finally {
+                        closeModal('confirm-delete-modal');
+                    }
+                    // --- FIM DA NOVA CORREÇÃO ATÔMICA ---
+                });
+            }
         }
         
         window.duplicateTrip = async (event, tripId) => {
@@ -6373,10 +6469,13 @@ let dividerHtml = '';
             daySelect.innerHTML = ''; // Limpa opções antigas
 
             if (trip && trip.startDate && trip.endDate) {
+                
+                // CORREÇÃO: Converte AMBOS os timestamps para objetos Date
                 let currentDate = new Date(trip.startDate);
-                const endDate = new Date(trip.endDate);
+                const endDate = new Date(trip.endDate); // <-- Esta era a linha que faltava
                 let dayCounter = 1;
 
+                // Agora o loop 'while(currentDate <= endDate)' funciona
                 while(currentDate <= endDate) {
                     const dayKey = currentDate.toISOString().split('T')[0];
                     const dayString = formatDate(dayKey, {weekday: 'short', day: 'numeric', month: 'short'});
