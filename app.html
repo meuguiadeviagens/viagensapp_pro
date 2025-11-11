@@ -668,7 +668,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.5 | 10/11/2025, 21:21</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.5 | 10/11/2025, 21:25</p>
             </main>
         </div>
 
@@ -4183,7 +4183,7 @@ window.addEventListener('popstate', (event) => {
             const pastTrips = [];
 
             tripsData.forEach(trip => {
-                const tripEndDate = new Date(trip.endDate + 'T00:00:00Z');
+                const tripEndDate = new Date(trip.endDate);
                 if (tripEndDate < today) {
                     pastTrips.push(trip);
                 } else {
@@ -4195,7 +4195,7 @@ window.addEventListener('popstate', (event) => {
             if (upcomingTrips.length > 0) {
                 // 1. Agrupa as viagens por ano
                 const groupedUpcoming = upcomingTrips.reduce((acc, trip) => {
-                    const year = new Date(trip.startDate + 'T00:00:00Z').getFullYear();
+                    const year = new Date(trip.startDate).getFullYear();
                     if (!acc[year]) acc[year] = [];
                     acc[year].push(trip);
                     return acc;
@@ -4232,7 +4232,7 @@ window.addEventListener('popstate', (event) => {
                 pastTrips.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
 
                 const groupedPast = pastTrips.reduce((acc, trip) => {
-                    const year = new Date(trip.startDate + 'T00:00:00Z').getFullYear();
+                    const year = new Date(trip.startDate).getFullYear();
                     if (!acc[year]) acc[year] = [];
                     acc[year].push(trip);
                     return acc;
@@ -4329,7 +4329,7 @@ window.addEventListener('popstate', (event) => {
 
                 const today = new Date();
                 today.setUTCHours(0, 0, 0, 0);
-                const tripEndDate = new Date(trip.endDate + 'T00:00:00Z');
+                const tripEndDate = new Date(trip.endDate);
 
                 if (tripEndDate < today) {
                     imageContainerClasses += ' grayscale';
@@ -5157,8 +5157,8 @@ window.addEventListener('popstate', (event) => {
             }
 
             const requiredNights = [];
-            let currentDate = new Date(trip.startDate + 'T00:00:00Z');
-            const endDate = new Date(trip.endDate + 'T00:00:00Z');
+            let currentDate = new Date(trip.startDate);
+            const endDate = new Date(trip.endDate);
             while (currentDate < endDate) {
                 requiredNights.push(currentDate.toISOString().split('T')[0]);
                 currentDate.setUTCDate(currentDate.getUTCDate() + 1);
@@ -5604,7 +5604,7 @@ let dividerHtml = '';
 
             // Checa se é uma Viagem Avulsa E se ela já começou
             if (isPurchasedTrip) {
-                const startDate = new Date(trip.startDate + 'T00:00:00Z');
+                const startDate = new Date(trip.startDate);
                 const today = new Date();
                 today.setUTCHours(0, 0, 0, 0); // Zera a hora para comparar só a data
 
