@@ -180,6 +180,36 @@
                 display: none !important;
             }
 
+            /* --- INÍCIO: CORREÇÃO DE ORDEM DE IMPRESSÃO --- */
+
+            /* 1. Transforma o container principal (#details-view) em uma coluna */
+            #details-view {
+                display: flex !important;
+                flex-direction: column !important;
+            }
+
+            /* 2. Define a ordem de impressão padrão dos elementos */
+            #details-view > header { order: 1 !important; } /* Cabeçalho */
+            #details-view > main { order: 2 !important; }   /* Voos, Transportes, Hosp. */
+            #documents-panel { order: 3 !important; }
+            #daily-itinerary-panel { order: 4 !important; }
+            #spending-panel { order: 5 !important; }        /* <--- Gastos vem primeiro */
+            #shared-expenses-panel { order: 6 !important; } /* <--- Divisão em segundo */
+
+            /* 3. Joga o painel de ANOTAÇÕES para o FIM da fila */
+            #notes-panel {
+                order: 99 !important; /* Um número alto joga para o fim */
+            }
+
+            /* 4. Limpa qualquer regra de quebra que possa ter sobrado */
+            #daily-itinerary-panel,
+            #notes-panel,
+            #spending-panel,
+            #shared-expenses-panel {
+                page-break-before: auto !important;
+                page-break-inside: auto !important;
+            }
+
         }
 
 
@@ -668,7 +698,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.5 | 10/11/2025, 21:25</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.6 | 10/11/2025, 21:42</p>
             </main>
         </div>
 
