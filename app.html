@@ -668,7 +668,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.5 | 10/11/2025, 21:14</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.5 | 10/11/2025, 21:21</p>
             </main>
         </div>
 
@@ -4807,11 +4807,11 @@ window.addEventListener('popstate', (event) => {
             }, {});
 
             const cityAnchorsCreated = new Set();
-            const startDate = new Date(trip.startDate + 'T00:00:00Z');
-            const endDate = new Date(trip.endDate + 'T00:00:00Z');
+            const startDate = new Date(trip.startDate);
+            const endDate = new Date(trip.endDate);
             const totalTripDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             let dayCounter = 1;
-            let currentDate = new Date(trip.startDate + 'T00:00:00Z');
+            let currentDate = new Date(trip.startDate);
 
             // Ponto de inserção inicial
             container.insertAdjacentHTML('beforeend', `<div class="insertion-point" onclick="insertNewDay(0)">
