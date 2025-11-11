@@ -698,7 +698,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.6 | 10/11/2025, 21:42</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.7 | 10/11/2025, 21:52</p>
             </main>
         </div>
 
@@ -7150,7 +7150,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             
             if (isPurchasedTrip) {
                 const trip = tripsData.find(t => t.id === currentTripId); // Pega a viagem da memória
-                const startDate = new Date(trip.startDate + 'T00:00:00Z');
+                const startDate = new Date(trip.startDate);
                 const today = new Date();
                 today.setUTCHours(0, 0, 0, 0);
                 if (today >= startDate) {
