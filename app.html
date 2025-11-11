@@ -698,7 +698,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.9 | 11/11/2025, 11:00</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.10 | 11/11/2025, 18:00</p>
             </main>
         </div>
 
@@ -2552,8 +2552,9 @@ window.addEventListener('popstate', (event) => {
             }
 
             // 5. Salva a lista atualizada no banco de dados
-            const updates = { [`/${currentTripId}/paidSettlements`]: currentPaidSettlements };
-            await update(ref(db, 'trips'), updates);
+            const tripRef = ref(db, `trips/${currentTripId}`);
+            const updates = { "paidSettlements": currentPaidSettlements };
+            await update(tripRef, updates);
 
             // 6. Atualiza o estilo visual do item instantaneamente
             const transactionElement = checkbox.closest('.transaction-item');
@@ -3219,8 +3220,9 @@ window.addEventListener('popstate', (event) => {
             showConfirmDelete('Tem certeza que deseja excluir esta despesa compartilhada?', async () => {
                 const trip = tripsData.find(t => t.id === currentTripId);
                 const updatedExpenses = (trip.sharedExpenses || []).filter(e => e.id !== expenseId);
-                const updates = { [`/${currentTripId}/sharedExpenses`]: updatedExpenses };
-                await update(ref(db, 'trips'), updates);
+                const tripRef = ref(db, `trips/${currentTripId}`);
+                const updates = { "sharedExpenses": updatedExpenses };
+                await update(tripRef, updates);
                 closeModal('confirm-delete-modal');
             });
         };
@@ -3874,8 +3876,9 @@ window.addEventListener('popstate', (event) => {
 
             if (expenseIndex > -1) {
                 currentExpenses[expenseIndex] = updatedExpense;
-                const updates = { [`/${currentTripId}/sharedExpenses`]: currentExpenses };
-                await update(ref(db, 'trips'), updates);
+                const tripRef = ref(db, `trips/${currentTripId}`);
+                const updates = { "sharedExpenses": currentExpenses };
+                await update(tripRef, updates);
                 closeModal('edit-expense-modal');
             } else {
                 alert('Erro: não foi possível encontrar a despesa para atualizar.');
@@ -5421,8 +5424,9 @@ let dividerHtml = '';
                 currentDocuments[documentIndex].bgColor = newColor; 
                 
                 // 5. Salva o array 'documents' atualizado de volta no Firebase
-                const updates = { [`/${currentTripId}/documents`]: currentDocuments };
-                await update(ref(db, 'trips'), updates);
+                const tripRef = ref(db, `trips/${currentTripId}`);
+                const updates = { "documents": currentDocuments };
+                await update(tripRef, updates);
             }
 
             // 6. Esconde o menu de cores de documento e reseta a variável
@@ -6329,8 +6333,9 @@ let dividerHtml = '';
                 const trip = tripsData.find(t => t.id === currentTripId);
                 const currentActivities = trip.activities ? Object.values(trip.activities) : [];
                 const updatedActivities = currentActivities.filter(a => a.id !== activityId);
-                const updates = { [`/${currentTripId}/activities`]: updatedActivities };
-                await update(ref(db, 'trips'), updates);
+                const tripRef = ref(db, `trips/${currentTripId}`);
+                const updates = { "activities": updatedActivities };
+                await update(tripRef, updates);
                 closeModal('confirm-delete-modal');
             });
         };
@@ -6341,8 +6346,9 @@ let dividerHtml = '';
                 const trip = tripsData.find(t => t.id === currentTripId);
                 if (!trip || !trip.notes) return;
                 const updatedNotes = trip.notes.filter(n => n.id !== noteId);
-                const updates = { [`/${currentTripId}/notes`]: updatedNotes };
-                await update(ref(db, 'trips'), updates);
+                const tripRef = ref(db, `trips/${currentTripId}`);
+                const updates = { "notes": updatedNotes };
+                await update(tripRef, updates);
                 closeModal('confirm-delete-modal');
             });
         };
@@ -6352,8 +6358,9 @@ let dividerHtml = '';
                 const trip = tripsData.find(t => t.id === currentTripId);
                 if (!trip || !trip.documents) return;
                 const updatedDocuments = trip.documents.filter(d => d.id !== docId);
-                const updates = { [`/${currentTripId}/documents`]: updatedDocuments };
-                await update(ref(db, 'trips'), updates);
+                const tripRef = ref(db, `trips/${currentTripId}`);
+                const updates = { "documents": updatedDocuments };
+                await update(tripRef, updates);
                 closeModal('confirm-delete-modal');
             });
         };
@@ -6372,8 +6379,9 @@ let dividerHtml = '';
 
             [documents[index], documents[newIndex]] = [documents[newIndex], documents[index]];
 
-            const updates = { [`/${currentTripId}/documents`]: documents };
-            await update(ref(db, 'trips'), updates);
+            const tripRef = ref(db, `trips/${currentTripId}`);
+            const updates = { "documents": documents };
+            await update(tripRef, updates);
         };
 
 	
@@ -6392,8 +6400,9 @@ let dividerHtml = '';
             // Troca os elementos de posição no array
             [notes[index], notes[newIndex]] = [notes[newIndex], notes[index]];
 
-            const updates = { [`/${currentTripId}/notes`]: notes };
-            await update(ref(db, 'trips'), updates);
+            const tripRef = ref(db, `trips/${currentTripId}`);
+            const updates = { "notes": notes };
+            await update(tripRef, updates);
         };
 
         window.toggleFeatured = async (event, tripId) => {
@@ -6788,12 +6797,13 @@ let dividerHtml = '';
                      obj[item.id] = item;
                      return obj;
                  }, {});
-                 updates[`/${currentTripId}/activities`] = activitiesObject;
+                 updates = { "activities": activitiesObject };
             }
 
             // Envia as atualizações para o Firebase
             try {
-                await update(ref(db, 'trips'), updates);
+                const tripRef = ref(db, `trips/${currentTripId}`);
+                await update(tripRef, updates);
                 console.log("Ordem e datas das atividades atualizadas no Firebase.");
             } catch (error) {
                 console.error("Erro ao salvar ordem/datas das atividades:", error);
@@ -6847,12 +6857,13 @@ let dividerHtml = '';
             const newEndDate = new Date(currentDate);
             newEndDate.setUTCDate(newEndDate.getUTCDate() - 1);
             
+            const tripRef = ref(db, `trips/${tripId}`); // <-- Usa tripId
             const updates = {
-                [`/${tripId}/activities`]: newActivities,
-                [`/${tripId}/endDate`]: newEndDate.toISOString().split('T')[0]
+                "activities": newActivities,
+                "endDate": newEndDate.toISOString().split('T')[0]
             };
-            
-            await update(ref(db, 'trips'), updates);
+
+            await update(tripRef, updates);
         }
         
         function getDaysArray(trip) {
@@ -6961,12 +6972,13 @@ let dividerHtml = '';
             } else { 
                 // Saindo do modo de reordenação
                 if (isCancelling && initialTripState) {
+                    const tripRef = ref(db, `trips/${currentTripId}`);
                     const updates = {
-                        [`/${currentTripId}/activities`]: initialTripState.activities,
-                        [`/${currentTripId}/endDate`]: initialTripState.endDate
+                        "activities": initialTripState.activities,
+                        "endDate": initialTripState.endDate
                     };
                     // Corrigindo para a referência correta do banco de dados
-                    update(ref(db, 'trips'), updates);
+                    update(tripRef, updates);
                 }
                 initialTripState = null;
 
@@ -7003,8 +7015,9 @@ let dividerHtml = '';
                 currentActivities[activityIndex].bgColor = newColor; 
                 
                 // Salva o array de atividades inteiro de volta no Firebase
-                const updates = { [`/${currentTripId}/activities`]: currentActivities };
-                await update(ref(db, 'trips'), updates);
+                const tripRef = ref(db, `trips/${currentTripId}`);
+                const updates = { "activities": currentActivities };
+                await update(tripRef, updates);
             }
 
             // Esconde o menu
@@ -7239,8 +7252,14 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             };
 
             const updatedDocuments = [...currentDocuments, newDocument];
-            const updates = { [`/${currentTripId}/documents`]: updatedDocuments };
-            await update(ref(db, 'trips'), updates);
+
+            // 1. Define a referência CORRETA
+            const tripRef = ref(db, `trips/${currentTripId}`);
+            // 2. Define o objeto de atualização SIMPLES
+            const updates = { "documents": updatedDocuments };
+
+            // 3. Executa o update na referência da viagem
+            await update(tripRef, updates);
             await logTripActivity(`adicionou o documento: "${docName}"`);
 
             input.value = '';
@@ -7403,8 +7422,10 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             };
             const currentActivities = trip.activities ? [...Object.values(trip.activities)] : [];
             currentActivities.push(newActivity);
-            const updates = { [`/${currentTripId}/activities`]: currentActivities };
-            await update(ref(db, 'trips'), updates);
+
+            const tripRef = ref(db, `trips/${currentTripId}`);
+            const updates = { "activities": currentActivities };
+            await update(tripRef, updates);
             await logTripActivity(`adicionou a atividade: "${newActivity.name}" no dia ${formatDate(newActivity.date)}`);
             closeModal('add-activity-modal');
         });
@@ -7428,8 +7449,9 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     imageUrl: document.getElementById('edit-activity-image-url').value.trim(), // <-- LINHA ADICIONADA
                     cost: document.getElementById('edit-activity-cost').value,
                 };
-                const updates = { [`/${currentTripId}/activities`]: currentActivities };
-                await update(ref(db, 'trips'), updates);
+                const tripRef = ref(db, `trips/${currentTripId}`);
+                const updates = { "activities": currentActivities };
+                await update(tripRef, updates);
                 const updatedActivity = currentActivities[activityIndex];
                 await logTripActivity(`editou a atividade: "${updatedActivity.name}"`);
             }
@@ -7454,11 +7476,14 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             currentNotes.push(newNote);
 
             // --- CORREÇÃO AQUI ---
-            // Removemos a barra "/" do início do caminho.
-            // O caminho agora é relativo ao ref('trips'), que é o correto.
-            const updates = { [`${currentTripId}/notes`]: currentNotes };
-            
-            await update(ref(db, 'trips'), updates);
+            // 1. Criamos a referência PARA A VIAGEM específica:
+            const tripRef = ref(db, `trips/${currentTripId}`);
+
+            // 2. O objeto 'updates' agora só precisa da CHAVE que queremos mudar ("notes")
+            const updates = { "notes": currentNotes };
+
+            // 3. Fazemos o update diretamente na referência da viagem
+            await update(tripRef, updates);
             await logTripActivity(`adicionou a anotação: "${newNote.title}"`);
             
             closeModal('add-note-modal');
@@ -7483,8 +7508,9 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     link: document.getElementById('edit-note-link').value.trim(),
                     icon: document.getElementById('edit-note-icon').value,
                 };
-                const updates = { [`${currentTripId}/notes`]: trip.notes };
-                await update(ref(db, 'trips'), updates);
+                const tripRef = ref(db, `trips/${currentTripId}`);
+                const updates = { "notes": trip.notes };
+                await update(tripRef, updates);
                 await logTripActivity(`editou a anotação: "${trip.notes[noteIndex].title}"`);
             }
             closeModal('edit-note-modal');
@@ -7559,8 +7585,9 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             const currentExpenses = trip.sharedExpenses || [];
             currentExpenses.push(newExpense);
-            const updates = { [`/${currentTripId}/sharedExpenses`]: currentExpenses };
-            await update(ref(db, 'trips'), updates);
+            const tripRef = ref(db, `trips/${currentTripId}`);
+            const updates = { "sharedExpenses": currentExpenses };
+            await update(tripRef, updates);
 
             e.target.reset(); // Limpa o formulário
 
@@ -8482,7 +8509,6 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         document.getElementById('edit-document-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const trip = tripsData.find(t => t.id === currentTripId);
-            const docId = document.getElementById('edit-document-id').value;
             const newName = document.getElementById('edit-document-name').value.trim();
 
             if (!trip || !trip.documents || !docId || !newName) {
@@ -8501,10 +8527,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 updatedDocuments[docIndex].name = newName;
 
                 // Salva o array de documentos inteiro de volta
-                const updates = { [`/${currentTripId}/documents`]: updatedDocuments };
+                const tripRef = ref(db, `trips/${currentTripId}`);
+                const updates = { "documents": updatedDocuments };
                 
                 try {
-                    await update(ref(db, 'trips'), updates);
+                    await update(tripRef, updates);
                     await logTripActivity(`renomeou um documento para: "${newName}"`);
                     closeModal('edit-document-modal');
                 } catch (error) {
