@@ -698,7 +698,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.7 | 10/11/2025, 21:52</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.8 | 10/11/2025, 22:00</p>
             </main>
         </div>
 
@@ -2959,10 +2959,23 @@ window.addEventListener('popstate', (event) => {
         }
 
         // NOVO: Converte um timestamp (ex: 1763683200000) para "YYYY-MM-DD"
-        function timestampToISODate(timestamp) {
-            if (!timestamp || typeof timestamp !== 'number') return '';
-            const date = new Date(timestamp);
-            // Usamos getUTC... para ignorar o fuso horário, já que salvamos em UTC
+        // (VERSÃO CORRIGIDA QUE ACEITA NÚMEROS E STRINGS ANTIGAS)
+        function timestampToISODate(dateValue) {
+            if (!dateValue) return ''; // Retorna vazio se for nulo
+
+            let date;
+            if (typeof dateValue === 'number') {
+                // É um timestamp novo (ex: 1763683200000)
+                date = new Date(dateValue);
+            } else if (typeof dateValue === 'string') {
+                // É uma string antiga (ex: "2025-11-20")
+                // Adicionamos 'T00:00:00Z' para garantir que seja lida como UTC
+                date = new Date(dateValue + 'T00:00:00Z'); 
+            } else {
+                return ''; // Formato desconhecido
+            }
+
+            // O resto da sua função original continua igual
             const year = date.getUTCFullYear();
             const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
             const day = date.getUTCDate().toString().padStart(2, '0');
@@ -6360,8 +6373,8 @@ let dividerHtml = '';
             daySelect.innerHTML = ''; // Limpa opções antigas
 
             if (trip && trip.startDate && trip.endDate) {
-                let currentDate = new Date(trip.startDate + 'T00:00:00Z');
-                const endDate = new Date(trip.endDate + 'T00:00:00Z');
+                let currentDate = new Date(trip.startDate);
+                const endDate = new Date(trip.endDate);
                 let dayCounter = 1;
 
                 while(currentDate <= endDate) {
@@ -6720,7 +6733,7 @@ let dividerHtml = '';
 
         async function remapAndSaveDays(tripId, daysArray) {
             const trip = tripsData.find(t => t.id === tripId);
-            let currentDate = new Date(trip.startDate + 'T00:00:00Z');
+            let currentDate = new Date(trip.startDate);
             const newActivities = [];
             
             daysArray.forEach(dayObj => {
@@ -6754,8 +6767,8 @@ let dividerHtml = '';
 
             let daysArray = [];
             if (trip.startDate && trip.endDate) {
-                let currentDate = new Date(trip.startDate + 'T00:00:00Z');
-                const endDate = new Date(trip.endDate + 'T00:00:00Z');
+                let currentDate = new Date(trip.startDate);
+                const endDate = new Date(trip.endDate);
                 while(currentDate <= endDate) {
                     const dayKey = currentDate.toISOString().split('T')[0];
                     daysArray.push({
