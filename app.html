@@ -699,7 +699,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.16 | 11/11/2025, 21:40</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.17 | 11/11/2025, 21:51</p>
             </main>
         </div>
 
@@ -1733,29 +1733,32 @@
     </div>
     
     <div id="view-activity-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4 text-center">
-            <div id="view-activity-icon" class="mx-auto mb-4 w-12 h-12 flex items-center justify-center bg-slate-100 text-slate-600 rounded-full">
-            </div>
-            <h3 id="view-activity-name" class="text-2xl font-semibold text-slate-800"></h3>
-            <p id="view-activity-time" class="text-slate-500"></p>
-            <p id="view-activity-meta" class="text-sm text-slate-500 mt-1"></p>
-            <p id="view-activity-type" class="text-sm font-medium text-slate-500 bg-slate-100 rounded-full px-3 py-1 mt-2 mb-4 inline-block"></p>
-            <img id="view-activity-image" src="" alt="Foto da atividade" class="w-full h-48 object-cover rounded-lg mb-4 hidden">
-            <p id="view-activity-description" class="text-slate-600 mb-4"></p>
-            <div id="view-activity-details-list" class="text-sm text-left space-y-2 border-t pt-4"></div>
-            <div id="view-activity-buttons-container" class="mt-6 flex justify-center gap-3">
+        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4 text-center flex flex-col max-h-[80vh]">
+            
+            <div class="flex-grow overflow-y-auto pr-2">
+                <div id="view-activity-icon" class="mx-auto mb-4 w-12 h-12 flex items-center justify-center bg-slate-100 text-slate-600 rounded-full">
+                </div>
+                <h3 id="view-activity-name" class="text-2xl font-semibold text-slate-800"></h3>
+                <p id="view-activity-time" class="text-slate-500"></p>
+                <p id="view-activity-meta" class="text-sm text-slate-500 mt-1"></p>
+                <p id="view-activity-type" class="text-sm font-medium text-slate-500 bg-slate-100 rounded-full px-3 py-1 mt-2 mb-4 inline-block"></p>
+                <img id="view-activity-image" src="" alt="Foto da atividade" class="w-full h-48 object-cover rounded-lg mb-4 hidden">
+                <p id="view-activity-description" class="text-slate-600 mb-4"></p>
+                <div id="view-activity-details-list" class="text-sm text-left space-y-2 border-t pt-4"></div>
                 
-                <button id="view-activity-search-btn" style="display: none;" class="inline-flex items-center justify-center gap-2 bg-slate-600 text-white font-semibold px-5 py-3 rounded-lg shadow-md hover:bg-slate-700 transition-colors duration-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-                    <span>Buscar</span>
-                </button>
-
-                <a id="view-activity-link-btn" href="#" target="_blank" rel="noopener noreferrer" style="display: none;" class="inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" x2="21" y1="14" y2="3"></line></svg>
-                    <span>Link</span>
-                </a>
+                <div id="view-activity-buttons-container" class="mt-6 flex justify-center gap-3">
+                    <button id="view-activity-search-btn" style="display: none;" class="inline-flex items-center justify-center gap-2 bg-slate-600 text-white font-semibold px-5 py-3 rounded-lg shadow-md hover:bg-slate-700 transition-colors duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                        <span>Buscar</span>
+                    </button>
+                    <a id="view-activity-link-btn" href="#" target="_blank" rel="noopener noreferrer" style="display: none;" class="inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" x2="21" y1="14" y2="3"></line></svg>
+                        <span>Link</span>
+                    </a>
+                </div>
             </div>
-            <div class="pt-6 flex justify-center">
+
+            <div class="pt-6 flex justify-center border-t mt-4">
                 <button type="button" onclick="closeModal('view-activity-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Fechar</button>
             </div>
         </div>
@@ -1842,21 +1845,27 @@
     
 
     <div id="view-note-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4">
-            <h3 id="view-note-title" class="text-2xl font-semibold text-slate-800 mb-1"></h3>
-            <p id="view-note-author" class="text-sm text-slate-500 mb-4"></p>
+        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4 flex flex-col max-h-[80vh]">
             
-            <div id="view-note-description-container" class="text-slate-600 mb-4 p-3 bg-slate-50 rounded-md border">
-                <p id="view-note-description"></p>
+            <div>
+                <h3 id="view-note-title" class="text-2xl font-semibold text-slate-800 mb-1"></h3>
+                <p id="view-note-author" class="text-sm text-slate-500 mb-4"></p>
             </div>
             
-            <div id="view-note-link-container" style="display: none;" class="mt-6">
-                 <a id="view-note-link-btn" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 w-full bg-blue-600 text-white font-semibold px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" x2="21" y1="14" y2="3"></line></svg>
-                    <span>Acessar Link de Referência</span>
-                </a>
+            <div class="flex-grow overflow-y-auto pr-2"> 
+                <div id="view-note-description-container" class="text-slate-600 mb-4 p-3 bg-slate-50 rounded-md border">
+                    <p id="view-note-description"></p>
+                </div>
+                
+                <div id="view-note-link-container" style="display: none;" class="mt-6">
+                     <a id="view-note-link-btn" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 w-full bg-blue-600 text-white font-semibold px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" x2="21" y1="14" y2="3"></line></svg>
+                        <span>Acessar Link de Referência</span>
+                    </a>
+                </div>
             </div>
-            <div class="pt-6 flex justify-center">
+            
+            <div class="pt-6 flex justify-center border-t mt-4">
                 <button type="button" onclick="closeModal('view-note-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Fechar</button>
             </div>
         </div>
