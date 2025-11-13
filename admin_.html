@@ -174,7 +174,7 @@
                 <div class="md:col-span-1 border rounded-lg p-4 bg-slate-50">                    
                     <div class="md:col-span-1 border rounded-lg p-4 bg-slate-50">
                     <div class="flex justify-between items-center mb-3">
-                         <h3 class="font-semibold">Cidades</h3>
+                         <h3 id="cities-list-title" class="font-semibold">Cidades</h3>
                          <button onclick="openAddCityModal()" class="px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700">Nova Cidade</button>
                     </div>
 
@@ -1572,6 +1572,14 @@
             const suggestionsRef = ref(db, 'suggestedItineraries');
             onValue(suggestionsRef, (snapshot) => {
                 suggestedItinerariesData = snapshot.val() || {};
+
+                // --- NOVO: Atualiza o contador de cidades ---
+                const totalCitiesCount = Object.keys(suggestedItinerariesData).length;
+                const citiesTitleElement = document.getElementById('cities-list-title');
+                if (citiesTitleElement) {
+                    citiesTitleElement.textContent = `Cidades (${totalCitiesCount})`;
+                }
+                // --- FIM DA MODIFICAÇÃO ---
                 
                 const countries = Object.values(suggestedItinerariesData)
                                       .map(city => city.country.trim()) // Pega o país e remove espaços
@@ -2345,7 +2353,7 @@
         // --- FIM: LÓGICA DE NOTIFICAÇÃO EM MASSA ---
 
     </script>
-<br><center><p>V. 1.2013 - 10/11/2025 11:52</p></center><br>
+<br><center><p>V. 1.2014 - 13/11/2025 11:52</p></center><br>
 
 </body>
 </html>
