@@ -699,7 +699,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.21 | 12/11/2025, 08:30</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.22 | 13/11/2025, 11:30</p>
             </main>
         </div>
 
@@ -1618,6 +1618,23 @@
         </div>
     </div>
 
+    <div id="suggestion-prompt-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md m-4">
+            <h3 class="text-xl font-semibold mb-4 text-slate-800">Temos uma sugestão!</h3>
+            <p id="suggestion-prompt-message" class="text-slate-600 mb-6">
+                Carregando...
+            </p>
+            <div class="flex justify-end gap-3">
+                <button id="suggestion-btn-cancel" class="px-5 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors font-medium">
+                    Mais tarde
+                </button>
+                <button id="suggestion-btn-confirm" class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold">
+                    Ver sugestões
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="add-activity-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
         <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4 overflow-y-auto max-h-screen">
             <h3 class="text-2xl font-semibold mb-6">Adicionar Atividade</h3>
@@ -2316,6 +2333,9 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
         let myExpensesData = []; // Cache local das despesas
         let myExpensesCategories = []; // Cache local das categorias
         let currentEditingMyExpenseId = null;
+        let tempSuggestionTripId = null;
+        let tempSuggestionCityId = null;
+        let tempSuggestionCityName = null;
 
         // Constante com as moedas permitidas
         const MY_EXPENSE_CURRENCIES = ["BRL", "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "CNY", "CC/IOF"];
@@ -2967,6 +2987,59 @@ window.addEventListener('popstate', (event) => {
                     docPanel.querySelector('.flex.justify-between').onclick = () => toggleGenericPanel('documents-panel');
                 }
             }
+        }
+
+        /**
+         * Coloca a primeira letra de uma string em maiúsculo.
+         * @param {string} str - A string para formatar. - PERMITIR SUGESTÃO DE ATIVIDADES SE A CIDADE EXISTIR
+         */
+        function capitalizeFirstLetter(str) {
+            if (!str) return '';
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
+        /**
+         * Calcula a distância de Levenshtein entre duas strings (para correção de typos).
+         * @param {string} a - A primeira string.
+         * @param {string} b - A segunda string.
+         */
+        function getLevenshteinDistance(a, b) {
+            if (a.length === 0) return b.length;
+            if (b.length === 0) return a.length;
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    const cost = (a[j - 1] === b[i - 1]) ? 0 : 1;
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j] + 1,     // deletion
+                        matrix[i][j - 1] + 1,     // insertion
+                        matrix[i - 1][j - 1] + cost // substitution
+                    );
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+
+        /**
+         * Limpa, normaliza e divide uma string em palavras-chave para busca.
+         * @param {string} str - A string para limpar.
+         */
+        function cleanAndSplit(str) {
+            if (!str) return [];
+            
+            // 1. Remove acentos e pontuações, e converte para minúsculo
+            const cleaned = str.toLowerCase()
+                               .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove acentos
+                               .replace(/[,\.!"'?()]/g, ''); // remove pontuação
+            
+            // 2. Define palavras comuns a serem ignoradas
+            const stopwords = new Set(['em', 'de', 'do', 'da', 'dos', 'das', 'para', 'com', 'no', 'na', 'o', 'a', 'e']);
+            
+            // 3. Divide em palavras, ignora stopwords e palavras com menos de 3 letras
+            return cleaned.split(/\s+/)
+                          .filter(word => word.length >= 3 && !stopwords.has(word));
         }
 
         // Função Utilitária
@@ -6484,13 +6557,26 @@ let dividerHtml = '';
         // --- NOVA SEÇÃO: LÓGICA DE IMPORTAÇÃO DE SUGESTÕES ---
 
         async function loadSuggestedItineraries() {
+            // 1. Verifica o cache. Se já estiver carregado, retorna os dados cacheados.
+            if (Object.keys(suggestedItinerariesData).length > 0) {
+                return suggestedItinerariesData; // <-- RETURN 1 (retorna o cache)
+            }
+
+            // 2. Se o cache estiver vazio, busca no Firebase
             try {
                 const snapshot = await get(ref(db, 'suggestedItineraries'));
-                suggestedItinerariesData = snapshot.exists() ? snapshot.val() : {};
+                if (snapshot.exists()) {
+                    suggestedItinerariesData = snapshot.val(); // 3. Salva no cache
+                } else {
+                    suggestedItinerariesData = {}; // Salva cache vazio se não houver dados
+                }
             } catch (error) {
                 console.error("Erro ao carregar roteiros sugeridos:", error);
                 suggestedItinerariesData = {};
             }
+            
+            // 4. Retorna os dados (sejam eles quais forem)
+            return suggestedItinerariesData; // <-- RETURN 2 (retorna o resultado do Firebase)
         }
 
         window.openImportSuggestionsModal = () => {
@@ -7192,73 +7278,185 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         document.getElementById('edit-expense-currency').addEventListener('change', window.validateEditPayerSplitTotal);
         document.getElementById('edit-expense-currency-custom').addEventListener('input', window.validateEditPayerSplitTotal);
 
+
+        function closeSuggestionModal() {
+            closeModal('suggestion-prompt-modal');
+            tempSuggestionTripId = null;
+            tempSuggestionCityId = null;
+            tempSuggestionCityName = null;
+        }
+
+        /**
+         * Ação para o botão "Ver sugestões".
+         * Abre a viagem, abre o modal de importação e pré-seleciona a cidade.
+         */
+        function acceptSuggestion() {
+            if (!tempSuggestionTripId || !tempSuggestionCityId || !tempSuggestionCityName) {
+                console.warn("Dados temporários da sugestão não encontrados.");
+                closeSuggestionModal();
+                return;
+            }
+
+            // 1. Pega os dados antes de limpar
+            const tripId = tempSuggestionTripId;
+            const cityId = tempSuggestionCityId;
+            const cityName = tempSuggestionCityName;
+
+            // 2. Fecha o modal de sugestão e limpa as variáveis
+            closeSuggestionModal();
+
+            // 3. Abre a tela de detalhes da viagem recém-criada
+            showTripDetails(tripId);
+
+            // 4. Abre o modal de importação
+            openImportSuggestionsModal();
+
+            // 5. Preenche o campo e carrega as atividades da cidade correspondente
+            // (Isso simula o usuário selecionando a cidade na lista)
+            document.getElementById('suggestions-city-input').value = cityName;
+            loadActivitiesForCity(cityId);
+            document.getElementById('city-suggestions-popup').classList.add('hidden');
+        }
+
+        // Adiciona os listeners para os novos botões
+        document.getElementById('suggestion-btn-cancel').addEventListener('click', closeSuggestionModal);
+        document.getElementById('suggestion-btn-confirm').addEventListener('click', acceptSuggestion);
+
         // --- LISTENERS DOS FORMULÁRIOS ---
         document.getElementById('add-trip-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
+            e.preventDefault(); // Impede o recarregamento
+            
             const user = auth.currentUser;
             if (!user) return;
 
-            // INÍCIO - VALIDAÇÃO DE PLANO (VERSÃO CORRIGIDA 2.0)
+            // --- 1. VALIDAÇÕES SÍNCRONAS (RÁPIDAS) ---
             if (currentUserLicense.type === 'gratuito') {
+                // ... (código de validação de 7 dias - não precisa mudar)
                 const startDateStr = document.getElementById('trip-start-date').value;
                 const endDateStr = document.getElementById('trip-end-date').value;
-
-                // Lógica de data robusta (ignora fuso e horário de verão)
                 const date1 = new Date(startDateStr);
                 const date2 = new Date(endDateStr);
                 const utc1 = Date.UTC(date1.getFullYear(), date1.getMonth(), date1.getDate());
                 const utc2 = Date.UTC(date2.getFullYear(), date2.getMonth(), date2.getDate());
                 const MS_PER_DAY = 1000 * 60 * 60 * 24;
-                
-                // Calcula a diferença exata de dias e soma 1
                 const diffDays = Math.floor((utc2 - utc1) / MS_PER_DAY) + 1;
-
-                // O limite é 7. Se for 8 ou mais (diffDays > 7), bloqueia.
                 if (diffDays > 7) {
                     alert("Plano Gratuito: A duração máxima da viagem é de 7 dias. Por favor, adquira um plano ou compre esta viagem avulsa para criar viagens mais longas.");
-                    openModal('upgrade-plan-modal'); // Abre o modal de planos
-                    return; // Impede o envio do formulário
+                    openModal('upgrade-plan-modal'); 
+                    return; 
                 }
             }
-            // FIM - VALIDAÇÃO DE PLANO
 
-            // O resto do seu código para salvar a viagem (não precisa mudar)
-            const userProfileRef = ref(db, `users/${user.uid}/profile`);
-            const profileSnapshot = await get(userProfileRef);
-            const userProfile = profileSnapshot.val();
-
-            if (!userProfile || !userProfile.fullName) {
-                alert("Erro: Não foi possível encontrar seu nome no perfil. Tente novamente.");
-                return;
-            }
-
+            // --- 2. PEGA OS DADOS DO FORMULÁRIO ---
             const tripName = document.getElementById('trip-name').value;
-            const newTripRef = push(ref(db, 'trips'));
-            const newTripId = newTripRef.key;
-
-            const newTripData = {
-                name: tripName,
-                destination: document.getElementById('trip-destination').value,
-                startDate: new Date(document.getElementById('trip-start-date').value + 'T00:00:00Z').getTime(),
-                endDate: new Date(document.getElementById('trip-end-date').value + 'T00:00:00Z').getTime(),
-                imageUrl: `https://placehold.co/600x400/a3e635/1e293b?text=${encodeURIComponent(tripName)}`,
-                featured: false,
-                members: { [user.uid]: "owner" },
-                travelers: [{ uid: user.uid, name: userProfile.fullName, email: user.email }],
-                DateAdded: serverTimestamp()
-            };
-
+            const tripDestination = document.getElementById('trip-destination').value;
+            const tripStartDate = document.getElementById('trip-start-date').value;
+            const tripEndDate = document.getElementById('trip-end-date').value;
+            
+            // --- 3. EXECUTAR O SALVAMENTO (COM AWAIT) ---
+            let newTripId; // Precisamos do ID da viagem no escopo externo
             try {
-                await set(newTripRef, newTripData);
-                await set(ref(db, `users/${user.uid}/memberOf/${newTripId}`), true);                
-                
-                closeModal('add-trip-modal');
-            } catch (error) {
-                console.error("Erro ao criar viagem:", error);
-                alert("Ocorreu um erro ao criar a viagem. Verifique as permissões do banco de dados.");
-            }
-        });
+                const userProfileRef = ref(db, `users/${user.uid}/profile`);
+                const profileSnapshot = await get(userProfileRef);
+                const userProfile = profileSnapshot.val();
 
+                if (!userProfile || !userProfile.fullName) {
+                    alert("Erro: Não foi possível encontrar seu nome no perfil. Tente novamente.");
+                    return; 
+                }
+
+                const newTripRef = push(ref(db, 'trips'));
+                newTripId = newTripRef.key; // Salva o ID da nova viagem
+                const newTripData = {
+                    name: tripName,
+                    destination: tripDestination,
+                    startDate: new Date(tripStartDate + 'T00:00:00Z').getTime(),
+                    endDate: new Date(tripEndDate + 'T00:00:00Z').getTime(),
+                    imageUrl: `https://placehold.co/600x400/a3e635/1e293b?text=${encodeURIComponent(tripName)}`,
+                    featured: false,
+                    members: { [user.uid]: "owner" },
+                    travelers: [{ uid: user.uid, name: userProfile.fullName, email: user.email }],
+                    DateAdded: serverTimestamp()
+                };
+                
+                await set(newTripRef, newTripData);
+                await set(ref(db, `users/${user.uid}/memberOf/${newTripId}`), true);
+                
+                // --- 4. RESPOSTA DA UI (APÓS O SUCESSO DO SAVE) ---
+                closeModal('add-trip-modal');
+
+            } catch (error) {
+                console.error("Erro ao salvar viagem:", error);
+                alert("Ocorreu um erro ao salvar sua nova viagem. Por favor, tente novamente.");
+                return; // Para a execução
+            }
+
+            // --- 5. TAREFAS "FIRE AND FORGET" (VERIFICAÇÃO DE SUGESTÃO) ---
+            (async (nameToCheck, savedTripId) => {
+                try {
+                    let foundCity = null; // Vai armazenar o objeto da cidade (id, displayName)
+                    const suggestions = await loadSuggestedItineraries(); 
+
+                    if (Object.keys(suggestions).length > 0) {
+                        const tripWords = cleanAndSplit(nameToCheck);
+                        const availableCities = Object.keys(suggestions).map(cityId => ({
+                            id: cityId,
+                            displayName: suggestions[cityId].cityName,
+                            cleanName: suggestions[cityId].cityName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[,\.]/g, ''),
+                            cleanWords: cleanAndSplit(suggestions[cityId].cityName)
+                        }));
+
+                        // Feature 1: Correspondência parcial
+                        for (const word of tripWords) {
+                            const match = availableCities.find(city => city.cleanName.includes(word));
+                            if (match) {
+                                foundCity = match;
+                                break;
+                            }
+                        }
+
+                        // Feature 2: "Fuzzy" (typos)
+                        if (!foundCity) {
+                            let bestMatch = null;
+                            let minDistance = 1;
+                            for (const tripWord of tripWords) {
+                                for (const city of availableCities) { 
+                                    for (const cityWord of city.cleanWords) {
+                                        const distance = getLevenshteinDistance(tripWord, cityWord);
+                                        if (distance <= minDistance) {
+                                            minDistance = distance;
+                                            bestMatch = city; // Salva o objeto inteiro
+                                        }
+                                    }
+                                }
+                            }
+                            if (bestMatch) {
+                                foundCity = bestMatch;
+                            }
+                        }
+                    }
+
+                    // --- D. ABRIR O NOVO MODAL (em vez do alert) ---
+                    if (foundCity) {
+                        // 1. Prepara os dados para os botões do modal
+                        tempSuggestionTripId = savedTripId;
+                        tempSuggestionCityId = foundCity.id;
+                        tempSuggestionCityName = foundCity.displayName;
+
+                        // 2. Cria a mensagem personalizada
+                        const message = `A sua viagem é para ${foundCity.displayName}, certo? Nós temos algumas sugestões de pontos turísticos para você. Gostaria de visualizá-las agora?`;
+                        
+                        // 3. Atualiza o texto e abre o modal
+                        document.getElementById('suggestion-prompt-message').textContent = message;
+                        openModal('suggestion-prompt-modal');
+                    }
+
+                } catch (err) {
+                    console.warn("A verificação de sugestão em F&F falhou:", err);
+                }
+            })(tripName, newTripId); // Passa o 'tripName' e o 'newTripId' para a função F&F
+
+        });
         
 
         document.getElementById('add-document-form').addEventListener('submit', async function(e) {
