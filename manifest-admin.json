@@ -1,0 +1,17 @@
+{
+  "name": "Admin NVS",
+  "short_name": "Viagens",
+  "description": "Painel Admin NVS",
+  "start_url": "/admin_.html",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "favicon_admin.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
