@@ -12,6 +12,11 @@
     
     <style>
 
+        /* Ocultar o tipo de atividade.. passeio, cidade, outro */
+        #view-activity-type {
+            display: none !important;
+        }
+
         /* ... (outros estilos) ... */
         .paid-transaction {
             text-decoration: line-through;
@@ -700,7 +705,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.24 | 14/11/2025, 07:12</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.25 | 14/11/2025, 11:55</p>
             </main>
         </div>
 
@@ -1766,7 +1771,7 @@
                 <div class="flex justify-center items-center gap-x-3 gap-y-1 flex-wrap mt-2 mb-4 text-sm">
                     <p id="view-activity-date" class="text-slate-600 font-bold"></p>
                     <span id="view-activity-date-sep" class="text-slate-500 hidden">|</span>
-                    <p id="view-activity-time" class="text-slate-500 font-medium"></p>
+                    <p id="view-activity-time" class="text-slate-500 font-medium bg-slate-100 rounded-full px-3 py-1"></p>
                     <p id="view-activity-meta" class="text-slate-500"></p>
                     <p id="view-activity-type" class="font-medium text-slate-500 bg-slate-100 rounded-full px-3 py-1"></p>
                 </div>
