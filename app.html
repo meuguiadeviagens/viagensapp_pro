@@ -699,7 +699,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.23 | 13/11/2025, 22:30</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.24 | 14/11/2025, 07:12</p>
             </main>
         </div>
 
@@ -1699,6 +1699,10 @@
                 <input type="hidden" id="edit-activity-id">
                 <input type="hidden" id="edit-activity-icon">
                 <div>
+                    <label for="edit-activity-date" class="block text-sm font-medium text-slate-600">Data da Atividade*</label>
+                    <input type="date" id="edit-activity-date" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
+                </div>
+                <div>
                     <label for="edit-activity-time" class="block text-sm font-medium text-slate-600">Horário*</label>
                     <input type="time" id="edit-activity-time" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
                 </div>
@@ -1761,6 +1765,8 @@
                 </div>
 
                 <div class="flex justify-center items-center gap-x-3 gap-y-1 flex-wrap mt-2 mb-4 text-sm">
+                    <p id="view-activity-date" class="text-slate-600 font-bold"></p>
+                    <span id="view-activity-date-sep" class="text-slate-500 hidden">|</span>
                     <p id="view-activity-time" class="text-slate-500 font-medium"></p>
                     <p id="view-activity-meta" class="text-slate-500"></p>
                     <p id="view-activity-type" class="font-medium text-slate-500 bg-slate-100 rounded-full px-3 py-1"></p>
@@ -5047,6 +5053,8 @@ window.addEventListener('popstate', (event) => {
                         data-bgcolor="${event.data.bgColor || ''}"
                         data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
                         data-created-at="${event.data.createdAt || ''}"
+                        data-day-counter="${dayCounter}" 
+                        data-total-trip-days="${totalTripDays}"
                         ${datasetAttributes}
                         ${closedDaysAttr} /* Adiciona o atributo data-closeddays */
                     >
@@ -5868,6 +5876,35 @@ let dividerHtml = '';
             const ds = element.dataset;
             document.getElementById('view-activity-icon').innerHTML = ds.icon.replace('w-5 h-5', 'w-8 h-8');
             document.getElementById('view-activity-name').textContent = ds.name;
+
+            const dateISO = ds.date;
+            const dateEl = document.getElementById('view-activity-date');
+            const dateSep = document.getElementById('view-activity-date-sep');
+
+            if (dateISO) {
+                // Formata a data (Ex: "TER, 14 de novembro")
+                const dayMap = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+                const dateObj = new Date(dateISO + 'T00:00:00Z');
+                const weekdayAbbr = dayMap[dateObj.getUTCDay()];
+                const dateString = dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC', day: 'numeric', month: 'long' });
+                const formattedDate = `${weekdayAbbr}, ${dateString}`;
+                
+                // Combina com o contador de dias (Ex: "TER, 14 de novembro | 1/12")
+                if (ds.dayCounter && ds.totalTripDays) {
+                    dateEl.textContent = `${formattedDate} | ${ds.dayCounter}/${ds.totalTripDays}`;
+                } else {
+                    dateEl.textContent = formattedDate;
+                }
+                
+                dateEl.classList.remove('hidden');
+                dateSep.classList.remove('hidden'); // Mostra o separador |
+            } else {
+                // Esconde os elementos se não houver data
+                dateEl.textContent = '';
+                dateEl.classList.add('hidden');
+                dateSep.classList.add('hidden');
+            }
+
             document.getElementById('view-activity-time').textContent = ds.time;
 
             const metaElement = document.getElementById('view-activity-meta');
@@ -6093,6 +6130,7 @@ let dividerHtml = '';
             const activity = Object.values(trip.activities).find(a => a.id === activityId);
             if (activity) {
                 document.getElementById('edit-activity-id').value = activity.id;
+                document.getElementById('edit-activity-date').value = activity.date;
                 document.getElementById('edit-activity-time').value = activity.time;
                 document.getElementById('edit-activity-name').value = activity.name || '';
                 document.getElementById('edit-activity-type').value = activity.type;
@@ -7696,6 +7734,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             if (activityIndex > -1) {
                 currentActivities[activityIndex] = {
                     ...currentActivities[activityIndex],
+                    date: document.getElementById('edit-activity-date').value,
                     time: document.getElementById('edit-activity-time').value,
                     name: document.getElementById('edit-activity-name').value,
                     type: document.getElementById('edit-activity-type').value,
