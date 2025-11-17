@@ -705,7 +705,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.25 | 14/11/2025, 11:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.27 | 17/11/2025, 11:55</p>
             </main>
         </div>
 
@@ -7577,8 +7577,10 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const isPurchasedTrip = currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[currentTripId];
             let isLocked = false;
             
+            // Pega a viagem atual da memória para comparações
+            const trip = tripsData.find(t => t.id === currentTripId); 
+
             if (isPurchasedTrip) {
-                const trip = tripsData.find(t => t.id === currentTripId); // Pega a viagem da memória
                 const startDate = new Date(trip.startDate);
                 const today = new Date();
                 today.setUTCHours(0, 0, 0, 0);
@@ -7603,7 +7605,6 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     const startDateStr = document.getElementById('edit-trip-start-date').value;
                     const endDateStr = document.getElementById('edit-trip-end-date').value;
                     
-                    // Lógica de data robusta (ignora fuso e horário de verão)
                     const date1 = new Date(startDateStr);
                     const date2 = new Date(endDateStr);
                     const utc1 = Date.UTC(date1.getFullYear(), date1.getMonth(), date1.getDate());
@@ -7619,9 +7620,41 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     }
                 }
                 
+                // --- LÓGICA PARA MOVER AS ATIVIDADES ---
+                const newStartDateStr = document.getElementById('edit-trip-start-date').value;
+                const newStartDateTimestamp = new Date(newStartDateStr + 'T00:00:00Z').getTime();
+                const oldStartDateTimestamp = trip.startDate;
+
+                // Se a data de início mudou, ajustamos as atividades
+                if (oldStartDateTimestamp !== newStartDateTimestamp && trip.activities) {
+                    // Calcula a diferença em milissegundos
+                    const timeDiff = newStartDateTimestamp - oldStartDateTimestamp;
+
+                    // Cria uma cópia profunda das atividades para modificar
+                    // (Funciona tanto se for Array quanto Objeto no Firebase)
+                    const updatedActivities = JSON.parse(JSON.stringify(trip.activities));
+                    
+                    // Itera sobre as chaves (seja array ou objeto)
+                    Object.keys(updatedActivities).forEach(key => {
+                        const activity = updatedActivities[key];
+                        if (activity.date) {
+                            // 1. Converte a data da atividade para timestamp
+                            const actDate = new Date(activity.date + 'T00:00:00Z').getTime();
+                            // 2. Aplica a diferença
+                            const newActDate = new Date(actDate + timeDiff);
+                            // 3. Converte de volta para string YYYY-MM-DD
+                            activity.date = newActDate.toISOString().split('T')[0];
+                        }
+                    });
+
+                    // Adiciona as atividades atualizadas ao pacote de envio
+                    updates.activities = updatedActivities;
+                }
+                // --- FIM DA LÓGICA PARA MOVER AS ATIVIDADES ---
+
                 // Se não estiver travado, pode atualizar os 3 campos
                 updates.name = document.getElementById('edit-trip-name').value;
-                updates.startDate = new Date(document.getElementById('edit-trip-start-date').value + 'T00:00:00Z').getTime();
+                updates.startDate = newStartDateTimestamp;
                 updates.imageUrl = document.getElementById('edit-trip-image-url').value;
 
             } else if (isLocked) {
@@ -7632,7 +7665,13 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             const tripToUpdateRef = ref(db, `trips/${currentTripId}`);
             await update(tripToUpdateRef, updates);
-            await logTripActivity('editou os dados gerais da viagem.');
+            
+            // Loga a ação corretamente dependendo do que mudou
+            if (updates.activities) {
+                await logTripActivity('editou a data da viagem e reagendou automaticamente as atividades.');
+            } else {
+                await logTripActivity('editou os dados gerais da viagem.');
+            }
 
             // 1. Atualiza os dados na variável local...
             const tripIndex = tripsData.findIndex(t => t.id === currentTripId);
