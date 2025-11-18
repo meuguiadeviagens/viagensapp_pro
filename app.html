@@ -4,7 +4,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Não Vou Sozinho - Roteiro de Viagens</title>
     <link rel="manifest" href="manifest.json">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script 
+        src="https://cdn.tailwindcss.com" 
+        onerror="this.onerror=null; this.remove(); var s=document.createElement('script'); s.src='https://unpkg.com/@tailwindcss/browser@4'; document.head.appendChild(s);">
+    </script>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com/">
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
@@ -705,7 +709,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.27 | 17/11/2025, 11:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.28 | 18/11/2025, 11:22</p>
             </main>
         </div>
 
@@ -7468,19 +7472,27 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             // --- 5. TAREFAS "FIRE AND FORGET" (VERIFICAÇÃO DE SUGESTÃO) ---
             (async (nameToCheck, savedTripId) => {
                 try {
-                    let foundCity = null; // Vai armazenar o objeto da cidade (id, displayName)
-                    const suggestions = await loadSuggestedItineraries(); 
+                    let foundCity = null; // Objeto da cidade encontrada (ou a primeira do país)
+                    let foundCountryName = null; // Nome do país encontrado, se houver
+                    let citiesInCountry = []; // Lista de cidades se achar pelo país
+
+                    const suggestions = await loadSuggestedItineraries();
 
                     if (Object.keys(suggestions).length > 0) {
                         const tripWords = cleanAndSplit(nameToCheck);
+                        
+                        // Prepara os dados para busca
                         const availableCities = Object.keys(suggestions).map(cityId => ({
                             id: cityId,
                             displayName: suggestions[cityId].cityName,
+                            country: suggestions[cityId].country, // Importante: pegar o país
                             cleanName: suggestions[cityId].cityName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[,\.]/g, ''),
                             cleanWords: cleanAndSplit(suggestions[cityId].cityName)
                         }));
 
-                        // Feature 1: Correspondência parcial
+                        // --- PASSO 1: TENTA ACHAR PELA CIDADE (Prioridade) ---
+                        
+                        // Busca exata/parcial
                         for (const word of tripWords) {
                             const match = availableCities.find(city => city.cleanName.includes(word));
                             if (match) {
@@ -7489,7 +7501,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                             }
                         }
 
-                        // Feature 2: "Fuzzy" (typos)
+                        // Busca Fuzzy (typos) se não achou exata
                         if (!foundCity) {
                             let bestMatch = null;
                             let minDistance = 1;
@@ -7499,36 +7511,71 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                                         const distance = getLevenshteinDistance(tripWord, cityWord);
                                         if (distance <= minDistance) {
                                             minDistance = distance;
-                                            bestMatch = city; // Salva o objeto inteiro
+                                            bestMatch = city;
                                         }
                                     }
                                 }
                             }
-                            if (bestMatch) {
-                                foundCity = bestMatch;
+                            if (bestMatch) foundCity = bestMatch;
+                        }
+
+                        // --- PASSO 2: SE NÃO ACHOU CIDADE, TENTA ACHAR PELO PAÍS ---
+                        if (!foundCity) {
+                            // Cria uma lista única de países disponíveis e suas palavras chave
+                            const availableCountries = [...new Set(availableCities.map(c => c.country))];
+                            
+                            for (const word of tripWords) {
+                                // Verifica se a palavra digitada bate com algum país (busca simples, insensível a acento/case)
+                                const matchedCountry = availableCountries.find(countryName => {
+                                    const cleanCountry = countryName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                                    return cleanCountry.includes(word);
+                                });
+
+                                if (matchedCountry) {
+                                    foundCountryName = matchedCountry;
+                                    // Filtra todas as cidades desse país
+                                    citiesInCountry = availableCities.filter(c => c.country === matchedCountry);
+                                    break; // Para na primeira correspondência de país
+                                }
                             }
                         }
                     }
 
-                    // --- D. ABRIR O NOVO MODAL (em vez do alert) ---
-                    if (foundCity) {
-                        // 1. Prepara os dados para os botões do modal
-                        tempSuggestionTripId = savedTripId;
-                        tempSuggestionCityId = foundCity.id;
-                        tempSuggestionCityName = foundCity.displayName;
+                    // --- PASSO 3: PREPARA A MENSAGEM E O ALVO ---
+                    let message = "";
+                    let targetCityForButton = null;
 
-                        // 2. Cria a mensagem personalizada
-                        const message = `A sua viagem é para ${foundCity.displayName}, certo? Nós temos algumas sugestões de pontos turísticos para você. Gostaria de visualizá-las agora?`;
+                    if (foundCity) {
+                        // Cenário A: Achou a cidade direto
+                        targetCityForButton = foundCity;
+                        message = `A sua viagem é para ${foundCity.displayName}, certo? Nós temos algumas sugestões de pontos turísticos para você. Gostaria de visualizá-las agora?`;
+                    } else if (foundCountryName && citiesInCountry.length > 0) {
+                        // Cenário B: Achou o país -> Pega a primeira cidade como alvo padrão
+                        targetCityForButton = citiesInCountry[0]; // Define a primeira cidade para abrir o modal
                         
-                        // 3. Atualiza o texto e abre o modal
-                        document.getElementById('suggestion-prompt-message').textContent = message;
+                        const cityListNames = citiesInCountry.map(c => c.displayName).join(', ');
+                        message = `Notamos que sua viagem é para o país: ${foundCountryName}. Temos roteiros cadastrados para as seguintes cidades: ${cityListNames}. \n\nDeseja visualizar as sugestões (abrindo por ${targetCityForButton.displayName})?`;
+                    }
+
+                    // --- PASSO 4: ABRE O MODAL SE HOUVER ALVO ---
+                    if (targetCityForButton) {
+                        // 1. Prepara os dados globais temporários para o botão "Ver sugestões" funcionar
+                        tempSuggestionTripId = savedTripId;
+                        tempSuggestionCityId = targetCityForButton.id;
+                        tempSuggestionCityName = targetCityForButton.displayName;
+
+                        // 2. Atualiza o texto e abre o modal
+                        const msgElement = document.getElementById('suggestion-prompt-message');
+                        // Usa innerText para que o \n funcione como quebra de linha
+                        msgElement.innerText = message; 
+                        
                         openModal('suggestion-prompt-modal');
                     }
 
                 } catch (err) {
                     console.warn("A verificação de sugestão em F&F falhou:", err);
                 }
-            })(tripName, newTripId); // Passa o 'tripName' e o 'newTripId' para a função F&F
+            })(tripName, newTripId);
 
         });
         
