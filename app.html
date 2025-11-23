@@ -709,7 +709,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.28 | 18/11/2025, 11:22</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.29 | 23/11/2025, 17:08</p>
             </main>
         </div>
 
@@ -3252,7 +3252,8 @@ window.addEventListener('popstate', (event) => {
                     currencyHeader.textContent = currency;
                     expenseListContainer.appendChild(currencyHeader);
                     
-                    const currencyExpenses = expensesByCurrency[currency].sort((a, b) => a.description.localeCompare(b.description));
+                    // VAI ORDENAR POR DATA DE CADASTRO (expense.id) EM ORDEM DECRESCENTE
+                    const currencyExpenses = expensesByCurrency[currency].sort((a, b) => b.id - a.id);
                     
                     currencyExpenses.forEach(expense => {
                         const expenseElement = document.createElement('div');
@@ -3271,11 +3272,22 @@ window.addEventListener('popstate', (event) => {
                                 payersText = oldPayers.join(', ');
                             }
                         }
+                        
+                        // NOVO: Formata o ID (timestamp) como data/hora
+                        let createdDate = '';
+                        if (expense.id) {
+                            const date = new Date(parseInt(expense.id, 10));
+                            createdDate = date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                        }
 
                         expenseElement.innerHTML = `
                             <div>
                                 <p class="font-semibold text-slate-800">${expense.description}</p>
-                                <p class="text-sm text-slate-500">Total: ${formatCurrency(expense.amount, expense.currency)} | Pago por: ${payersText}</p>
+                                <p class="text-sm text-slate-500">
+                                    Total: ${formatCurrency(expense.amount, expense.currency)} | 
+                                    Pago por: ${payersText} 
+                                    ${createdDate ? `<span class="text-xs text-slate-400 ml-1">(${createdDate})</span>` : ''}
+                                </p>
                             </div>
                             <div class="flex items-center gap-1">
                                 <button onclick="openExpenseDetailsModal('${expense.id}')" title="Ver detalhes" class="text-slate-500 hover:text-blue-600 p-1">
@@ -7554,7 +7566,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                         targetCityForButton = citiesInCountry[0]; // Define a primeira cidade para abrir o modal
                         
                         const cityListNames = citiesInCountry.map(c => c.displayName).join(', ');
-                        message = `Notamos que sua viagem é para o país: ${foundCountryName}. Temos roteiros cadastrados para as seguintes cidades: ${cityListNames}. \n\nDeseja visualizar as sugestões (abrindo por ${targetCityForButton.displayName})?`;
+                        message = `Notamos que sua viagem é para o país: ${foundCountryName}. Temos roteiros cadastrados para as seguintes cidades: ${cityListNames}. \n\nDeseja visualizar as sugestões?`;
                     }
 
                     // --- PASSO 4: ABRE O MODAL SE HOUVER ALVO ---
