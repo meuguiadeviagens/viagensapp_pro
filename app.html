@@ -263,6 +263,14 @@
             display: none !important;
         }
 
+        /* Atualize ou adicione esta regra */
+        #traveler-suggestions {
+            min-width: 300px; /* Garante uma largura boa para ler nome e email */
+            width: auto;      /* Permite crescer se necessário */
+            max-width: 90vw;  /* Evita que estoure a tela em celulares muito pequenos */
+            white-space: normal; /* Permite que o texto quebre linha se necessário */
+        }
+
 /* --- ESTILOS PARA O BOTÃO VOLTAR AO TOPO ---  https://meuguiadeviagens.github.io/viagensapp_pro */
         #back-to-top-btn {
             transition: opacity 0.3s, transform 0.3s;
@@ -709,7 +717,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.30 | 01/12/2025, 09:21</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.31 | 01/12/2025, 09:21</p>
             </main>
         </div>
 
@@ -2781,7 +2789,8 @@ window.addEventListener('popstate', (event) => {
         // Função para mostrar as sugestões filtradas na tela
         function renderSuggestions(filteredTravelers) {
             const suggestionsContainer = document.getElementById('traveler-suggestions');
-            const nameInput = document.getElementById('traveler-name');
+            
+            // Limpa sugestões anteriores
             suggestionsContainer.innerHTML = '';
 
             if (filteredTravelers.length === 0) {
@@ -2790,18 +2799,42 @@ window.addEventListener('popstate', (event) => {
             }
 
             filteredTravelers.forEach(traveler => {
+                // Container principal da linha
                 const suggestionDiv = document.createElement('div');
-                suggestionDiv.className = 'suggestion-item';
-                // Guardamos os dados no próprio elemento para usar ao clicar
-                suggestionDiv.dataset.name = traveler.name;
-                suggestionDiv.dataset.email = traveler.email;
-                suggestionDiv.innerHTML = `
-                    <div class="suggestion-name">${traveler.name}</div>
-                    <div class="suggestion-email">${traveler.email}</div>
+                suggestionDiv.className = 'suggestion-item flex items-center p-2 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors cursor-pointer';
+                
+                // 1. Botão de Excluir (AGORA NA ESQUERDA)
+                const deleteBtn = document.createElement('button');
+                // Removi a opacidade para garantir que apareça sempre
+                deleteBtn.className = 'flex-shrink-0 mr-3 p-2 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-full transition-all';
+                deleteBtn.title = "Esquecer este viajante";
+                // Ícone X um pouco mais grosso para facilitar o toque
+                deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+                
+                // Ação de excluir
+                deleteBtn.onclick = (e) => {
+                    e.preventDefault(); // Evita qualquer comportamento padrão
+                    e.stopPropagation(); // Garante que não clique na div pai
+                    deleteFrequentTraveler(e, traveler.id);
+                };
+
+                // 2. Informações do Viajante
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'flex-grow min-w-0'; // min-w-0 ajuda no truncate
+                infoDiv.innerHTML = `
+                    <div class="suggestion-name font-medium text-slate-800 truncate">${traveler.name}</div>
+                    <div class="suggestion-email text-xs text-slate-500 truncate">${traveler.email}</div>
                 `;
-                suggestionDiv.addEventListener('click', () => {
+
+                // Ação de selecionar (ao clicar na área do texto)
+                suggestionDiv.onclick = () => {
                     selectSuggestion(traveler.name, traveler.email);
-                });
+                };
+
+                // Monta a linha: Botão na esquerda -> Texto na direita
+                suggestionDiv.appendChild(deleteBtn);
+                suggestionDiv.appendChild(infoDiv);
+                
                 suggestionsContainer.appendChild(suggestionDiv);
             });
 
@@ -2820,8 +2853,14 @@ window.addEventListener('popstate', (event) => {
             // 1. Carrega o histórico do Firebase e guarda em cache
             const frequentTravelersRef = ref(db, `users/${currentUserId}/frequentTravelers`);
             const snapshot = await get(frequentTravelersRef);
+            
             if (snapshot.exists()) {
-                frequentTravelersCache = Object.values(snapshot.val());
+                // MUDANÇA AQUI: Mapeamos as chaves (IDs) junto com os valores
+                const data = snapshot.val();
+                frequentTravelersCache = Object.keys(data).map(key => ({
+                    id: key, // Guardamos o ID para poder apagar depois
+                    ...data[key]
+                }));
             } else {
                 frequentTravelersCache = [];
             }
@@ -2837,10 +2876,10 @@ window.addEventListener('popstate', (event) => {
                     return;
                 }
                 
-                // 3. Filtra o cache local (não o banco de dados!)
+                // 3. Filtra o cache local
                 const filtered = frequentTravelersCache.filter(t => 
-                    t.name.toLowerCase().includes(query) || 
-                    t.email.toLowerCase().includes(query)
+                    (t.name && t.name.toLowerCase().includes(query)) || 
+                    (t.email && t.email.toLowerCase().includes(query))
                 );
                 
                 renderSuggestions(filtered);
@@ -2856,7 +2895,41 @@ window.addEventListener('popstate', (event) => {
                 }
             }, true);
         }
-        // --- FIM DAS FUNÇÕES DE AUTOCOMPLETE ---
+
+        // Adicione esta nova função ao seu código
+        window.deleteFrequentTraveler = async (event, travelerId) => {
+            if (!currentUserId || !travelerId) return;
+
+            // Confirmação simples (opcional, pode remover se quiser que seja direto)
+            if (!confirm("Deseja remover este nome do seu histórico de sugestões?")) {
+                return;
+            }
+
+            try {
+                // 1. Remove do Firebase
+                const travelerRef = ref(db, `users/${currentUserId}/frequentTravelers/${travelerId}`);
+                await remove(travelerRef);
+
+                // 2. Remove do cache local imediatamente para atualizar a UI
+                frequentTravelersCache = frequentTravelersCache.filter(t => t.id !== travelerId);
+
+                // 3. Atualiza a lista filtrada que está aberta agora
+                const nameInput = document.getElementById('traveler-name');
+                const query = nameInput.value.toLowerCase();
+                
+                const filtered = frequentTravelersCache.filter(t => 
+                    (t.name && t.name.toLowerCase().includes(query)) || 
+                    (t.email && t.email.toLowerCase().includes(query))
+                );
+                
+                // Re-renderiza a lista (se ficar vazia, ela se esconde)
+                renderSuggestions(filtered);
+
+            } catch (error) {
+                console.error("Erro ao excluir viajante frequente:", error);
+                alert("Não foi possível excluir.");
+            }
+        };
 
         /**
          * Renderiza a lista de viajantes, buscando o "papel" (role) de cada um no objeto "members".
