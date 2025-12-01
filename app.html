@@ -717,7 +717,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.31 | 01/12/2025, 09:21</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.32 | 01/12/2025, 18:21</p>
             </main>
         </div>
 
@@ -6980,7 +6980,7 @@ let dividerHtml = '';
             const trip = tripsData.find(t => t.id === currentTripId);
             if (!trip) return;
 
-            // Atualização visual imediata do item arrastado
+            // --- 1. Atualização Visual Imediata (Feedback para o usuário) ---
             if (evt && evt.item && evt.to) {
                 const movedItem = evt.item;
                 const targetList = evt.to;
@@ -6988,55 +6988,50 @@ let dividerHtml = '';
 
                 let closedDays = [];
                 try {
-                    // Tenta ler os dias fechados do atributo data-closeddays
                     closedDays = JSON.parse(movedItem.dataset.closeddays || '[]');
                 } catch (e) {
-                    console.error("Erro ao parsear data-closeddays:", movedItem.dataset.closeddays, e);
-                    closedDays = []; // Garante um array vazio em caso de erro
+                    console.error("Erro data-closeddays:", e);
                 }
 
+                // Verifica se fecha no novo dia
                 const dayMap = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
-                // Usa T12:00:00 para evitar problemas de fuso horário/horário de verão
                 const targetDateObj = new Date(newDate + 'T12:00:00');
                 const dayOfWeekString = dayMap[targetDateObj.getDay()];
-
                 const isNowClosed = closedDays.includes(dayOfWeekString);
 
+                // Atualiza a UI (Texto vermelho e Aviso)
                 const nameElement = movedItem.querySelector('strong.font-semibold');
-                // Encontra o parágrafo que contém nome e descrição
                 const textElement = movedItem.querySelector('p.text-sm');
-                const descriptionSpanText = movedItem.dataset.description || ''; // Descrição original sem prefixo
-
+                const descriptionSpanText = movedItem.dataset.description || ''; 
                 const closedWarningText = "(Neste dia não abre) ";
 
-                // Atualiza estilo do nome
-                if (nameElement) {
-                    nameElement.classList.toggle('text-red-600', isNowClosed);
-                    nameElement.classList.toggle('font-bold', isNowClosed);
+                // Atualiza dataset para o salvamento posterior saber que mudou
+                if (isNowClosed) {
+                    movedItem.dataset.description = descriptionSpanText ? `${closedWarningText}${descriptionSpanText}` : closedWarningText;
+                } else {
+                    // Remove o aviso se o local estiver aberto no novo dia
+                    movedItem.dataset.description = descriptionSpanText.replace(closedWarningText, '');
                 }
 
-                // Atualiza o texto completo (nome + descrição com/sem prefixo)
+                // Renderiza o HTML atualizado
                 if (textElement && nameElement) {
-                    let newDescriptionPart = '';
-                    if (isNowClosed) {
-                        newDescriptionPart = descriptionSpanText ? ` | ${closedWarningText}${descriptionSpanText}` : ` | ${closedWarningText}`;
-                         // Atualiza o data-description para refletir o aviso visual
-                        movedItem.dataset.description = `${closedWarningText}${descriptionSpanText}`;
-                    } else {
-                        newDescriptionPart = descriptionSpanText ? ` | ${descriptionSpanText}` : '';
-                         // Atualiza o data-description removendo o aviso
-                         movedItem.dataset.description = descriptionSpanText;
-                    }
-                    // Remonta o conteúdo do parágrafo
+                    nameElement.classList.toggle('text-red-600', isNowClosed);
+                    nameElement.classList.toggle('font-bold', isNowClosed);
+                    
+                    const displayDesc = movedItem.dataset.description;
+                    const separator = (nameElement.textContent && displayDesc) ? ' | ' : '';
+                    
                     textElement.innerHTML = `
                         <strong class="font-semibold ${isNowClosed ? 'text-red-600 font-bold' : ''}">${nameElement.textContent}</strong>
-                        ${newDescriptionPart}
+                        ${displayDesc ? separator + displayDesc : ''}
                     `;
                 }
             }
 
-            // Lógica para salvar TODAS as atividades no Firebase (após a atualização visual)
+            // --- 2. Coleta e Preparação de Dados para o Firebase ---
             const allActivityElements = document.querySelectorAll('#daily-itinerary-list .activity-item[data-activity-id]');
+            
+            // Clona os dados atuais para não alterar a referência original diretamente antes da hora
             let allCurrentActivitiesData = trip.activities ? JSON.parse(JSON.stringify(Object.values(trip.activities))) : [];
             let updatedActivitiesForSave = [];
 
@@ -7046,62 +7041,54 @@ let dividerHtml = '';
                 const activityData = allCurrentActivitiesData.find(a => a.id === activityId);
 
                 if (activityData && currentDayDate) {
-                    activityData.date = currentDayDate; // Atualiza a data no objeto de dados
+                    // Atualiza data
+                    activityData.date = currentDayDate; 
 
-                    // *** RECALCULA isClosedToday ANTES DE SALVAR ***
+                    // Recalcula lógica de "Fechado" para salvar no banco corretamente
                     let closedDaysForSave = [];
-                    try {
-                        closedDaysForSave = JSON.parse(el.dataset.closeddays || '[]');
-                    } catch(e) { /* Usa array vazio */ }
+                    try { closedDaysForSave = JSON.parse(el.dataset.closeddays || '[]'); } catch(e) {}
+                    
                     const saveDateObj = new Date(currentDayDate + 'T12:00:00');
                     const saveDayMap = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
                     const saveDayOfWeek = saveDayMap[saveDateObj.getDay()];
+                    
+                    // Define as propriedades atualizadas
                     activityData.isClosedToday = closedDaysForSave.includes(saveDayOfWeek);
-                    // Adiciona também a descrição atualizada ao salvar
-                    activityData.description = el.dataset.description || '';
+                    activityData.description = el.dataset.description || ''; 
 
                     updatedActivitiesForSave.push(activityData);
                 } else if (activityData) {
-                    // Mantém a atividade original se não encontrar a data (pouco provável)
+                    // Fallback para não perder dados se algo falhar na UI
                     updatedActivitiesForSave.push(activityData);
                 }
             });
 
-            // Garante que atividades não presentes no DOM não sejam perdidas
+            // Recupera atividades que podem não estar na tela (filtro, erro de render, etc)
             allCurrentActivitiesData.forEach(act => {
                 if (!updatedActivitiesForSave.find(a => a.id === act.id)) {
                     updatedActivitiesForSave.push(act);
                 }
             });
 
-            // Prepara para salvar no Firebase
+            // --- 3. Envio para o Firebase ---
             const updates = {};
-            // Mantém a estrutura original (array ou objeto)
+            
             if (Array.isArray(trip.activities)) {
-                 updates[`/${currentTripId}/activities`] = updatedActivitiesForSave;
+                updates[`/${currentTripId}/activities`] = updatedActivitiesForSave;
             } else {
-                 const activitiesObject = updatedActivitiesForSave.reduce((obj, item) => {
-                     // Adiciona ou atualiza a propriedade isClosedToday antes de salvar
-                     let itemClosedDays = item.closedDays || [];
-                     const itemDateObj = new Date(item.date + 'T12:00:00');
-                     const itemDayMap = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
-                     const itemDayOfWeek = itemDayMap[itemDateObj.getDay()];
-                     item.isClosedToday = itemClosedDays.includes(itemDayOfWeek);
-
-                     obj[item.id] = item;
-                     return obj;
-                 }, {});
-                 updates = { "activities": activitiesObject };
+                // Converte array de volta para objeto (se seu banco usar estrutura de Objeto)
+                const activitiesObject = updatedActivitiesForSave.reduce((obj, item) => {
+                    obj[item.id] = item;
+                    return obj;
+                }, {});
+                updates[`/${currentTripId}/activities`] = activitiesObject; // Usei o path direto aqui também por segurança
             }
 
-            // Envia as atualizações para o Firebase
             try {
-                const tripRef = ref(db, `trips/${currentTripId}`);
-                await update(tripRef, updates);
-                console.log("Ordem e datas das atividades atualizadas no Firebase.");
+                await update(ref(db), updates); // Use ref(db) para permitir updates em paths absolutos
+                console.log("Ordem atualizada com sucesso.");
             } catch (error) {
-                console.error("Erro ao salvar ordem/datas das atividades:", error);
-                // Considerar reverter a mudança visual aqui se o salvamento falhar?
+                console.error("Erro ao salvar:", error);
             }
         }
 
@@ -7119,7 +7106,7 @@ let dividerHtml = '';
                         animation: 150,
                         handle: '.activity-drag-handle',
                         draggable: '.activity-item[data-iseditable="true"]',
-                        onEnd: (evt) => updateActivityOrderAndDate(),
+                        onEnd: (evt) => updateActivityOrderAndDate(evt),
 
                         // --- INÍCIO DA CORREÇÃO PARA CELULAR ---
                         forceFallback: true,        // Força o modo de "clone", muito melhor para toque
