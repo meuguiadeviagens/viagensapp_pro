@@ -709,7 +709,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.29 | 23/11/2025, 17:08</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.30 | 01/12/2025, 09:21</p>
             </main>
         </div>
 
@@ -4457,14 +4457,34 @@ window.addEventListener('popstate', (event) => {
             tripCard.className = 'trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative';
             tripCard.onclick = () => showTripDetails(trip.id);
             
-            // --- INÍCIO DA LÓGICA ATUALIZADA ---
-            
             // 1. Pega o papel (role) do usuário atual nesta viagem
             const userRole = (currentUserId && trip.members) ? trip.members[currentUserId] : null;
 
-            // --- FIM DA LÓGICA ATUALIZADA ---
+            // --- INÍCIO DA LÓGICA DE NOTIFICAÇÃO (BOLINHA VERMELHA) ---
+            let notificationBadgeHtml = '';
+            if (currentUserId && trip.activityLog) {
+                // Pega o timestamp da última vez que ESTE usuário viu o log (ou 0 se nunca viu)
+                const lastViewedTimestamp = (trip.userViewTimestamps && trip.userViewTimestamps[currentUserId]) 
+                                            ? trip.userViewTimestamps[currentUserId] 
+                                            : 0;
+                
+                // Verifica se existe ALGUM item no log que seja mais novo que a última visualização
+                const logEntries = Object.values(trip.activityLog);
+                const hasNewItems = logEntries.some(entry => entry.timestamp > lastViewedTimestamp);
 
-            // --- INÍCIO DA LÓGICA PARA ENCONTRAR O NOME DO DONO ---
+                if (hasNewItems) {
+                    // Cria o HTML da bolinha vermelha
+                    notificationBadgeHtml = `
+                        <span class="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-yellow-300 bg-green-700 rounded-full shadow-sm animate-pulse" title="Novas alterações nesta viagem">
+                            Novidades!
+                        </span>`;
+                    // Alternativa: Se quiser apenas a bolinha sem texto, use este:
+                    // notificationBadgeHtml = `<span class="ml-2 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm flex-shrink-0" title="Novidades"></span>`;
+                }
+            }
+            // --- FIM DA LÓGICA DE NOTIFICAÇÃO ---
+
+            // Lógica para encontrar o nome do dono
             let ownerDisplayName = 'Carregando...';
             if (trip.members && trip.travelers) {
                 const ownerUid = Object.keys(trip.members).find(uid => trip.members[uid] === 'owner');
@@ -4479,11 +4499,10 @@ window.addEventListener('popstate', (event) => {
                     ownerDisplayName = "Sem dono definido";
                 }
             }
-            // --- FIM DA LÓGICA ---
 
-            // --- INÍCIO: LÓGICA DO ÍCONE DE VISUALIZAÇÃO ---
+            // Lógica do ícone de visualização
             let viewOnlyIconHtml = '';
-            if (userRole === 'viewer') { // Lógica simplificada
+            if (userRole === 'viewer') { 
                 viewOnlyIconHtml = `
                     <div class="absolute bottom-3 right-3 z-10" title="Apenas visualização">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 bg-white/70 backdrop-blur-sm p-1 rounded-full">
@@ -4493,27 +4512,22 @@ window.addEventListener('popstate', (event) => {
                     </div>
                 `;
             }
-            // --- FIM: LÓGICA DO ÍCONE DE VISUALIZAÇÃO ---
 
-            // --- INÍCIO DA LÓGICA ATUALIZADA DO BOTÃO "EXCLUIR / SAIR" ---
+            // Lógica do botão Excluir/Sair
             let deleteButtonHtml = '';
-
             if (userRole === 'owner') {
-                // Dono: Botão vermelho "Excluir Viagem" com ícone de lixeira
                 deleteButtonHtml = `
                     <button onclick="deleteTrip(event, '${trip.id}')" title="Excluir Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                     </button>
                 `;
             } else if (userRole === 'editor' || userRole === 'viewer') {
-                // Membro: Botão laranja "Sair da Viagem" com ícone de saída
                 deleteButtonHtml = `
                     <button onclick="deleteTrip(event, '${trip.id}')" title="Sair da Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
                     </button>
                 `;
             }
-            // --- FIM DA LÓGICA ATUALIZADA DO BOTÃO ---
 
             let imageContainerClasses = 'h-48';
             let textContainerClasses = 'p-6';
@@ -4550,12 +4564,15 @@ window.addEventListener('popstate', (event) => {
                 </div>
                 <div class="${imageContainerClasses} bg-cover bg-center transition-all duration-300" style="background-image: url('${trip.imageUrl}')"></div>
                 <div class="${textContainerClasses}">
-                    <h3 class="${titleClasses} font-bold text-slate-900 truncate">${trip.name}</h3>
+                    <div class="flex items-center justify-between mb-1">
+                        <h3 class="${titleClasses} font-bold text-slate-900 truncate max-w-[70%]">${trip.name}</h3>
+                        ${notificationBadgeHtml}
+                    </div>
                     
-                    <p class="text-slate-500 mt-1 text-sm truncate">Criado por ${ownerDisplayName}</p>
+                    <p class="text-slate-500 text-sm truncate">Criado por ${ownerDisplayName}</p>
                     
                     <div class="mt-2 text-xs font-medium text-slate-600">
-                       ${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}
+                    ${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}
                     </div>
                     ${viewOnlyIconHtml}
                 </div>
@@ -5622,13 +5639,15 @@ let dividerHtml = '';
             currentTripId = null; 
             history.pushState({ view: 'trips' }, 'Todas as Viagens', '#');
 
-            // --- A LÓGICA CORRETA DE NAVEGAÇÃO (COM CORREÇÃO) ---
+            // Força a atualização da lista para refletir mudanças (como o sumiço da bolinha)
+            renderTripLists(); 
+
             // Mostra o painel da lista de viagens
             document.getElementById('trips-view').classList.remove('hidden');
 
             // Esconde os outros painéis
             document.getElementById('details-view').classList.add('hidden');
-            document.getElementById('checklist-view').classList.add('hidden'); // <-- ESTA É A LINHA QUE FALTAVA
+            document.getElementById('checklist-view').classList.add('hidden');
 
             // Esconde o botão flutuante de "voltar"
             document.getElementById('back-to-trips-btn').classList.add('hidden');
