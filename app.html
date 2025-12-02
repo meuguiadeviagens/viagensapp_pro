@@ -717,7 +717,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.32 | 01/12/2025, 18:21</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.33 | 02/12/2025, 10:45</p>
             </main>
         </div>
 
@@ -5058,7 +5058,17 @@ window.addEventListener('popstate', (event) => {
                             if (t.arrivalDate && t.arrivalTime) allEvents.push({ dateTime: new Date(`${t.arrivalDate}T${t.arrivalTime}`), name: `Devolução de Carro`, description: t.description || 'Detalhes da devolução', icon: eventIcon, data: transportData });
                             break;
                         default:
-                            eventIcon = t.type === 'Trem' ? ICONS.train : (t.type === 'Ônibus' ? ICONS.bus : ICONS.transport_other);
+                            // Lógica atualizada para incluir o ícone de carro
+                            if (t.type === 'Trem') {
+                                eventIcon = ICONS.train;
+                            } else if (t.type === 'Ônibus') {
+                                eventIcon = ICONS.bus;
+                            } else if (t.type === 'Viagem de Carro') {
+                                eventIcon = ICONS.car; // <--- Usa o ícone de carro correto
+                            } else {
+                                eventIcon = ICONS.transport_other;
+                            }
+
                             if (t.departureDate && t.departureTime) allEvents.push({ dateTime: new Date(`${t.departureDate}T${t.departureTime}`), name: `Partida (${t.type})`, description: `De ${t.from || '?'} para ${t.to || '?'}`, icon: eventIcon, data: transportData });
                             if (t.arrivalDate && t.arrivalTime) allEvents.push({ dateTime: new Date(`${t.arrivalDate}T${t.arrivalTime}`), name: `Chegada (${t.type})`, description: `Em ${t.to || '?'}`, icon: eventIcon, data: transportData });
                     }
