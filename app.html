@@ -717,7 +717,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.35 | 02/12/2025, 10:45</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.36 | 02/12/2025, 18:05</p>
             </main>
         </div>
 
@@ -2399,58 +2399,37 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
         ];
 
         // ===============================================
-        // INÍCIO: LÓGICA DE DETECÇÃO DE ATUALIZAÇÃO DO PWA
+        // INÍCIO: LÓGICA DE ATUALIZAÇÃO AUTOMÁTICA (SEM MODAL)
         // ===============================================
 
-        let newWorker; // Variável para guardar o novo Service Worker
-
-        // (A função showUpdateBar() não é mais necessária)
-
-        // 1. Registra o Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js') // <-- CONFIRME O NOME DO SEU ARQUIVO
-                .then(registration => {
-                    console.log('Service Worker registrado com sucesso.');
+            navigator.serviceWorker.register('./sw.js').then(registration => {
+                console.log('Service Worker registrado.');
 
-                    // 2. Escuta por um novo Service Worker "esperando"
-                    registration.addEventListener('updatefound', () => {
-                        console.log('Atualização encontrada. Novo Service Worker sendo instalado.');
-                        newWorker = registration.installing;
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    console.log('Nova versão detectada. Baixando...');
 
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed') {
-                                // 3. Se um novo SW foi instalado, ABRE O MODAL FORÇADO
-                                if (navigator.serviceWorker.controller) {
-                                    console.log('Novo Service Worker está instalado e esperando. FORÇANDO ATUALIZAÇÃO.');
-                                    // A função openModal() já existe no seu código
-                                    openModal('force-update-modal'); 
-                                }
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed') {
+                            if (navigator.serviceWorker.controller) {
+                                // ATUALIZAÇÃO DISPONÍVEL: 
+                                // Em vez de abrir modal, forçamos a atualização imediatamente.
+                                console.log('Nova versão instalada. Atualizando página...');
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
                             }
-                        });
+                        }
                     });
-                })
-                .catch(error => {
-                    console.error('Falha ao registrar o Service Worker:', error);
                 });
+            });
+
+            // Recarrega a página automaticamente quando o novo SW assume
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                window.location.reload();
+            });
         }
-
-        // 4. Ação do botão "Atualizar Agora" (do modal forçado)
-        document.getElementById('force-reload-btn').addEventListener('click', () => {
-            if (newWorker) {
-                // 5. Envia a mensagem para o SW
-                newWorker.postMessage({ type: 'SKIP_WAITING' });
-                // Não é preciso fechar o modal, a página vai recarregar.
-            }
-        });
-        
-        // 6. Recarrega a página DEPOIS que o novo SW assumir o controle
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            console.log('Novo Service Worker assumiu o controle. Recarregando a página.');
-            window.location.reload();
-        });
-
         // ===============================================
-        // FIM: LÓGICA DE DETECÇÃO DE ATUALIZAÇÃO
+        // FIM: LÓGICA DE ATUALIZAÇÃO AUTOMÁTICA
         // ===============================================
 
 
@@ -3231,9 +3210,11 @@ window.addEventListener('popstate', (event) => {
             shopping: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`,
             tree: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M5 12h14"/></svg>`,
             
-            cake: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dessert"><circle cx="12" cy="4" r="2"/><path d="M10.2 3.2C5.5 4 2 8.1 2 13a2 2 0 0 0 4 0v-1a2 2 0 0 1 4 0v4a2 2 0 0 0 4 0v-4a2 2 0 0 1 4 0v1a2 2 0 0 0 4 0c0-4.9-3.5-9-8.2-9.8"/><path d="M12 13a8 8 0 0 0-8 8h16a8 8 0 0 0-8-8Z"/></svg>`,
+            cake: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dessert"><circle cx="12" cy="4" r="2"/><path d="M10.2 3.2C5.5 4 2 8.1 2 13a2 2 0 0 0 4 0v-1a2 2 0 0 1 4 0v4a2 2 0 0 0 4 0v-4a2 2 0 0 1 4 0v1a2 2 0 0 0 4 0c0-4.9-3.5-9-8.2-9.8"/><path d="M12 13a8 8 0 0 0-8 8h16a8 8 0 0 0-8-8Z"/></svg>`,
+            
             //sun virou um metrô/trem
             sun: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><path d="M8 15h.01"/><path d="M16 15h.01"/></svg>`,
+            
             leaf: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`,
             mountain: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>`,
             ferris_wheel: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="10"/><path d="m12 22 3-8 3 8"/><path d="m12 22-3-8-3 8"/><path d="m2 12h8"/><path d="m14 12h8"/><path d="m19.07 4.93-4.24 4.24"/><path d="m4.93 19.07 4.24-4.24"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 19.07-4.24-4.24"/></svg>`,
@@ -9698,21 +9679,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         <div id="image-preview-popup" class="hidden fixed z-[1000] border border-slate-300 shadow-lg rounded-md overflow-hidden bg-white p-1 max-w-[300px] max-h-[300px]" style="pointer-events: none;">
             <img id="image-preview-content" src="" alt="Pré-visualização" class="block w-full h-full object-contain">
-        </div>
-
-      <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(registration => {
-              console.log('Service Worker registrado com sucesso:', registration);
-            })
-            .catch(error => {
-              console.log('Falha ao registrar o Service Worker:', error);
-            });
-        });
-      }
-    </script>
+        </div>    
 
 </body>
 </html>
