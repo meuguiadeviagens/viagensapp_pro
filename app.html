@@ -99,7 +99,7 @@
             #lodging-section .flex-col.gap-2.items-center,
             .document-item .flex.items-center.gap-2,
             .note-item-container .flex.items-center.gap-2,
-            .activity-item .flex.gap-2.items-center.flex-shrink-0,
+            .activity-item .activity-actions-print,
             #shared-expenses-list button,
             #shared-expenses-panel button[onclick] {
                 display: none !important;
@@ -717,7 +717,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.39 | 02/12/2025, 18:06</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.40 | 03/12/2025, 07:06</p>
             </main>
         </div>
 
@@ -5177,8 +5177,8 @@ window.addEventListener('popstate', (event) => {
                             </p>
                         </div>
                         ${(isEditable && !isReadOnly) ? `
-                        <div class="flex gap-2 items-center flex-shrink-0">
-                            <button onclick="event.stopPropagation(); openEditActivityModal('${event.data.id}')" class="text-slate-500 hover:text-blue-600 p-1" title="Editar Atividade">
+                            <div class="activity-actions-print flex gap-2 items-center flex-shrink-0"> 
+                                <button onclick="event.stopPropagation(); openEditActivityModal('${event.data.id}')" class="text-slate-500 hover:text-blue-600 p-1" title="Editar Atividade">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                             </button>
                             <button onclick="event.stopPropagation(); deleteActivity('${event.data.id}')" class="text-slate-500 hover:text-red-600 p-1" title="Excluir Atividade">
