@@ -663,13 +663,13 @@
     <div id="app" class="max-w-7xl mx-auto p-4 md:p-8 hidden">
 
         <div id="trips-view">
-            <header class="flex flex-col sm:flex-row justify-between sm:items-center mb-8">
-                <div>
-                    <h1 class="text-4xl font-bold text-slate-900"><a href="index.html"><img src="logo_meuguiadeviagens.png" class="w-[300px] h-[50px] object-contain"></a></h1>
-                    <p class="text-slate-500 mt-1"></p>
-                </div>
-                <div class="flex items-center gap-4 mt-4 sm:mt-0">
-                    <label class="flex items-center gap-2 cursor-pointer bg-white px-3 py-3 rounded-lg shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors h-[48px]">
+            <header class="flex flex-col items-center gap-6 mb-8 text-center">
+            <div>
+                <h1 class="text-4xl font-bold text-slate-900 justify-center flex"><a href="index.html"><img src="logo_meuguiadeviagens.png" class="w-[300px] h-[50px] object-contain"></a></h1>
+                <p class="text-slate-500 mt-1"></p>
+            </div>
+            <div class="flex flex-wrap justify-center items-center gap-4">
+                    <label id="filter-news-label" class="hidden flex items-center gap-2 cursor-pointer bg-white px-3 py-3 rounded-lg shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors h-[48px]">
                         <input type="checkbox" id="filter-news-checkbox" onchange="renderTripLists()" class="h-4 w-4 rounded text-green-600 focus:ring-green-500 border-gray-300">
                         <span class="text-sm font-semibold text-slate-700 select-none"></span><!-- Checkbox Novidades -->
                         <span class="flex h-2 w-2 relative">
@@ -725,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.49 | 05/12/2025, 19:22</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.50 | 05/12/2025, 20:22</p>
             </main>
         </div>
 
