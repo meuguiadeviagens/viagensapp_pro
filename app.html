@@ -669,6 +669,14 @@
                     <p class="text-slate-500 mt-1"></p>
                 </div>
                 <div class="flex items-center gap-4 mt-4 sm:mt-0">
+                    <label class="flex items-center gap-2 cursor-pointer bg-white px-3 py-3 rounded-lg shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors h-[48px]">
+                        <input type="checkbox" id="filter-news-checkbox" onchange="renderTripLists()" class="h-4 w-4 rounded text-green-600 focus:ring-green-500 border-gray-300">
+                        <span class="text-sm font-semibold text-slate-700 select-none">Novidades</span>
+                        <span class="flex h-2 w-2 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                    </label>
                     <button onclick="openModal('add-trip-modal')" class="flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus-circle"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="16"></line><line x1="8" x2="16" y1="12" y2="12"></line></svg>
                         <span>Nova Viagem</span>
@@ -717,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.46 | 05/12/2025, 10:56</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.47 | 05/12/2025, 19:22</p>
             </main>
         </div>
 
@@ -4437,68 +4445,78 @@ window.addEventListener('popstate', (event) => {
             featuredTripsList.id = 'featured-trips-list';
             featuredTripsList.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
 
-            // Pega os NOVOS containers de conteúdo que criamos no HTML
             const upcomingContent = document.getElementById('upcoming-trips-content');
             const pastContent = document.getElementById('past-trips-content');
             
-            // Limpa os containers antes de preencher
+            // Limpa containers
             featuredTripsPanel.innerHTML = '';
             upcomingContent.innerHTML = '';
             pastContent.innerHTML = '';
 
-            // Lógica para viagens destacadas (continua a mesma)
-            const featuredTrips = tripsData.filter(trip => userFavoriteTrips.has(trip.id));
+            // --- INÍCIO DA LÓGICA DO FILTRO ---
+            const isNewsFilterActive = document.getElementById('filter-news-checkbox')?.checked || false;
+            
+            // Filtra o array principal com base no checkbox
+            let tripsToDisplay = tripsData;
+            
+            if (isNewsFilterActive) {
+                tripsToDisplay = tripsData.filter(trip => checkTripHasNews(trip));
+            }
+            // --- FIM DA LÓGICA DO FILTRO ---
+
+            // Lógica para viagens destacadas (Favoritos)
+            // Nota: O filtro de novidades também se aplica aqui se estiver ativo
+            const featuredTrips = tripsToDisplay.filter(trip => userFavoriteTrips.has(trip.id));
+            
             if(featuredTrips.length > 0) {
-                featuredTripsPanel.innerHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-4">Viagens Destacadas</h2>`;
+                featuredTripsPanel.innerHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-4">Viagens Destacadas ${isNewsFilterActive ? '(Com Novidades)' : ''}</h2>`;
                 featuredTrips.forEach(trip => {
                     featuredTripsList.appendChild(createTripCard(trip, true));
                 });
                 featuredTripsPanel.appendChild(featuredTripsList);
             }
             
-            // --- INÍCIO DA CORREÇÃO ---
-            // A linha 'if' abaixo estava faltando
-            if (tripsData.length === 0) {
-                const welcomeCardHtml = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <a 
-                            href="https://youtu.be/b-NpcyDpmNI" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            class="trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative border-2 border-dashed border-blue-400 hover:border-blue-600">
-                            
-                            <div 
-                                class="h-48 bg-cover bg-center flex items-center justify-center relative" 
-                                style="background-image: url('https://midias-turismo.eurodicas.com.br/wp-content/uploads/2025/02/paris_na_primavera-2-1200x800.jpg.webp');">
-                                
-                                <div class="absolute inset-0 bg-black opacity-40"></div>
-                                
-                                <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play-circle text-white z-10 opacity-80"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-                            </div>
-
-                            <div class="p-6 text-center">
-                                <h3 class="text-2xl font-bold text-slate-900">Crie sua primeira viagem</h3>
-                                <p class="text-slate-500 mt-2">Clique aqui para ver um vídeo rápido de como começar a usar o app.</p>
-                            </div>
-                        </a>
-                    </div>
-                `;
-                upcomingContent.innerHTML = welcomeCardHtml;
-                // --- FIM DA MODIFICAÇÃO ---
+            // Se não houver viagens (seja porque não tem nenhuma ou porque o filtro escondeu todas)
+            if (tripsToDisplay.length === 0) {
+                let emptyMsg = '';
                 
-                pastContent.innerHTML = `<p class="col-span-full text-center text-sm text-slate-500 py-4">Nenhuma viagem realizada ainda.</p>`;
+                if (tripsData.length === 0) {
+                    // Caso 1: O usuário realmente não tem viagens (Código original do card de boas-vindas)
+                    const welcomeCardHtml = `
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <a href="https://youtu.be/b-NpcyDpmNI" target="_blank" rel="noopener noreferrer" class="trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative border-2 border-dashed border-blue-400 hover:border-blue-600">
+                                <div class="h-48 bg-cover bg-center flex items-center justify-center relative" style="background-image: url('https://midias-turismo.eurodicas.com.br/wp-content/uploads/2025/02/paris_na_primavera-2-1200x800.jpg.webp');">
+                                    <div class="absolute inset-0 bg-black opacity-40"></div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play-circle text-white z-10 opacity-80"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                                </div>
+                                <div class="p-6 text-center">
+                                    <h3 class="text-2xl font-bold text-slate-900">Crie sua primeira viagem</h3>
+                                    <p class="text-slate-500 mt-2">Clique aqui para ver um vídeo rápido.</p>
+                                </div>
+                            </a>
+                        </div>`;
+                    upcomingContent.innerHTML = welcomeCardHtml;
+                    pastContent.innerHTML = `<p class="col-span-full text-center text-sm text-slate-500 py-4">Nenhuma viagem realizada ainda.</p>`;
+                } else {
+                    // Caso 2: O filtro "Novidades" está ativo, mas nenhuma viagem tem novidade
+                    upcomingContent.innerHTML = `
+                        <div class="flex flex-col items-center justify-center p-8 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                            <p class="text-lg text-slate-600 font-medium">Tudo em dia! ✅</p>
+                            <p class="text-sm text-slate-500">Nenhuma viagem possui novidades não lidas no momento.</p>
+                            <button onclick="document.getElementById('filter-news-checkbox').click()" class="mt-4 text-blue-600 hover:underline text-sm">Limpar filtro</button>
+                        </div>`;
+                }
                 return;
-            } // --- ESTA '}' (linha 3226 no seu arquivo) estava sobrando, mas agora está correta.
-            // --- FIM DA CORREÇÃO ---
+            }
 
-            // Separa as viagens em futuras e passadas
+            // Separa as viagens filtradas em futuras e passadas
             const today = new Date();
             today.setUTCHours(0, 0, 0, 0);
 
             const upcomingTrips = [];
             const pastTrips = [];
 
-            tripsData.forEach(trip => {
+            tripsToDisplay.forEach(trip => {
                 const tripEndDate = new Date(trip.endDate);
                 if (tripEndDate < today) {
                     pastTrips.push(trip);
@@ -4507,9 +4525,8 @@ window.addEventListener('popstate', (event) => {
                 }
             });
 
-            // --- NOVA LÓGICA PARA RENDERIZAR PRÓXIMAS VIAGENS COM SEPARADOR DE ANO ---
+            // --- Renderiza Próximas Viagens (Código Mantido/Adaptado) ---
             if (upcomingTrips.length > 0) {
-                // 1. Agrupa as viagens por ano
                 const groupedUpcoming = upcomingTrips.reduce((acc, trip) => {
                     const year = new Date(trip.startDate).getFullYear();
                     if (!acc[year]) acc[year] = [];
@@ -4517,36 +4534,30 @@ window.addEventListener('popstate', (event) => {
                     return acc;
                 }, {});
 
-                // 2. Ordena os anos em ordem crescente (2025, 2026...)
                 const sortedUpcomingYears = Object.keys(groupedUpcoming).sort((a, b) => a - b);
 
-                // 3. Itera sobre cada ano e cria o título e o grid de cards
                 sortedUpcomingYears.forEach(year => {
-                    // Cria o título do ano
                     const yearHeader = document.createElement('h3');
                     yearHeader.className = 'text-xl font-bold text-blue-900 mt-8 mb-4 border-b pb-2';
                     yearHeader.textContent = `${year}`;
                     upcomingContent.appendChild(yearHeader);
 
-                    // Cria o container do grid para as viagens daquele ano
                     const yearGrid = document.createElement('div');
                     yearGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
                     
                     groupedUpcoming[year].forEach(trip => {
                         yearGrid.appendChild(createTripCard(trip, false));
                     });
-                    
                     upcomingContent.appendChild(yearGrid);
                 });
-            } else {
+            } else if (!isNewsFilterActive) {
+                // Só mostra mensagem vazia se não for culpa do filtro (já tratado acima)
                 upcomingContent.innerHTML = `<p class="text-center text-sm text-slate-500 py-4">Nenhuma viagem futura planejada.</p>`;
             }
 
-            // --- NOVA LÓGICA PARA RENDERIZAR VIAGENS PASSADAS COM SEPARADOR DE ANO ---
+            // --- Renderiza Viagens Passadas (Código Mantido/Adaptado) ---
             if (pastTrips.length > 0) {
-                // Ordena as viagens passadas da mais recente para a mais antiga
                 pastTrips.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-
                 const groupedPast = pastTrips.reduce((acc, trip) => {
                     const year = new Date(trip.startDate).getFullYear();
                     if (!acc[year]) acc[year] = [];
@@ -4554,7 +4565,6 @@ window.addEventListener('popstate', (event) => {
                     return acc;
                 }, {});
 
-                // Ordena os anos em ordem decrescente (2024, 2023...)
                 const sortedPastYears = Object.keys(groupedPast).sort((a, b) => b - a);
 
                 sortedPastYears.forEach(year => {
@@ -4569,13 +4579,14 @@ window.addEventListener('popstate', (event) => {
                     groupedPast[year].forEach(trip => {
                         yearGrid.appendChild(createTripCard(trip, false));
                     });
-                    
                     pastContent.appendChild(yearGrid);
                 });
-            } else {
+            } else if (!isNewsFilterActive) {
                 pastContent.innerHTML = `<p class="text-center text-sm text-slate-500 py-4">Nenhuma viagem realizada ainda.</p>`;
             }
         }
+
+        window.renderTripLists = renderTripLists;
         
         function createTripCard(trip, isFeaturedCard) {
             const tripCard = document.createElement('div');
@@ -4587,20 +4598,13 @@ window.addEventListener('popstate', (event) => {
 
             // --- INÍCIO DA LÓGICA DE NOTIFICAÇÃO (BOLINHA VERMELHA/VERDE) ---
             let notificationBadgeHtml = '';
-            if (currentUserId && trip.activityLog) {
-                const lastViewedTimestamp = (trip.userViewTimestamps && trip.userViewTimestamps[currentUserId]) 
-                                            ? trip.userViewTimestamps[currentUserId] 
-                                            : 0;
-                
-                const logEntries = Object.values(trip.activityLog);
-                const hasNewItems = logEntries.some(entry => entry.timestamp > lastViewedTimestamp);
-
-                if (hasNewItems) {
-                    notificationBadgeHtml = `
-                        <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-yellow-300 bg-green-700 rounded-full shadow-sm animate-pulse" title="Novas alterações nesta viagem">
-                            Novidades
-                        </span>`;
-                }
+            
+            // Usa a função auxiliar criada no Passo 2
+            if (checkTripHasNews(trip)) {
+                notificationBadgeHtml = `
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-yellow-300 bg-green-700 rounded-full shadow-sm animate-pulse" title="Novas alterações nesta viagem">
+                        Novidades
+                    </span>`;
             }
             // --- FIM DA LÓGICA DE NOTIFICAÇÃO ---
 
@@ -9963,6 +9967,20 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
             }
         };
+
+        // Função auxiliar para verificar se uma viagem tem novidades não lidas
+        function checkTripHasNews(trip) {
+            if (!currentUserId || !trip.activityLog) return false;
+
+            // Pega o carimbo da última vez que o usuário viu
+            const lastViewedTimestamp = (trip.userViewTimestamps && trip.userViewTimestamps[currentUserId]) 
+                                        ? trip.userViewTimestamps[currentUserId] 
+                                        : 0;
+
+            const logEntries = Object.values(trip.activityLog);
+            // Retorna true se houver ALGUM item com data maior que o visto
+            return logEntries.some(entry => entry.timestamp > lastViewedTimestamp);
+        }
 
     </script>
 
