@@ -793,6 +793,11 @@
                         <p class="text-sm font-medium text-slate-500">E-mail</p>
                         <p id="license-email" class="text-lg"></p>
                     </div>
+                    <div id="license-credits-block" class="hidden p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p class="text-sm font-medium text-yellow-800">Créditos de Viagem Avulsa</p>
+                        <p id="license-credits-count" class="text-2xl font-bold text-yellow-600">0</p>
+                        <p class="text-xs text-yellow-700 mt-1">Você pode usar esses créditos para desbloquear viagens com mais de 7 dias.</p>
+                    </div>
                     <div>
                         <p class="text-sm font-medium text-slate-500">Tipo de Licença</p>
                         <p id="license-type" class="text-lg font-bold"></p>
@@ -2234,31 +2239,47 @@
             <h3 class="text-2xl font-semibold mb-4">Adquirir Acesso Premium</h3>
             <p class="text-slate-600 mb-6">Desbloqueie viagens com duração ilimitada e planeje sem restrições.</p>
 
+            <div id="credit-usage-section" class="hidden mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6 shadow-sm">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-2xl">🎟️</span>
+                            <h4 class="text-lg font-bold text-slate-800">Você tem créditos disponíveis!</h4>
+                        </div>
+                        <p class="text-slate-600">Você possui <strong id="available-credits-display" class="text-lg text-slate-900">0</strong> crédito(s) de viagem avulsa.</p>
+                        <p class="text-sm text-slate-500">Deseja usar 1 crédito para desbloquear esta viagem agora?</p>
+                    </div>
+                    <button onclick="useCreditForCurrentTrip()" class="w-full sm:w-auto px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-lg shadow-md transition-transform transform hover:scale-105 active:scale-95">
+                        Sim, usar meu crédito
+                    </button>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-slate-50 p-4 rounded-lg border border-blue-200">
                     <h4 class="font-semibold text-slate-500 text-lg">Plano Anual</h4>
                     <p class="text-3xl font-bold text-slate-700 my-2">R$ 119,90<span class="text-sm font-normal"> / ano</span></p>
                     <p class="text-sm text-slate-600">Acesso ilimitado a todas as funcionalidades por 1 ano.</p>
-                    <br><center> <script src="https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js"
-data-preference-id="40505311-84c15864-6650-4f5e-a63f-64672f2a28aa" data-source="button">
-</script></center> 
+                    <br><center>
+    <div id="mp-container-anual" class="mp-placeholder" data-preference="40505311-84c15864-6650-4f5e-a63f-64672f2a28aa"></div>
+</center>
                 </div>
 
                 <div class="bg-slate-50 p-4 rounded-lg border border-blue-200">
                     <h4 class="font-semibold text-slate-500 text-lg">Plano Bianual</h4>
                     <p class="text-3xl font-bold text-slate-700 my-2">R$ 199,90<span class="text-sm font-normal"> / 2 anos</span></p>
                     <p class="text-sm text-slate-600">Acesso ilimitado a todas as funcionalidades por 2 anos.</p>
-                    <br> <center><script src="https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js"
-data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="button">
-</script></center>
+                    <br><center>
+    <div id="mp-container-bianual" class="mp-placeholder" data-preference="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa"></div>
+</center>
                 </div>
                 <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <h4 class="font-semibold text-slate-500 text-lg">Viagem Avulsa</h4>
                     <p class="text-3xl font-bold text-slate-700 my-2">R$ 39,90<span class="text-sm font-normal"> / viagem</span></p>
                     <p class="text-sm text-slate-600">Desbloqueia uma única viagem (pré-pago) para ter duração ilimitada.</p>
-                    <br><center><script src="https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js"
-    data-preference-id="40505311-b0998900-abe7-457b-a60c-3055922ad66c" data-source="button">
-    </script></center>
+                    <br><center>
+    <div id="mp-container-avulso" class="mp-placeholder" data-preference="40505311-b0998900-abe7-457b-a60c-3055922ad66c"></div>
+</center>
                 </div>
             </div>
 
@@ -2382,6 +2403,8 @@ data-preference-id="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa" data-source="
         let tempSuggestionTripId = null;
         let tempSuggestionCityId = null;
         let tempSuggestionCityName = null;
+        let tripIdPendingUpgrade = null;
+
 
         // Constante com as moedas permitidas
         const MY_EXPENSE_CURRENCIES = ["BRL", "USD", "EUR", "JPY", "GBP", "AUD", "CAD", "CHF", "CNY", "CC/IOF"];
@@ -3799,6 +3822,11 @@ window.addEventListener('popstate', (event) => {
                 // NOVO: Carregar a licença do usuário
                 const licenseRef = ref(db, `users/${user.uid}/license`);
                 onValue(licenseRef, (snapshot) => {
+
+                if (!currentUserLicense.purchasedTrips) currentUserLicense.purchasedTrips = {};
+                // GARANTIR QUE CRÉDITOS EXISTAM
+                if (!currentUserLicense.credits) currentUserLicense.credits = 0;
+
                     if (snapshot.exists()) {
                         currentUserLicense = snapshot.val();
                         // Garante que purchasedTrips exista para evitar erros
@@ -3927,37 +3955,31 @@ window.addEventListener('popstate', (event) => {
         });
 
         // Ação do formulário de LOGIN
-        document.getElementById('login-form').addEventListener('submit', async (e) => { // Adicionado 'async'
-            e.preventDefault(); // Impede o recarregamento da página
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault(); 
 
             const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
-            const rememberMe = document.getElementById('remember-me').checked; // Pega o estado do checkbox
-
+            // Removemos a verificação do checkbox por enquanto para garantir o funcionamento entre abas
+            
             if (!email || !password) {
                 alert('Por favor, preencha os campos de e-mail e senha.');
                 return; 
             }
 
-            // --- INÍCIO DA NOVA LÓGICA ---
-            // Define o tipo de persistência ANTES de fazer o login
-            const persistenceType = rememberMe ? browserLocalPersistence : browserSessionPersistence;
-            
             try {
-                // 1. Define como o Firebase deve "lembrar" (ou não)
-                await setPersistence(auth, persistenceType);
+                // --- CORREÇÃO: Forçamos a persistência LOCAL para funcionar entre abas ---
+                // Isso garante que o pagamento_confirmado.html enxergue o login feito aqui.
+                await setPersistence(auth, browserLocalPersistence);
                 
-                // 2. Agora, faz o login
                 await signInWithEmailAndPassword(auth, email, password);
                 
                 // O onAuthStateChanged vai cuidar de mostrar o app
                 
             } catch (error) {
-                // O 'catch' agora pega erros de persistência E de login
-                console.error("Erro no login ou persistência:", error.code);
+                console.error("Erro no login:", error.code);
                 alert("Falha no login. Verifique seu e-mail e senha.");
             }
-            // --- FIM DA NOVA LÓGICA ---
         });
 
         // Ação do botão de CADASTRO (agora só abre o painel)
@@ -4386,6 +4408,17 @@ window.addEventListener('popstate', (event) => {
             } else {
                 datesContainer.classList.add('hidden');
             }
+
+            // Lógica de Créditos - ALTERADO PARA EXIBIR SEMPRE
+            const creditsBlock = document.getElementById('license-credits-block');
+            
+            // Se não tiver a propriedade .credits, assume 0
+            const userCredits = currentUserLicense.credits || 0; 
+            
+            document.getElementById('license-credits-count').textContent = userCredits;
+            
+            // Remove a classe 'hidden' incondicionalmente para aparecer sempre
+            creditsBlock.classList.remove('hidden');
 
             openModal('license-modal');
         };
@@ -7553,9 +7586,13 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const user = auth.currentUser;
             if (!user) return;
 
+            // --- CORREÇÃO: Gerar o ID da viagem IMEDIATAMENTE aqui no topo ---
+            // O push() sem argumentos gera uma chave única, mas não salva nada no banco ainda.
+            const newTripRef = push(ref(db, 'trips'));
+            const newTripId = newTripRef.key; // Agora temos o ID para usar no modal de crédito!
+
             // --- 1. VALIDAÇÕES SÍNCRONAS (RÁPIDAS) ---
             if (currentUserLicense.type === 'gratuito') {
-                // ... (código de validação de 7 dias - não precisa mudar)
                 const startDateStr = document.getElementById('trip-start-date').value;
                 const endDateStr = document.getElementById('trip-end-date').value;
                 const date1 = new Date(startDateStr);
@@ -7564,10 +7601,16 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 const utc2 = Date.UTC(date2.getFullYear(), date2.getMonth(), date2.getDate());
                 const MS_PER_DAY = 1000 * 60 * 60 * 24;
                 const diffDays = Math.floor((utc2 - utc1) / MS_PER_DAY) + 1;
+                
                 if (diffDays > 7) {
-                    alert("Plano Gratuito: A duração máxima da viagem é de 7 dias. Por favor, adquira um plano ou compre esta viagem avulsa para criar viagens mais longas.");
+                    alert("Plano Gratuito: A duração máxima da viagem é de 7 dias...");
+                    
+                    // AGORA VAI FUNCIONAR: newTripId já existe!
+                    tripIdPendingUpgrade = newTripId;     
+                    
+                    prepareUpgradeModal(); // Configura a UI do modal
                     openModal('upgrade-plan-modal'); 
-                    return; 
+                    return; // Para o salvamento aqui
                 }
             }
 
@@ -7577,8 +7620,8 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const tripStartDate = document.getElementById('trip-start-date').value;
             const tripEndDate = document.getElementById('trip-end-date').value;
             
-            // --- 3. EXECUTAR O SALVAMENTO (COM AWAIT) ---
-            let newTripId; // Precisamos do ID da viagem no escopo externo
+            // --- 3. EXECUTAR O SALVAMENTO ---
+            // (Removemos a declaração 'let newTripId' daqui pois já foi feita no topo)
             try {
                 const userProfileRef = ref(db, `users/${user.uid}/profile`);
                 const profileSnapshot = await get(userProfileRef);
@@ -7589,8 +7632,9 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     return; 
                 }
 
-                const newTripRef = push(ref(db, 'trips'));
-                newTripId = newTripRef.key; // Salva o ID da nova viagem
+                // Removemos o 'push' daqui, pois já criamos o 'newTripRef' lá em cima.
+                // Apenas montamos o objeto e salvamos.
+                
                 const newTripData = {
                     name: tripName,
                     destination: tripDestination,
@@ -7603,16 +7647,16 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     DateAdded: serverTimestamp()
                 };
                 
+                // Usamos o newTripRef criado no topo
                 await set(newTripRef, newTripData);
                 await set(ref(db, `users/${user.uid}/memberOf/${newTripId}`), true);
                 
-                // --- 4. RESPOSTA DA UI (APÓS O SUCESSO DO SAVE) ---
                 closeModal('add-trip-modal');
 
             } catch (error) {
                 console.error("Erro ao salvar viagem:", error);
-                alert("Ocorreu um erro ao salvar sua nova viagem. Por favor, tente novamente.");
-                return; // Para a execução
+                alert("Ocorreu um erro ao salvar sua nova viagem.");
+                return;
             }
 
             // --- 5. TAREFAS "FIRE AND FORGET" (VERIFICAÇÃO DE SUGESTÃO) ---
@@ -7808,6 +7852,10 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
                     if (diffDays > 7) {
                         alert("Plano Gratuito: A duração máxima da viagem é de 7 dias. Por favor, adquira um plano ou compre esta viagem avulsa para poder salvar.");
+                        
+                        tripIdPendingUpgrade = currentTripId; // Na edição, usamos o ID da viagem atual
+                        prepareUpgradeModal();
+                        
                         openModal('upgrade-plan-modal');
                         return; // Impede o save
                     }
@@ -9719,6 +9767,94 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 badge.classList.add('hidden');
             }
         }
+
+        // Variável de controle para não carregar duas vezes
+        let isMercadoPagoLoaded = false;
+
+        window.loadMercadoPagoButtons = () => {
+            if (isMercadoPagoLoaded) return; // Se já carregou, não faz nada
+            
+            console.log("Carregando botões do Mercado Pago...");
+            
+            const placeholders = document.querySelectorAll('.mp-placeholder');
+            
+            placeholders.forEach(container => {
+                const preferenceId = container.dataset.preference;
+                
+                // Cria o elemento script via JS
+                const script = document.createElement('script');
+                script.src = "https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js";
+                script.dataset.preferenceId = preferenceId;
+                script.dataset.source = "button";
+                
+                // Adiciona o script dentro da div container
+                container.appendChild(script);
+            });
+
+            isMercadoPagoLoaded = true;
+        };
+
+        // Função para configurar o modal de upgrade antes de abrir
+        window.prepareUpgradeModal = () => {
+            const creditSection = document.getElementById('credit-usage-section');
+            const credits = currentUserLicense.credits || 0;
+
+            // Só mostra a seção se tiver créditos E tivermos uma viagem alvo definida
+            if (credits > 0 && tripIdPendingUpgrade) {
+                document.getElementById('available-credits-display').textContent = credits;
+                creditSection.classList.remove('hidden');
+            } else {
+                creditSection.classList.add('hidden');
+            }
+
+            loadMercadoPagoButtons()
+        };
+
+        // Função chamada pelo botão "Sim, usar meu crédito"
+        window.useCreditForCurrentTrip = async () => {
+            if (!currentUserId || !tripIdPendingUpgrade || currentUserLicense.credits <= 0) return;
+
+            if (!confirm("Confirmar uso de 1 crédito para desbloquear esta viagem?")) return;
+
+            const updates = {};
+            
+            // 1. Decrementa o crédito
+            const newCreditCount = (currentUserLicense.credits || 0) - 1;
+            updates[`users/${currentUserId}/license/credits`] = newCreditCount;
+
+            // 2. Adiciona a viagem à lista de compradas
+            updates[`users/${currentUserId}/license/purchasedTrips/${tripIdPendingUpgrade}`] = {
+                date: serverTimestamp(),
+                method: 'credit'
+            };
+
+            try {
+                await update(ref(db), updates);
+                
+                alert("Viagem desbloqueada com sucesso!");
+                closeModal('upgrade-plan-modal');
+                
+                // Se a viagem já existe na tela (estávamos editando), destrava ela visualmente
+                const tripIndex = tripsData.findIndex(t => t.id === tripIdPendingUpgrade);
+                if (tripIndex > -1) {
+                    // Recarrega detalhes se estiver aberto
+                    if (currentTripId === tripIdPendingUpgrade) {
+                    // Removemos o aviso de bloqueio se existir
+                    const notice = document.getElementById('purchased-trip-notice');
+                    if(notice) notice.classList.remove('hidden'); // Mostra que é comprada
+                    }
+                }
+                
+                // Dica: Se o usuário estava tentando SALVAR uma viagem nova e parou no modal,
+                // ele terá que clicar em "Salvar" novamente no formulário de criação.
+                // Ou você pode tentar reenviar o form programaticamente, mas apenas fechar o modal
+                // e deixar ele clicar em "Salvar" de novo é mais seguro e simples.
+
+            } catch (error) {
+                console.error("Erro ao usar crédito:", error);
+                alert("Erro ao processar o crédito. Tente novamente.");
+            }
+        };
 
     </script>
 
