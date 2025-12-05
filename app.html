@@ -2237,7 +2237,8 @@
         <div id="upgrade-plan-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
         <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-3xl m-4 max-h-[90vh] overflow-y-auto">
             <h3 class="text-2xl font-semibold mb-4">Adquirir Acesso Premium</h3>
-            <p class="text-slate-600 mb-6">Desbloqueie viagens com duração ilimitada e planeje sem restrições.</p>
+            <p class="text-slate-600 mb-6">No plano gratuito, a duração máxima da viagem é de 7 dias.<br>Desbloqueie viagens com duração ilimitada e planeje sem restrições.</p>
+            
 
             <div id="credit-usage-section" class="hidden mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6 shadow-sm">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -2404,6 +2405,7 @@
         let tempSuggestionCityId = null;
         let tempSuggestionCityName = null;
         let tripIdPendingUpgrade = null;
+        let pendingFormId = null; // <-- NOVA VARIÁVEL
 
 
         // Constante com as moedas permitidas
@@ -5856,6 +5858,7 @@ let dividerHtml = '';
 
             // --- INÍCIO DA NOVA LÓGICA (ADICIONE AQUI) ---
             if (modalId === 'add-trip-modal') {
+                tripIdPendingUpgrade = null; // Garante um ID limpo para uma nova tentativa
                 // Cria a data de hoje no formato YYYY-MM-DD
                 const today = new Date();
                 const year = today.getFullYear();
@@ -7581,18 +7584,30 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         // --- LISTENERS DOS FORMULÁRIOS ---
         document.getElementById('add-trip-form').addEventListener('submit', async function(e) {
-            e.preventDefault(); // Impede o recarregamento
+            e.preventDefault(); 
             
             const user = auth.currentUser;
             if (!user) return;
 
-            // --- CORREÇÃO: Gerar o ID da viagem IMEDIATAMENTE aqui no topo ---
-            // O push() sem argumentos gera uma chave única, mas não salva nada no banco ainda.
-            const newTripRef = push(ref(db, 'trips'));
-            const newTripId = newTripRef.key; // Agora temos o ID para usar no modal de crédito!
+            // --- CORREÇÃO 1: REUTILIZAR O ID SE ELE JÁ EXISTIR (CRÉDITO APLICADO) ---
+            let newTripId;
+            let newTripRef;
 
-            // --- 1. VALIDAÇÕES SÍNCRONAS (RÁPIDAS) ---
-            if (currentUserLicense.type === 'gratuito') {
+            if (tripIdPendingUpgrade) {
+                // Se já tentamos salvar antes e paramos pra pagar, usa o MESMO ID
+                newTripId = tripIdPendingUpgrade;
+                newTripRef = ref(db, `trips/${newTripId}`);
+            } else {
+                // Se é a primeira tentativa, gera um novo
+                newTripRef = push(ref(db, 'trips'));
+                newTripId = newTripRef.key;
+            }
+
+            // --- 2. VALIDAÇÕES ---
+            // Verifica se essa viagem ESPECÍFICA já foi comprada/desbloqueada com crédito
+            const isPurchased = currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[newTripId];
+
+            if (currentUserLicense.type === 'gratuito' && !isPurchased) { // Adicionamos !isPurchased
                 const startDateStr = document.getElementById('trip-start-date').value;
                 const endDateStr = document.getElementById('trip-end-date').value;
                 const date1 = new Date(startDateStr);
@@ -7603,38 +7618,33 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 const diffDays = Math.floor((utc2 - utc1) / MS_PER_DAY) + 1;
                 
                 if (diffDays > 7) {
-                    alert("Plano Gratuito: A duração máxima da viagem é de 7 dias...");
+                    //alert("Plano Gratuito: A duração máxima da viagem é de 7 dias...");
                     
-                    // AGORA VAI FUNCIONAR: newTripId já existe!
                     tripIdPendingUpgrade = newTripId;     
+                    pendingFormId = 'add-trip-form'; // <-- ADICIONE ISSO
                     
-                    prepareUpgradeModal(); // Configura a UI do modal
+                    prepareUpgradeModal();
                     openModal('upgrade-plan-modal'); 
-                    return; // Para o salvamento aqui
+                    return;
                 }
             }
 
-            // --- 2. PEGA OS DADOS DO FORMULÁRIO ---
+            // --- 3. PEGA OS DADOS E SALVA ---
             const tripName = document.getElementById('trip-name').value;
             const tripDestination = document.getElementById('trip-destination').value;
             const tripStartDate = document.getElementById('trip-start-date').value;
             const tripEndDate = document.getElementById('trip-end-date').value;
             
-            // --- 3. EXECUTAR O SALVAMENTO ---
-            // (Removemos a declaração 'let newTripId' daqui pois já foi feita no topo)
             try {
                 const userProfileRef = ref(db, `users/${user.uid}/profile`);
                 const profileSnapshot = await get(userProfileRef);
                 const userProfile = profileSnapshot.val();
 
                 if (!userProfile || !userProfile.fullName) {
-                    alert("Erro: Não foi possível encontrar seu nome no perfil. Tente novamente.");
+                    alert("Erro: Perfil incompleto.");
                     return; 
                 }
 
-                // Removemos o 'push' daqui, pois já criamos o 'newTripRef' lá em cima.
-                // Apenas montamos o objeto e salvamos.
-                
                 const newTripData = {
                     name: tripName,
                     destination: tripDestination,
@@ -7647,16 +7657,17 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     DateAdded: serverTimestamp()
                 };
                 
-                // Usamos o newTripRef criado no topo
+                // Salva usando a referência que definimos no topo (seja nova ou reutilizada)
                 await set(newTripRef, newTripData);
                 await set(ref(db, `users/${user.uid}/memberOf/${newTripId}`), true);
                 
+                // Limpeza final
+                tripIdPendingUpgrade = null; 
                 closeModal('add-trip-modal');
 
             } catch (error) {
                 console.error("Erro ao salvar viagem:", error);
                 alert("Ocorreu um erro ao salvar sua nova viagem.");
-                return;
             }
 
             // --- 5. TAREFAS "FIRE AND FORGET" (VERIFICAÇÃO DE SUGESTÃO) ---
@@ -7851,13 +7862,14 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     const diffDays = Math.floor((utc2 - utc1) / MS_PER_DAY) + 1;
 
                     if (diffDays > 7) {
-                        alert("Plano Gratuito: A duração máxima da viagem é de 7 dias. Por favor, adquira um plano ou compre esta viagem avulsa para poder salvar.");
+                        //alert("Plano Gratuito: A duração máxima da viagem é de 7 dias...");
                         
-                        tripIdPendingUpgrade = currentTripId; // Na edição, usamos o ID da viagem atual
+                        tripIdPendingUpgrade = currentTripId;
+                        pendingFormId = 'edit-trip-form'; // <-- ADICIONE ISSO
+                        
                         prepareUpgradeModal();
-                        
                         openModal('upgrade-plan-modal');
-                        return; // Impede o save
+                        return;
                     }
                 }
                 
@@ -9814,15 +9826,10 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         window.useCreditForCurrentTrip = async () => {
             if (!currentUserId || !tripIdPendingUpgrade || currentUserLicense.credits <= 0) return;
 
-            if (!confirm("Confirmar uso de 1 crédito para desbloquear esta viagem?")) return;
-
+            // --- PASSO 1: Atualiza no Banco de Dados ---
             const updates = {};
-            
-            // 1. Decrementa o crédito
             const newCreditCount = (currentUserLicense.credits || 0) - 1;
             updates[`users/${currentUserId}/license/credits`] = newCreditCount;
-
-            // 2. Adiciona a viagem à lista de compradas
             updates[`users/${currentUserId}/license/purchasedTrips/${tripIdPendingUpgrade}`] = {
                 date: serverTimestamp(),
                 method: 'credit'
@@ -9831,24 +9838,25 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             try {
                 await update(ref(db), updates);
                 
-                alert("Viagem desbloqueada com sucesso!");
+                // --- PASSO 2: Atualiza a licença LOCALMENTE (Truque Rápido) ---
+                // Isso engana o formulário para ele achar que o dado já chegou do Firebase,
+                // evitando que ele bloqueie o salvamento novamente.
+                currentUserLicense.credits = newCreditCount;
+                if (!currentUserLicense.purchasedTrips) currentUserLicense.purchasedTrips = {};
+                currentUserLicense.purchasedTrips[tripIdPendingUpgrade] = { method: 'credit' };
+
+                alert("Viagem desbloqueada com sucesso! Salvando...");
                 closeModal('upgrade-plan-modal');
                 
-                // Se a viagem já existe na tela (estávamos editando), destrava ela visualmente
-                const tripIndex = tripsData.findIndex(t => t.id === tripIdPendingUpgrade);
-                if (tripIndex > -1) {
-                    // Recarrega detalhes se estiver aberto
-                    if (currentTripId === tripIdPendingUpgrade) {
-                    // Removemos o aviso de bloqueio se existir
-                    const notice = document.getElementById('purchased-trip-notice');
-                    if(notice) notice.classList.remove('hidden'); // Mostra que é comprada
+                // --- PASSO 3: Re-submete o formulário automaticamente ---
+                if (pendingFormId) {
+                    const form = document.getElementById(pendingFormId);
+                    if (form) {
+                        // requestSubmit() dispara o evento 'submit' como se fosse um clique real
+                        form.requestSubmit(); 
                     }
+                    pendingFormId = null; // Limpa a variável
                 }
-                
-                // Dica: Se o usuário estava tentando SALVAR uma viagem nova e parou no modal,
-                // ele terá que clicar em "Salvar" novamente no formulário de criação.
-                // Ou você pode tentar reenviar o form programaticamente, mas apenas fechar o modal
-                // e deixar ele clicar em "Salvar" de novo é mais seguro e simples.
 
             } catch (error) {
                 console.error("Erro ao usar crédito:", error);
