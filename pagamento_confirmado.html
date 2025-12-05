@@ -38,12 +38,19 @@
             </div>
 
             <div id="trip-selector-container" class="hidden space-y-2">
+                <div class="flex items-center mb-3 justify-end"> <input id="show-past-trips" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded cursor-pointer">
+                    <label for="show-past-trips" class="ml-2 block text-xs text-slate-500 cursor-pointer">
+                        Mostrar viagens antigas
+                    </label>
+                </div>
+
                 <label for="trip-select" class="block text-sm font-medium text-slate-700">
                     Selecione a viagem que você deseja desbloquear:
                 </label>
+                
                 <select id="trip-select" class="block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Carregando suas viagens...</option>
-                </select>
+                </select>             
             </div>
 
             <button id="solicitar-btn" 
@@ -94,6 +101,18 @@
         const tripSelectorContainer = document.getElementById('trip-selector-container');
         const tripSelect = document.getElementById('trip-select');
         const solicitarBtn = document.getElementById('solicitar-btn');
+        const showPastTripsCheckbox = document.getElementById('show-past-trips');
+
+
+        // --- LISTENER DO CHECKBOX ---
+        // Quando o usuário marcar/desmarcar, recarrega a lista aplicando o novo filtro
+        if (showPastTripsCheckbox) {
+            showPastTripsCheckbox.addEventListener('change', () => {
+                if (currentUserId) {
+                    loadUserTrips(currentUserId);
+                }
+            });
+        }
 
         /**
          * Converte a chave do plano (da URL) em um nome legível.
@@ -109,73 +128,101 @@
 
         /**
          * Busca as viagens do usuário e preenche o dropdown.
-         * Mostra apenas as viagens onde o usuário é o "dono" E que ainda NÃO foram compradas.
-         * ORDENAÇÃO: Mais recentes primeiro.
-         * VISUALIZAÇÃO: Data - Nome da Viagem.
+         * FILTRO: Por padrão, mostra apenas viagens futuras (ou do dia atual).
+         * CHECKBOX: Se marcado, mostra tudo.
          */
         async function loadUserTrips(userId) {
+            const tripSelect = document.getElementById('trip-select'); // Garante que pega o elemento certo
             tripSelect.innerHTML = '<option value="">Buscando suas viagens...</option>';
             
             try {
-                // 1. Busca as viagens que o usuário participa
+                // 1. Buscas no Firebase
                 const memberOfRef = ref(db, `users/${userId}/memberOf`);
                 const memberOfSnap = await get(memberOfRef);
 
-                // 2. Busca as viagens que o usuário JÁ comprou/desbloqueou
                 const licenseRef = ref(db, `users/${userId}/license/purchasedTrips`);
                 const licenseSnap = await get(licenseRef);
                 const purchasedTrips = licenseSnap.exists() ? licenseSnap.val() : {};
 
+                // Se não tiver viagens
                 if (!memberOfSnap.exists()) {
                     tripSelect.innerHTML = '<option value="">Nenhuma viagem criada.</option>';
+                    // Adiciona opção de crédito
                     const creditOption = document.createElement('option');
                     creditOption.value = "CREDIT_STORE";
                     creditOption.textContent = "🎫 Guardar como Crédito (a viagem ainda vai ser criada)";
                     creditOption.style.fontWeight = "bold";
                     tripSelect.appendChild(creditOption);
-                    solicitarBtn.disabled = false;
+                    
+                    document.getElementById('solicitar-btn').disabled = false;
                     return;
                 }
 
                 const tripIds = Object.keys(memberOfSnap.val());
                 const ownerTrips = [];
 
-                // Faz um loop para verificar cada viagem
+                // Data de hoje (Zera as horas para comparar apenas a data)
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                // 2. Loop de Filtragem
                 for (const tripId of tripIds) {
-                    // Se a viagem já estiver na lista de compradas, PULA para a próxima
-                    if (purchasedTrips[tripId]) {
-                        continue;
-                    }
+                    if (purchasedTrips[tripId]) continue; // Pula as já compradas
 
                     const tripRef = ref(db, `trips/${tripId}`);
                     const tripSnap = await get(tripRef);
 
                     if (tripSnap.exists()) {
                         const tripData = tripSnap.val();
-                        // Verifica se o usuário é o 'owner' desta viagem
+                        
+                        // Verifica se é owner
                         if (tripData.members && tripData.members[userId] === 'owner') {
-                            ownerTrips.push({ 
-                                id: tripId, 
-                                name: tripData.name, 
-                                startDate: tripData.startDate 
-                            });
+                            
+                            // --- LÓGICA SEGURA DE DATA ---
+                            let tripDateObj = new Date(0); // Data padrão (1970) se não tiver data
+                            
+                            if (tripData.startDate) {
+                                if (typeof tripData.startDate === 'number') {
+                                    // É timestamp (novo formato)
+                                    tripDateObj = new Date(tripData.startDate);
+                                } else {
+                                    // É string (formato antigo YYYY-MM-DD)
+                                    // Adiciona T12:00:00 para evitar problemas de fuso horário
+                                    const dateStr = tripData.startDate.includes('T') ? tripData.startDate : tripData.startDate + 'T12:00:00';
+                                    tripDateObj = new Date(dateStr);
+                                }
+                            }
+
+                            // A viagem é considerada futura se a data for >= hoje
+                            const isUpcoming = tripDateObj >= today;
+                            // O usuário quer ver passadas?
+                            const showPast = showPastTripsCheckbox ? showPastTripsCheckbox.checked : false;
+
+                            // Se for futura OU se o usuário pediu pra ver antigas, adiciona na lista
+                            if (isUpcoming || showPast) {
+                                ownerTrips.push({ 
+                                    id: tripId, 
+                                    name: tripData.name, 
+                                    startDate: tripData.startDate // Mantém o dado original para formatação depois
+                                });
+                            }
                         }
                     }
                 }
 
-                // --- ORDENAÇÃO ---
-                // Ordena do mais recente para o mais antigo (Decrescente)
+                // 3. Ordenação (Da mais recente para a mais antiga)
                 ownerTrips.sort((a, b) => {
-                    // Garante que seja tratado como data, seja número ou string
-                    const dateA = new Date(a.startDate || 0);
-                    const dateB = new Date(b.startDate || 0);
-                    return dateB - dateA; 
+                    // Helper para pegar data segura na ordenação
+                    const getDate = (dateVal) => {
+                        if (!dateVal) return new Date(0);
+                        return typeof dateVal === 'number' ? new Date(dateVal) : new Date(dateVal);
+                    };
+                    return getDate(b.startDate) - getDate(a.startDate); 
                 });
 
-                // Popula o dropdown
+                // 4. Popula o dropdown
                 tripSelect.innerHTML = '<option value="">-- Selecione --</option>';
 
-                // Opção de Crédito
                 const creditOption = document.createElement('option');
                 creditOption.value = "CREDIT_STORE";
                 creditOption.textContent = "🎫 Guardar como Crédito (a viagem ainda vai ser criada)";
@@ -187,21 +234,17 @@
                         const option = document.createElement('option');
                         option.value = trip.id;
                         
-                        // --- CORREÇÃO DA DATA AQUI ---
+                        // Formatação visual da data
                         let dateDisplay = "";
                         if (trip.startDate) {
                             let dateObj;
-                            
+                            // Mesma verificação de segurança aqui
                             if (typeof trip.startDate === 'number') {
-                                // Se for NÚMERO (Timestamp salvo pelo app.html), cria a data direto
                                 dateObj = new Date(trip.startDate);
                             } else {
-                                // Se for STRING (formato antigo), verifica se precisa do 'T'
                                 const dateStr = trip.startDate.includes('T') ? trip.startDate : trip.startDate + 'T12:00:00';
                                 dateObj = new Date(dateStr);
                             }
-
-                            // Formata para DD/MM/AAAA
                             dateDisplay = dateObj.toLocaleDateString('pt-BR') + " - ";
                         }
 
@@ -210,7 +253,7 @@
                     });
                 }
                 
-                solicitarBtn.disabled = false;
+                document.getElementById('solicitar-btn').disabled = false;
 
             } catch (error) {
                 console.error("Erro ao buscar viagens:", error);
