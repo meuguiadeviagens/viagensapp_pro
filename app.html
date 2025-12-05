@@ -717,7 +717,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.43 | 04/12/2025, 11:56</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.44 | 05/12/2025, 10:18</p>
             </main>
         </div>
 
@@ -2261,26 +2261,24 @@
                     <h4 class="font-semibold text-slate-500 text-lg">Plano Anual</h4>
                     <p class="text-3xl font-bold text-slate-700 my-2">R$ 119,90<span class="text-sm font-normal"> / ano</span></p>
                     <p class="text-sm text-slate-600">Acesso ilimitado a todas as funcionalidades por 1 ano.</p>
-                    <br><center>
-    <div id="mp-container-anual" class="mp-placeholder" data-preference="40505311-84c15864-6650-4f5e-a63f-64672f2a28aa"></div>
-</center>
+                    <br>
+                    <div id="mp-btn-anual" class="flex justify-center"></div>
                 </div>
 
                 <div class="bg-slate-50 p-4 rounded-lg border border-blue-200">
                     <h4 class="font-semibold text-slate-500 text-lg">Plano Bianual</h4>
                     <p class="text-3xl font-bold text-slate-700 my-2">R$ 199,90<span class="text-sm font-normal"> / 2 anos</span></p>
                     <p class="text-sm text-slate-600">Acesso ilimitado a todas as funcionalidades por 2 anos.</p>
-                    <br><center>
-    <div id="mp-container-bianual" class="mp-placeholder" data-preference="40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa"></div>
-</center>
+                    <br>
+                    <div id="mp-btn-bianual" class="flex justify-center"></div>
                 </div>
+                
                 <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
                     <h4 class="font-semibold text-slate-500 text-lg">Viagem Avulsa</h4>
                     <p class="text-3xl font-bold text-slate-700 my-2">R$ 39,90<span class="text-sm font-normal"> / viagem</span></p>
                     <p class="text-sm text-slate-600">Desbloqueia uma única viagem (pré-pago) para ter duração ilimitada.</p>
-                    <br><center>
-    <div id="mp-container-avulso" class="mp-placeholder" data-preference="40505311-b0998900-abe7-457b-a60c-3055922ad66c"></div>
-</center>
+                    <br>
+                    <div id="mp-btn-avulsa" class="flex justify-center"></div>
                 </div>
             </div>
 
@@ -4581,29 +4579,35 @@ window.addEventListener('popstate', (event) => {
             // 1. Pega o papel (role) do usuário atual nesta viagem
             const userRole = (currentUserId && trip.members) ? trip.members[currentUserId] : null;
 
-            // --- INÍCIO DA LÓGICA DE NOTIFICAÇÃO (BOLINHA VERMELHA) ---
+            // --- INÍCIO DA LÓGICA DE NOTIFICAÇÃO (BOLINHA VERMELHA/VERDE) ---
             let notificationBadgeHtml = '';
             if (currentUserId && trip.activityLog) {
-                // Pega o timestamp da última vez que ESTE usuário viu o log (ou 0 se nunca viu)
                 const lastViewedTimestamp = (trip.userViewTimestamps && trip.userViewTimestamps[currentUserId]) 
                                             ? trip.userViewTimestamps[currentUserId] 
                                             : 0;
                 
-                // Verifica se existe ALGUM item no log que seja mais novo que a última visualização
                 const logEntries = Object.values(trip.activityLog);
                 const hasNewItems = logEntries.some(entry => entry.timestamp > lastViewedTimestamp);
 
                 if (hasNewItems) {
-                    // Cria o HTML da bolinha vermelha
                     notificationBadgeHtml = `
-                        <span class="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-yellow-300 bg-green-700 rounded-full shadow-sm animate-pulse" title="Novas alterações nesta viagem">
-                            Novidades!
+                        <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-yellow-300 bg-green-700 rounded-full shadow-sm animate-pulse" title="Novas alterações nesta viagem">
+                            Novidades
                         </span>`;
-                    // Alternativa: Se quiser apenas a bolinha sem texto, use este:
-                    // notificationBadgeHtml = `<span class="ml-2 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm flex-shrink-0" title="Novidades"></span>`;
                 }
             }
             // --- FIM DA LÓGICA DE NOTIFICAÇÃO ---
+
+            // --- NOVO: LÓGICA DO BADGE "AVULSA" ---
+            let avulsaBadgeHtml = '';
+            // Verifica se a licença e a lista de compradas existem, e se este ID está lá
+            if (currentUserLicense && currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[trip.id]) {
+                avulsaBadgeHtml = `
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-purple-700 bg-purple-100 border border-purple-200 rounded-full shadow-sm" title="Esta viagem foi adquirida de forma avulsa">
+                        Avulsa
+                    </span>`;
+            }
+            // --- FIM LÓGICA AVULSA ---
 
             // Lógica para encontrar o nome do dono
             let ownerDisplayName = 'Carregando...';
@@ -4686,8 +4690,11 @@ window.addEventListener('popstate', (event) => {
                 <div class="${imageContainerClasses} bg-cover bg-center transition-all duration-300" style="background-image: url('${trip.imageUrl}')"></div>
                 <div class="${textContainerClasses}">
                     <div class="flex items-center justify-between mb-1">
-                        <h3 class="${titleClasses} font-bold text-slate-900 truncate max-w-[70%]">${trip.name}</h3>
-                        ${notificationBadgeHtml}
+                        <h3 class="${titleClasses} font-bold text-slate-900 truncate max-w-[60%]">${trip.name}</h3>
+                        <div class="flex items-center flex-shrink-0">
+                            ${avulsaBadgeHtml}
+                            ${notificationBadgeHtml}
+                        </div>
                     </div>
                     
                     <p class="text-slate-500 text-sm truncate">Criado por ${ownerDisplayName}</p>
@@ -5855,6 +5862,14 @@ let dividerHtml = '';
             if (!modal) return;
             
             modal.classList.replace('hidden', 'flex');
+
+            // --- ADICIONE ESTE BLOCO ---
+            if (modalId === 'upgrade-plan-modal') {
+                // Se o modal de planos for aberto (pelo menu ou pelo form), 
+                // garante que a UI e os botões sejam preparados.
+                prepareUpgradeModal();
+            }
+            // ---------------------------
 
             // --- INÍCIO DA NOVA LÓGICA (ADICIONE AQUI) ---
             if (modalId === 'add-trip-modal') {
@@ -9811,7 +9826,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const creditSection = document.getElementById('credit-usage-section');
             const credits = currentUserLicense.credits || 0;
 
-            // Só mostra a seção se tiver créditos E tivermos uma viagem alvo definida
+            // Lógica dos Créditos
             if (credits > 0 && tripIdPendingUpgrade) {
                 document.getElementById('available-credits-display').textContent = credits;
                 creditSection.classList.remove('hidden');
@@ -9819,12 +9834,27 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 creditSection.classList.add('hidden');
             }
 
-            loadMercadoPagoButtons()
+            // --- NOVO: Carregar botões do Mercado Pago ---
+            // Usa setTimeout para garantir que o modal já começou a abrir (DOM visível)
+            setTimeout(() => {
+                renderMPButton('mp-btn-anual', '40505311-84c15864-6650-4f5e-a63f-64672f2a28aa');
+                renderMPButton('mp-btn-bianual', '40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa');
+                renderMPButton('mp-btn-avulsa', '40505311-b0998900-abe7-457b-a60c-3055922ad66c');
+            }, 100);
         };
 
         // Função chamada pelo botão "Sim, usar meu crédito"
         window.useCreditForCurrentTrip = async () => {
             if (!currentUserId || !tripIdPendingUpgrade || currentUserLicense.credits <= 0) return;
+
+            // --- NOVA ETAPA: CONFIRMAÇÃO ---
+            const credits = currentUserLicense.credits;
+            const message = `Você tem ${credits} crédito(s) disponível(is).\n\nDeseja gastar 1 crédito para desbloquear esta viagem permanentemente?\n\nAtenção: Esta ação não pode ser desfeita.`;
+
+            if (!confirm(message)) {
+                return; // Se o usuário clicar em "Cancelar", para a execução aqui.
+            }
+            // -------------------------------
 
             // --- PASSO 1: Atualiza no Banco de Dados ---
             const updates = {};
@@ -9863,6 +9893,60 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 alert("Erro ao processar o crédito. Tente novamente.");
             }
         };
+
+        // Função auxiliar para injetar o botão do Mercado Pago
+        function renderMPButton(containerId, preferenceId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // Limpa, mas deixa preparado com altura fixa para não "piscar"
+            container.innerHTML = '';
+            
+            // 1. Cria um container visual de "Carregando"
+            const wrapper = document.createElement('div');
+            wrapper.className = "flex flex-col items-center justify-center w-full min-h-[50px]";
+            
+            const loadingText = document.createElement('span');
+            loadingText.className = "text-xs text-slate-400 mb-2 loading-indicator";
+            loadingText.innerText = "Carregando pagamento...";
+            
+            // 2. Botão de Fallback (Plano B)
+            // Se o script do MP for bloqueado, o usuário ainda vê este link
+            // NOTA: O script do MP costuma esconder o conteúdo da div quando carrega com sucesso.
+            // Se ele falhar, este link permanece visível/clicável.
+            const fallbackLink = document.createElement('a');
+            fallbackLink.href = `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preferenceId}`;
+            fallbackLink.target = "_blank";
+            fallbackLink.className = "text-blue-600 underline text-sm font-semibold hover:text-blue-800 hidden fallback-btn"; 
+            fallbackLink.innerText = "Clique aqui se o botão não aparecer";
+
+            wrapper.appendChild(loadingText);
+            wrapper.appendChild(fallbackLink);
+            container.appendChild(wrapper);
+
+            // 3. Injeta o Script
+            const script = document.createElement('script');
+            script.src = "https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js";
+            script.dataset.preferenceId = preferenceId;
+            script.dataset.source = "button";
+            
+            // Adiciona o script ao wrapper
+            wrapper.appendChild(script);
+
+            // 4. Temporizador de Segurança
+            // Se em 3 segundos o botão oficial não aparecer (o script do MP costuma criar um botão com classe 'mercadopago-button'),
+            // nós mostramos o link de fallback.
+            setTimeout(() => {
+                // Verifica se o MP injetou o botão dele (geralmente eles usam classes internas ou iframe)
+                // Como é difícil detectar o iframe cross-origin, assumimos que se o texto "Carregando" ainda estiver visível, falhou.
+                const mpButton = container.querySelector('.mercadopago-button'); 
+                if (!mpButton) {
+                    console.warn("Botão MP demorou ou foi bloqueado. Mostrando link direto.");
+                    loadingText.style.display = 'none';
+                    fallbackLink.classList.remove('hidden'); // Mostra o link simples
+                }
+            }, 3000);
+        }
 
     </script>
 
