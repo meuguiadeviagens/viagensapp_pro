@@ -141,20 +141,25 @@
                 }
 
                 // Popula o dropdown com as viagens encontradas
+                tripSelect.innerHTML = '<option value="">-- Selecione --</option>'; // Limpa
+
+                // ADIÇÃO: Opção de Crédito
+                const creditOption = document.createElement('option');
+                creditOption.value = "CREDIT_STORE";
+                creditOption.textContent = "🎟️ Guardar como Crédito (Usar depois)";
+                creditOption.style.fontWeight = "bold";
+                tripSelect.appendChild(creditOption);
+
                 if (ownerTrips.length > 0) {
-                    tripSelect.innerHTML = '<option value="">-- Selecione uma viagem para desbloquear --</option>';
                     ownerTrips.forEach(trip => {
                         const option = document.createElement('option');
                         option.value = trip.id;
                         option.textContent = trip.name;
                         tripSelect.appendChild(option);
                     });
-                    solicitarBtn.disabled = false; // Habilita o botão
-                } else {
-                    tripSelect.innerHTML = '<option value="">Nenhuma viagem (sua) encontrada.</option>';
-                    statusMessage.innerHTML = 'Você não possui nenhuma viagem criada por você. <br>Crie uma viagem no app primeiro e depois volte aqui para ativá-la.';
-                    statusMessage.className = 'p-4 rounded-md text-center bg-red-50 text-red-700';
                 }
+                // Habilita o botão sempre (pois agora sempre tem a opção de crédito)
+                solicitarBtn.disabled = false;
 
             } catch (error) {
                 console.error("Erro ao buscar viagens:", error);
@@ -210,7 +215,7 @@
          */
         window.solicitarAtivacao = async () => {
             if (!currentUserId || !planoComprado) {
-                alert("Erro: não foi possível identificar seu usuário ou seu plano. Tente recarregar a página.");
+                alert("Erro: não foi possível identificar usuário ou plano.");
                 return;
             }
 
@@ -224,20 +229,27 @@
                 status: 'pendente'
             };
 
-            // Se for 'avulsa', adiciona o ID da viagem ao payload
             if (planoComprado === 'avulsa') {
-                const selectedTripId = tripSelect.value;
+                const selectedValue = tripSelect.value;
                 
-                if (!selectedTripId) {
-                    alert("Por favor, selecione uma viagem da lista para desbloquear.");
+                if (!selectedValue) {
+                    alert("Por favor, selecione uma opção.");
                     solicitarBtn.disabled = false;
                     solicitarBtn.textContent = 'Solicitar Ativação';
                     return;
                 }
                 
-                const selectedTripName = tripSelect.options[tripSelect.selectedIndex].text;
-                payload.tripId = selectedTripId;
-                payload.tripName = selectedTripName; // Facilita para o admin ver
+                if (selectedValue === "CREDIT_STORE") {
+                    // Lógica de Crédito
+                    payload.actionType = "store_credit";
+                    payload.tripName = "Crédito Avulso"; // Para o admin saber
+                } else {
+                    // Lógica de Viagem Específica
+                    const selectedTripName = tripSelect.options[tripSelect.selectedIndex].text;
+                    payload.tripId = selectedValue;
+                    payload.tripName = selectedTripName;
+                    payload.actionType = "activate_trip";
+                }
             }
 
             try {
