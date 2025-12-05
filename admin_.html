@@ -1943,14 +1943,20 @@
                 let planDetailsHtml = '';
                 // Mostra detalhes diferentes se for 'avulsa'
                 if (request.plano === 'avulsa') {
-                    if (request.actionType === 'store_credit') {
+                    
+                    // CORREÇÃO: Verifica se é crédito OU se não tem ID de viagem (fallback de segurança)
+                    if (request.actionType === 'store_credit' || !request.tripId) {
                         // --- VISUAL PARA CRÉDITO ---
                         planDetailsHtml = `
-                            <p class="font-semibold text-lg text-yellow-600">🎟️ Plano: Crédito Avulso</p>
-                            <p class="text-sm text-slate-700 mt-1">O usuário quer guardar o crédito para usar depois.</p>
+                            <div class="bg-yellow-50 border border-yellow-200 p-2 rounded mt-1">
+                                <p class="font-bold text-lg text-yellow-700 flex items-center gap-2">
+                                    <span class="text-2xl">🎟️</span> Crédito Avulso
+                                </p>
+                                <p class="text-sm text-slate-700 mt-1">O usuário quer guardar o crédito para usar depois.</p>
+                            </div>
                         `;
                     } else {
-                        // --- VISUAL PARA VIAGEM ESPECÍFICA (Existente) ---
+                        // --- VISUAL PARA VIAGEM ESPECÍFICA ---
                         planDetailsHtml = `
                             <p class="font-semibold text-lg text-blue-800">Plano: Viagem Avulsa</p>
                             <p class="text-sm text-slate-700 mt-1"><strong>Viagem:</strong> ${request.tripName || 'Nome não encontrado'}</p>
@@ -2036,15 +2042,19 @@
 
             } else if (plano === 'avulsa') {
                 
-                if (actionType === 'store_credit') {
+                // CORREÇÃO: Se for store_credit OU se não tiver ID de viagem, é crédito.
+                if (actionType === 'store_credit' || !tripId) {
                     // --- LÓGICA DE CRÉDITO ---
                     const currentCredits = parseInt(newLicenseData.credits || 0);
                     newLicenseData.credits = currentCredits + 1;
                     
+                    // Define mensagem correta para o log/notificação
+                    if (!request.tripName) request.tripName = "Crédito Avulso";
+                    
                 } else {
                     // --- LÓGICA DE VIAGEM ESPECÍFICA ---
                     if (!tripId) {
-                        alert("Erro: A solicitação de 'Viagem Avulsa' não contém um ID de viagem. Aprovação falhou.");
+                        alert("Erro crítico: ID da viagem não encontrado.");
                         return;
                     }
                     if (!newLicenseData.purchasedTrips) {
@@ -2052,7 +2062,6 @@
                     }
                     newLicenseData.purchasedTrips[tripId] = true;
                 }
-                // Mantém o tipo de licença atual (ex: 'gratuito')
             
             } else {
                 alert("Erro: Tipo de plano desconhecido: " + plano);
