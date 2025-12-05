@@ -126,7 +126,7 @@
 
                 if (!memberOfSnap.exists()) {
                     tripSelect.innerHTML = '<option value="">Nenhuma viagem criada.</option>';
-                    // Mesmo sem viagens, deixamos o botão habilitado para a opção de Crédito
+                    // Opção de Crédito
                     const creditOption = document.createElement('option');
                     creditOption.value = "CREDIT_STORE";
                     creditOption.textContent = "🎫 Guardar como Crédito (a viagem ainda vai ser criada)";
@@ -153,15 +153,28 @@
                         const tripData = tripSnap.val();
                         // Verifica se o usuário é o 'owner' desta viagem
                         if (tripData.members && tripData.members[userId] === 'owner') {
-                            ownerTrips.push({ id: tripId, name: tripData.name });
+                            // ADIÇÃO: Salvamos também a data (startDate)
+                            ownerTrips.push({ 
+                                id: tripId, 
+                                name: tripData.name, 
+                                startDate: tripData.startDate // Assumindo formato YYYY-MM-DD ou timestamp
+                            });
                         }
                     }
                 }
 
+                // --- NOVO CÓDIGO DE ORDENAÇÃO ---
+                // Ordena do mais recente para o mais antigo (Decrescente)
+                ownerTrips.sort((a, b) => {
+                    const dateA = new Date(a.startDate || '1970-01-01');
+                    const dateB = new Date(b.startDate || '1970-01-01');
+                    return dateB - dateA; 
+                });
+
                 // Popula o dropdown com as viagens encontradas
                 tripSelect.innerHTML = '<option value="">-- Selecione --</option>'; // Limpa
 
-                // ADIÇÃO: Opção de Crédito (Sempre disponível)
+                // Opção de Crédito (Sempre disponível)
                 const creditOption = document.createElement('option');
                 creditOption.value = "CREDIT_STORE";
                 creditOption.textContent = "🎫 Guardar como Crédito (a viagem ainda vai ser criada)";
@@ -172,7 +185,17 @@
                     ownerTrips.forEach(trip => {
                         const option = document.createElement('option');
                         option.value = trip.id;
-                        option.textContent = trip.name;
+                        
+                        // --- FORMATAÇÃO DA DATA ---
+                        let dateDisplay = "";
+                        if (trip.startDate) {
+                            // Tenta criar data. Adiciona 'T12:00:00' para evitar problemas de fuso horário recuando o dia
+                            // se o formato for apenas "YYYY-MM-DD"
+                            const dateObj = new Date(trip.startDate.includes('T') ? trip.startDate : trip.startDate + 'T12:00:00');
+                            dateDisplay = dateObj.toLocaleDateString('pt-BR') + " - ";
+                        }
+
+                        option.textContent = `${dateDisplay}${trip.name}`;
                         tripSelect.appendChild(option);
                     });
                 }
@@ -299,4 +322,3 @@
 </body>
 
 </html>
-
