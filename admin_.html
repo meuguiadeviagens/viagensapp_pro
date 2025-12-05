@@ -1943,11 +1943,20 @@
                 let planDetailsHtml = '';
                 // Mostra detalhes diferentes se for 'avulsa'
                 if (request.plano === 'avulsa') {
-                    planDetailsHtml = `
-                        <p class="font-semibold text-lg text-blue-800">Plano: Viagem Avulsa</p>
-                        <p class="text-sm text-slate-700 mt-1"><strong>Viagem:</strong> ${request.tripName || 'Nome não encontrado'}</p>
-                        <p class="text-xs text-slate-500 font-mono"><strong>ID:</strong> ${request.tripId || 'ID não encontrado'}</p>
-                    `;
+                    if (request.actionType === 'store_credit') {
+                        // --- VISUAL PARA CRÉDITO ---
+                        planDetailsHtml = `
+                            <p class="font-semibold text-lg text-yellow-600">🎟️ Plano: Crédito Avulso</p>
+                            <p class="text-sm text-slate-700 mt-1">O usuário quer guardar o crédito para usar depois.</p>
+                        `;
+                    } else {
+                        // --- VISUAL PARA VIAGEM ESPECÍFICA (Existente) ---
+                        planDetailsHtml = `
+                            <p class="font-semibold text-lg text-blue-800">Plano: Viagem Avulsa</p>
+                            <p class="text-sm text-slate-700 mt-1"><strong>Viagem:</strong> ${request.tripName || 'Nome não encontrado'}</p>
+                            <p class="text-xs text-slate-500 font-mono"><strong>ID:</strong> ${request.tripId || 'ID não encontrado'}</p>
+                        `;
+                    }
                 } else {
                     planDetailsHtml = `
                         <p class="font-semibold text-lg text-blue-800">Plano: ${request.plano === 'anual' ? 'Anual' : 'Bianual'}</p>
@@ -1980,17 +1989,22 @@
          * Função chamada pelo botão "Aprovar Licença".
          * Atualiza a licença do usuário e apaga a solicitação.
          */
+        /**
+         * Função chamada pelo botão "Aprovar Licença".
+         * Atualiza a licença do usuário e apaga a solicitação.
+         */
         window.approveUpgrade = async (uid, request) => {
-            const { plano, tripId } = request;
+            // Extraímos actionType também
+            const { plano, tripId, actionType } = request;
             
             if (!uid || !plano) {
                 alert("Erro: UID do usuário ou Plano não encontrado na solicitação.");
                 return;
             }
 
-            // 1. Obter a licença ATUAL do usuário (importante para o plano avulso)
+            // 1. Obter a licença ATUAL do usuário
             const userLicenseRef = ref(db, `users/${uid}/license`);
-            let currentLicenseData = { type: 'gratuito', purchasedTrips: {} }; // Padrão
+            let currentLicenseData = { type: 'gratuito', purchasedTrips: {}, credits: 0 }; // Padrão com créditos
             try {
                 const snapshot = await get(userLicenseRef);
                 if (snapshot.exists()) {
@@ -2004,31 +2018,40 @@
             // 2. Preparar a NOVA licença
             let newLicenseData = { ...currentLicenseData }; // Copia a licença atual
             const today = new Date();
-            // Pega o início do dia de hoje (sem horas/minutos)
             const todayTimestamp = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
             const adminEmail = auth.currentUser ? auth.currentUser.email : 'unknown_admin';
 
             if (plano === 'anual' || plano === 'bianual') {
-            // Define a data de expiração
-            const expirationDate = new Date(today);
-            const yearsToAdd = (plano === 'anual') ? 1 : 2; // Lógica de 2 anos já está correta
-            expirationDate.setFullYear(expirationDate.getFullYear() + yearsToAdd);
+                // Define a data de expiração
+                const expirationDate = new Date(today);
+                const yearsToAdd = (plano === 'anual') ? 1 : 2;
+                expirationDate.setFullYear(expirationDate.getFullYear() + yearsToAdd);
 
-            newLicenseData.type = 'anual'; // <-- LINHA CORRIGIDA
-            newLicenseData.dataAquisicao = todayTimestamp;
-            newLicenseData.expires = expirationDate.getTime();
-            newLicenseData.purchasedTrips = newLicenseData.purchasedTrips || {}; 
+                newLicenseData.type = 'anual';
+                newLicenseData.dataAquisicao = todayTimestamp;
+                newLicenseData.expires = expirationDate.getTime();
+                // Garante que os campos existam
+                newLicenseData.purchasedTrips = newLicenseData.purchasedTrips || {}; 
+                newLicenseData.credits = newLicenseData.credits || 0;
 
-        } else if (plano === 'avulsa') {
-                if (!tripId) {
-                    alert("Erro: A solicitação de 'Viagem Avulsa' não contém um ID de viagem. Aprovação falhou.");
-                    return;
+            } else if (plano === 'avulsa') {
+                
+                if (actionType === 'store_credit') {
+                    // --- LÓGICA DE CRÉDITO ---
+                    const currentCredits = parseInt(newLicenseData.credits || 0);
+                    newLicenseData.credits = currentCredits + 1;
+                    
+                } else {
+                    // --- LÓGICA DE VIAGEM ESPECÍFICA ---
+                    if (!tripId) {
+                        alert("Erro: A solicitação de 'Viagem Avulsa' não contém um ID de viagem. Aprovação falhou.");
+                        return;
+                    }
+                    if (!newLicenseData.purchasedTrips) {
+                        newLicenseData.purchasedTrips = {};
+                    }
+                    newLicenseData.purchasedTrips[tripId] = true;
                 }
-                // Adiciona a viagem ao objeto, sem sobrescrever
-                if (!newLicenseData.purchasedTrips) {
-                    newLicenseData.purchasedTrips = {};
-                }
-                newLicenseData.purchasedTrips[tripId] = true;
                 // Mantém o tipo de licença atual (ex: 'gratuito')
             
             } else {
@@ -2041,7 +2064,7 @@
             updates[`/users/${uid}/license`] = newLicenseData; // Atualiza a licença
             updates[`/solicitacoes_upgrade/${uid}`] = null; // Remove a solicitação
 
-            // 4. Salvar log de admin (copiado da sua função de salvar licença)
+            // 4. Salvar log de admin
             const logEntry = {
                 timestamp: serverTimestamp(),
                 admin: adminEmail,
@@ -2053,22 +2076,27 @@
             updates[`/users/${uid}/adminHistory/${logRef.key}`] = logEntry;
 
             
-            // 5. (NOVO) Criar a notificação para o usuário
+            // 5. Criar a notificação para o usuário
             const notificationRef = push(ref(db, `users/${uid}/notifications`));
             let notificationTitle = "Plano Aprovado!";
             let notificationMessage = `Sua solicitação do ${plano === 'anual' ? 'Plano Anual' : 'Plano Bianual'} foi aprovada e já está ativa. Aproveite!`;
 
             if (plano === 'avulsa') {
-                notificationTitle = "Viagem Liberada!";
-                notificationMessage = `Sua compra da viagem '${request.tripName || 'viagem'}' foi aprovada. Você já pode acessá-la.`;
+                if (actionType === 'store_credit') {
+                    notificationTitle = "Crédito Adicionado!";
+                    notificationMessage = `Sua compra de 1 Crédito de Viagem Avulsa foi aprovada. Você pode usá-lo para desbloquear qualquer viagem futura.`;
+                } else {
+                    notificationTitle = "Viagem Liberada!";
+                    notificationMessage = `Sua compra da viagem '${request.tripName || 'viagem'}' foi aprovada. Você já pode acessá-la.`;
+                }
             }
 
             updates[`/users/${uid}/notifications/${notificationRef.key}`] = {
                 timestamp: serverTimestamp(),
-                type: "success", // Tipo da notificação (para o app saber qual ícone usar)
+                type: "success",
                 title: notificationTitle,
                 message: notificationMessage,
-                isRead: false // O app do usuário deve mudar para 'true' quando ele ler
+                isRead: false
             };   
             
             // 6. Executar a transação
