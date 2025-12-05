@@ -110,6 +110,8 @@
         /**
          * Busca as viagens do usuário e preenche o dropdown.
          * Mostra apenas as viagens onde o usuário é o "dono" E que ainda NÃO foram compradas.
+         * ORDENAÇÃO: Mais recentes primeiro.
+         * VISUALIZAÇÃO: Data - Nome da Viagem.
          */
         async function loadUserTrips(userId) {
             tripSelect.innerHTML = '<option value="">Buscando suas viagens...</option>';
@@ -126,7 +128,6 @@
 
                 if (!memberOfSnap.exists()) {
                     tripSelect.innerHTML = '<option value="">Nenhuma viagem criada.</option>';
-                    // Opção de Crédito
                     const creditOption = document.createElement('option');
                     creditOption.value = "CREDIT_STORE";
                     creditOption.textContent = "🎫 Guardar como Crédito (a viagem ainda vai ser criada)";
@@ -153,28 +154,28 @@
                         const tripData = tripSnap.val();
                         // Verifica se o usuário é o 'owner' desta viagem
                         if (tripData.members && tripData.members[userId] === 'owner') {
-                            // ADIÇÃO: Salvamos também a data (startDate)
                             ownerTrips.push({ 
                                 id: tripId, 
                                 name: tripData.name, 
-                                startDate: tripData.startDate // Assumindo formato YYYY-MM-DD ou timestamp
+                                startDate: tripData.startDate 
                             });
                         }
                     }
                 }
 
-                // --- NOVO CÓDIGO DE ORDENAÇÃO ---
+                // --- ORDENAÇÃO ---
                 // Ordena do mais recente para o mais antigo (Decrescente)
                 ownerTrips.sort((a, b) => {
-                    const dateA = new Date(a.startDate || '1970-01-01');
-                    const dateB = new Date(b.startDate || '1970-01-01');
+                    // Garante que seja tratado como data, seja número ou string
+                    const dateA = new Date(a.startDate || 0);
+                    const dateB = new Date(b.startDate || 0);
                     return dateB - dateA; 
                 });
 
-                // Popula o dropdown com as viagens encontradas
-                tripSelect.innerHTML = '<option value="">-- Selecione --</option>'; // Limpa
+                // Popula o dropdown
+                tripSelect.innerHTML = '<option value="">-- Selecione --</option>';
 
-                // Opção de Crédito (Sempre disponível)
+                // Opção de Crédito
                 const creditOption = document.createElement('option');
                 creditOption.value = "CREDIT_STORE";
                 creditOption.textContent = "🎫 Guardar como Crédito (a viagem ainda vai ser criada)";
@@ -186,12 +187,21 @@
                         const option = document.createElement('option');
                         option.value = trip.id;
                         
-                        // --- FORMATAÇÃO DA DATA ---
+                        // --- CORREÇÃO DA DATA AQUI ---
                         let dateDisplay = "";
                         if (trip.startDate) {
-                            // Tenta criar data. Adiciona 'T12:00:00' para evitar problemas de fuso horário recuando o dia
-                            // se o formato for apenas "YYYY-MM-DD"
-                            const dateObj = new Date(trip.startDate.includes('T') ? trip.startDate : trip.startDate + 'T12:00:00');
+                            let dateObj;
+                            
+                            if (typeof trip.startDate === 'number') {
+                                // Se for NÚMERO (Timestamp salvo pelo app.html), cria a data direto
+                                dateObj = new Date(trip.startDate);
+                            } else {
+                                // Se for STRING (formato antigo), verifica se precisa do 'T'
+                                const dateStr = trip.startDate.includes('T') ? trip.startDate : trip.startDate + 'T12:00:00';
+                                dateObj = new Date(dateStr);
+                            }
+
+                            // Formata para DD/MM/AAAA
                             dateDisplay = dateObj.toLocaleDateString('pt-BR') + " - ";
                         }
 
@@ -200,7 +210,6 @@
                     });
                 }
                 
-                // Habilita o botão sempre (pois agora sempre tem a opção de crédito)
                 solicitarBtn.disabled = false;
 
             } catch (error) {
