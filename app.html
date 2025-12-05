@@ -9832,6 +9832,14 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const creditSection = document.getElementById('credit-usage-section');
             const credits = currentUserLicense.credits || 0;
 
+            // --- Lógica de salvar intenção (que fizemos antes) ---
+            if (tripIdPendingUpgrade) {
+                localStorage.setItem('pendingTripId', tripIdPendingUpgrade);
+            } else {
+                localStorage.removeItem('pendingTripId');
+            }
+            // ----------------------------------------------------
+
             // Lógica dos Créditos
             if (credits > 0 && tripIdPendingUpgrade) {
                 document.getElementById('available-credits-display').textContent = credits;
@@ -9840,13 +9848,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 creditSection.classList.add('hidden');
             }
 
-            // --- NOVO: Carregar botões do Mercado Pago ---
-            // Usa setTimeout para garantir que o modal já começou a abrir (DOM visível)
-            setTimeout(() => {
-                renderMPButton('mp-btn-anual', '40505311-84c15864-6650-4f5e-a63f-64672f2a28aa');
-                renderMPButton('mp-btn-bianual', '40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa');
-                renderMPButton('mp-btn-avulsa', '40505311-b0998900-abe7-457b-a60c-3055922ad66c');
-            }, 100);
+            // --- NOVO: Botões Nativos (Carregamento Imediato) ---
+            // Removemos o setTimeout pois é HTML puro agora
+            renderMPButton('mp-btn-anual', '40505311-84c15864-6650-4f5e-a63f-64672f2a28aa', 'Assinar Anual');
+            renderMPButton('mp-btn-bianual', '40505311-ad7cd424-3478-47dd-b203-975bfcd3ccaa', 'Assinar Bianual');
+            renderMPButton('mp-btn-avulsa', '40505311-b0998900-abe7-457b-a60c-3055922ad66c', 'Comprar Avulsa');
         };
 
         // Função chamada pelo botão "Sim, usar meu crédito"
@@ -9900,58 +9906,33 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
         };
 
-        // Função auxiliar para injetar o botão do Mercado Pago
-        function renderMPButton(containerId, preferenceId) {
+        // Função auxiliar para criar botão nativo com link direto
+        function renderMPButton(containerId, preferenceId, labelText) {
             const container = document.getElementById(containerId);
             if (!container) return;
 
-            // Limpa, mas deixa preparado com altura fixa para não "piscar"
-            container.innerHTML = '';
-            
-            // 1. Cria um container visual de "Carregando"
-            const wrapper = document.createElement('div');
-            wrapper.className = "flex flex-col items-center justify-center w-full min-h-[50px]";
-            
-            const loadingText = document.createElement('span');
-            loadingText.className = "text-xs text-slate-400 mb-2 loading-indicator";
-            loadingText.innerText = "Carregando pagamento...";
-            
-            // 2. Botão de Fallback (Plano B)
-            // Se o script do MP for bloqueado, o usuário ainda vê este link
-            // NOTA: O script do MP costuma esconder o conteúdo da div quando carrega com sucesso.
-            // Se ele falhar, este link permanece visível/clicável.
-            const fallbackLink = document.createElement('a');
-            fallbackLink.href = `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preferenceId}`;
-            fallbackLink.target = "_blank";
-            fallbackLink.className = "text-blue-600 underline text-sm font-semibold hover:text-blue-800 hidden fallback-btn"; 
-            fallbackLink.innerText = "💳 Adquirir"; //clique aqui se o botão não aparecer => foi trocado para "Adquirir"
+            container.innerHTML = ''; // Limpa o container
 
-            wrapper.appendChild(loadingText);
-            wrapper.appendChild(fallbackLink);
-            container.appendChild(wrapper);
-
-            // 3. Injeta o Script
-            const script = document.createElement('script');
-            script.src = "https://www.mercadopago.com.br/integrations/v1/web-payment-checkout.js";
-            script.dataset.preferenceId = preferenceId;
-            script.dataset.source = "button";
+            // Cria o link estilizado como botão
+            const link = document.createElement('a');
             
-            // Adiciona o script ao wrapper
-            wrapper.appendChild(script);
+            // Link direto para o checkout do Mercado Pago
+            link.href = `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${preferenceId}`;
+            link.target = '_blank'; // Abre em nova guia
+            link.rel = 'noopener noreferrer'; // Segurança para links externos
+            
+            // Estilos Tailwind (Botão Azul com hover e transição)
+            link.className = "flex items-center justify-center w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-transform active:scale-95 shadow-md group";
 
-            // 4. Temporizador de Segurança
-            // Se em 3 segundos o botão oficial não aparecer (o script do MP costuma criar um botão com classe 'mercadopago-button'),
-            // nós mostramos o link de fallback.
-            setTimeout(() => {
-                // Verifica se o MP injetou o botão dele (geralmente eles usam classes internas ou iframe)
-                // Como é difícil detectar o iframe cross-origin, assumimos que se o texto "Carregando" ainda estiver visível, falhou.
-                const mpButton = container.querySelector('.mercadopago-button'); 
-                if (!mpButton) {
-                    console.warn("Botão MP demorou ou foi bloqueado. Mostrando link direto.");
-                    loadingText.style.display = 'none';
-                    fallbackLink.classList.remove('hidden'); // Mostra o link simples
-                }
-            }, 1000);
+            // Conteúdo do botão (Texto + Ícone de link externo)
+            link.innerHTML = `
+                <span>${labelText}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-2 opacity-70 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+            `;
+            
+            container.appendChild(link);
         }
 
         // Função para apagar todas as notificações
