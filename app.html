@@ -725,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.51 | 05/12/2025, 22:22</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.52 | 06/12/2025, 14:30</p>
             </main>
         </div>
 
@@ -4439,6 +4439,28 @@ window.addEventListener('popstate', (event) => {
         // --- FUNÇÕES DE RENDERIZAÇÃO ---
         // VERSÃO NOVA
         function renderTripLists() {
+
+            // --- INÍCIO DA LÓGICA DE VISIBILIDADE DO CHECKBOX ---
+            // Verifica se existe ALGUMA viagem com novidade (usando sua função auxiliar checkTripHasNews)
+            const hasAnyNews = tripsData.some(trip => checkTripHasNews(trip));
+            
+            const newsLabel = document.getElementById('filter-news-label');
+            const newsCheckbox = document.getElementById('filter-news-checkbox');
+
+            if (newsLabel) {
+                if (hasAnyNews) {
+                    // Se tem novidade, mostra o botão (remove o hidden)
+                    newsLabel.classList.remove('hidden');
+                } else {
+                    // Se não tem, esconde e desmarca
+                    newsLabel.classList.add('hidden');
+                    if (newsCheckbox && newsCheckbox.checked) {
+                        newsCheckbox.checked = false;
+                    }
+                }
+            }
+            // --- FIM DA LÓGICA DE VISIBILIDADE DO CHECKBOX ---
+
             const featuredTripsPanel = document.getElementById('featured-trips-panel');
             const featuredTripsList = document.createElement('div');
             featuredTripsList.id = 'featured-trips-list';
