@@ -725,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.52 | 06/12/2025, 14:30</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.53 | 09/12/2025, 09:27</p>
             </main>
         </div>
 
@@ -3368,10 +3368,20 @@ window.addEventListener('popstate', (event) => {
                 });
 
                 sortedCurrencies.forEach(currency => {
+                    // --- NOVO CÁLCULO DE TOTAL ---
+                    const currencyExpensesList = expensesByCurrency[currency];
+                    const totalVal = currencyExpensesList.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+                    const totalDisplay = formatCurrency(totalVal, currency);
+                    // -----------------------------
+
                     // Adiciona o cabeçalho da moeda
                     const currencyHeader = document.createElement('h5');
                     currencyHeader.className = 'text-base font-semibold text-slate-700 mt-4 first:mt-0';
-                    currencyHeader.textContent = currency;
+                    
+                    // --- ATUALIZAÇÃO DO TEXTO ---
+                    currencyHeader.textContent = `${currency} (Total: ${totalDisplay})`; 
+                    // ----------------------------
+
                     expenseListContainer.appendChild(currencyHeader);
                     
                     // VAI ORDENAR POR DATA DE CADASTRO (expense.id) EM ORDEM DECRESCENTE
