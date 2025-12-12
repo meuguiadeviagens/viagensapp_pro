@@ -725,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.54 | 12/12/2025, 11:27</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.55 | 12/12/2025, 11:28</p>
             </main>
         </div>
 
@@ -1093,30 +1093,40 @@
         <!-- FIM: MENU DE DESPESAS MOVIDO -->
         
         <div id="checklist-view" class="hidden">
-            <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8 p-6 bg-white rounded-xl shadow-lg">
-                <div class="flex items-center gap-4">
-                    <button onclick="showTripsView()" class="flex items-center justify-center w-12 h-12 bg-slate-200 text-slate-700 rounded-full hover:bg-slate-300 transition-colors" title="Voltar para Viagens">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-                    </button>
-                    <div>
-                        <h1 class="text-3xl font-bold text-slate-900">Checklist</h1>
-                        <p class="text-slate-500">Seu checklist pessoal</p>
+            <header class="flex flex-col gap-4 mb-8 p-4 sm:p-6 bg-white rounded-xl shadow-lg">
+                
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <button onclick="showTripsView()" class="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-slate-200 text-slate-700 rounded-full hover:bg-slate-300 transition-colors" title="Voltar para Viagens">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                        </button>
+                        <div>
+                            <h1 class="text-2xl sm:text-3xl font-bold text-slate-900">Checklist</h1>
+                            <p class="text-sm text-slate-500">Seu checklist pessoal</p>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2 p-2 ml-6 bg-slate-100 rounded-lg">
-                        <input type="checkbox" id="filter-pending-items-checkbox" onchange="applyChecklistFilter()"
+                    
+                    <button onclick="addChecklistSection()" class="flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-4 py-3 sm:py-2 rounded-lg shadow-md hover:bg-blue-700 transition-colors w-full sm:w-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span>Nova Categoria</span>
+                    </button>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-slate-100">
+                    
+                    <div class="flex items-center justify-center sm:justify-start gap-2 p-3 bg-slate-100 rounded-lg w-full sm:w-auto cursor-pointer" onclick="document.getElementById('filter-pending-items-checkbox').click()">
+                        <input type="checkbox" id="filter-pending-items-checkbox" onchange="event.stopPropagation(); applyChecklistFilter()"
                             class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-slate-400">
-                        <label for="filter-pending-items-checkbox" class="text-sm font-semibold text-slate-700 cursor-pointer">
+                        <label for="filter-pending-items-checkbox" class="text-sm font-semibold text-slate-700 cursor-pointer pointer-events-none">
                             Mostrar somente pendentes
                         </label>
                     </div>   
-                    <button id="toggle-all-sections-btn" onclick="toggleAllChecklistSections()" class="ml-4 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+
+                    <button id="toggle-all-sections-btn" onclick="toggleAllChecklistSections()" class="w-full sm:w-auto py-3 sm:py-2 px-4 text-sm font-bold text-blue-600 border border-blue-200 bg-blue-50 sm:bg-transparent sm:border-transparent rounded-lg hover:bg-blue-100 transition-colors">
                         Recolher Tudo
                     </button>             
                 </div>
-                <button onclick="addChecklistSection()" class="flex items-center gap-2 bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    <span>Nova Categoria</span>
-                </button>
+
             </header>
 
             <main id="checklist-container" class="space-y-6">
