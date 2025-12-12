@@ -725,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.53 | 09/12/2025, 09:27</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.1.54 | 12/12/2025, 11:27</p>
             </main>
         </div>
 
@@ -1108,7 +1108,10 @@
                         <label for="filter-pending-items-checkbox" class="text-sm font-semibold text-slate-700 cursor-pointer">
                             Mostrar somente pendentes
                         </label>
-                    </div>                
+                    </div>   
+                    <button id="toggle-all-sections-btn" onclick="toggleAllChecklistSections()" class="ml-4 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+                        Recolher Tudo
+                    </button>             
                 </div>
                 <button onclick="addChecklistSection()" class="flex items-center gap-2 bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -8953,6 +8956,9 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 container.appendChild(sectionElement);
             });
 
+            const toggleBtn = document.getElementById('toggle-all-sections-btn');
+            if(toggleBtn) toggleBtn.textContent = "Recolher Tudo";
+
             applyChecklistFilter();
         }
 
@@ -9043,15 +9049,35 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
         };
 
-        // NOVA FUNÇÃO: Aplica o filtro de "pendentes"
+        // NOVA FUNÇÃO: Aplica filtro de pendentes + Expande categorias automaticamente
         window.applyChecklistFilter = () => {
             const filterCheckbox = document.getElementById('filter-pending-items-checkbox');
-            if (!filterCheckbox) return; // Sai se o elemento ainda não existir
+            const toggleBtn = document.getElementById('toggle-all-sections-btn'); // <--- Correção do erro anterior
+            
+            if (!filterCheckbox) return; 
             
             const isFilterActive = filterCheckbox.checked;
             const sections = document.querySelectorAll('.checklist-section-item');
 
+            // LÓGICA DO BOTÃO E SINCRONIZAÇÃO
+            if (toggleBtn) {
+                if (isFilterActive) {
+                    toggleBtn.classList.add('hidden'); // Esconde o botão durante o filtro
+                } else {
+                    toggleBtn.classList.remove('hidden');
+                    // Como o filtro expande tudo, ao sair dele, o botão deve estar pronto para "Recolher"
+                    toggleBtn.textContent = "Recolher Tudo"; 
+                }
+            }
+
             sections.forEach(section => {
+                
+                // --- NOVO: SE O FILTRO ESTIVER ATIVO, EXPANDIR TUDO ---
+                if (isFilterActive) {
+                    section.classList.remove('collapsed');
+                }
+                // ------------------------------------------------------
+
                 let hasPendingItems = false;
                 const items = section.querySelectorAll('.checklist-row-item');
 
@@ -9073,11 +9099,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     }
                 });
 
-                // Agora, decide se a seção inteira deve ser escondida
+                // Decide se a seção inteira deve ser escondida (se não tiver pendentes visíveis)
                 if (isFilterActive && !hasPendingItems) {
-                    section.classList.add('hidden'); // Esconde a seção se o filtro está ativo e não há pendentes
+                    section.classList.add('hidden'); 
                 } else {
-                    section.classList.remove('hidden'); // Mostra a seção
+                    section.classList.remove('hidden'); 
                 }
             });
         };
@@ -10012,6 +10038,24 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             // Retorna true se houver ALGUM item com data maior que o visto
             return logEntries.some(entry => entry.timestamp > lastViewedTimestamp);
         }
+
+        // Função para expandir ou recolher todas as categorias
+        window.toggleAllChecklistSections = () => {
+            const btn = document.getElementById('toggle-all-sections-btn');
+            const sections = document.querySelectorAll('.checklist-section-item');
+            const isCurrentlyCollapsing = btn.textContent.includes('Recolher');
+
+            sections.forEach(section => {
+                if (isCurrentlyCollapsing) {
+                    section.classList.add('collapsed');
+                } else {
+                    section.classList.remove('collapsed');
+                }
+            });
+
+            // Atualiza o texto do botão
+            btn.textContent = isCurrentlyCollapsing ? "Expandir Tudo" : "Recolher Tudo";
+        };
 
     </script>
 
