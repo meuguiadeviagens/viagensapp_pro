@@ -725,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.1.55 | 12/12/2025, 11:28</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.0 | 17/12/2025, 10:25</p>
             </main>
         </div>
 
@@ -3339,10 +3339,18 @@ window.addEventListener('popstate', (event) => {
                 travelers.forEach(traveler => {
                     const safeName = traveler.name.replace(/\s+/g, '-');
 
+                    // --- INÍCIO DA ALTERAÇÃO PARA MARCAR O USUÁRIO COMO PAGADOR ---
+                    // Verifica se este viajante é o usuário logado
+                    const isCurrentUser = (traveler.uid === currentUserId);
+                    // Se for, cria a string 'checked', senão deixa vazia
+                    const checkedAttr = isCurrentUser ? 'checked' : '';
+                    // ---------------------------
+                    
                     // 3. Popula os checkboxes de PAGADORES
                     const payerCheckboxDiv = document.createElement('div');
                     payerCheckboxDiv.className = 'flex items-center gap-2';
-                    payerCheckboxDiv.innerHTML = `<input type="checkbox" id="payer-${safeName}" value="${traveler.name}" onchange="window.updatePayerSplitView()" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"><label for="payer-${safeName}" class="text-sm text-slate-700">${traveler.name}</label>`;
+                    // Note que adicionei ${checkedAttr} dentro da string do input abaixo:
+                    payerCheckboxDiv.innerHTML = `<input type="checkbox" id="payer-${safeName}" value="${traveler.name}" ${checkedAttr} onchange="window.updatePayerSplitView()" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"><label for="payer-${safeName}" class="text-sm text-slate-700">${traveler.name}</label>`;
                     payersContainer.appendChild(payerCheckboxDiv);
                     
                     // 4. Popula os checkboxes de PARTICIPANTES (como antes)
@@ -9193,6 +9201,8 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             e.preventDefault();
             const trip = tripsData.find(t => t.id === currentTripId);
             const newName = document.getElementById('edit-document-name').value.trim();
+
+            const docId = document.getElementById('edit-document-id').value;
 
             if (!trip || !trip.documents || !docId || !newName) {
                 alert("Erro ao salvar. Tente novamente.");
