@@ -725,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.0 | 17/12/2025, 10:25</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.1 | 17/12/2025, 21:41</p>
             </main>
         </div>
 
@@ -6625,6 +6625,10 @@ let dividerHtml = '';
         
         window.duplicateTrip = async (event, tripId) => {
             event.stopPropagation();
+
+            if (!confirm("Tem certeza que deseja duplicar esta viagem?")) {
+                return;
+            }
             
             // 1. Pega o usuário atual
             const user = auth.currentUser;
