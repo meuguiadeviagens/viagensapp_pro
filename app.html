@@ -725,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.1 | 17/12/2025, 21:41</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.2 | 19/12/2025, 10:59</p>
             </main>
         </div>
 
@@ -10080,6 +10080,22 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             // Atualiza o texto do botão
             btn.textContent = isCurrentlyCollapsing ? "Expandir Tudo" : "Recolher Tudo";
         };
+
+        // CORREÇÃO: Força a reaplicação do filtro ao desbloquear o celular/voltar para a aba (voltar do Standby / Bloqueio de Tela / Suspensão)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                // Verifica se a tela de checklist está ativa
+                const checklistView = document.getElementById('checklist-view');
+                if (checklistView && !checklistView.classList.contains('hidden')) {
+                    console.log("App visível novamente: Reaplicando filtro do checklist...");
+                    
+                    // Força a execução da lógica de filtro para sincronizar visual e dados
+                    if (typeof window.applyChecklistFilter === 'function') {
+                        window.applyChecklistFilter();
+                    }
+                }
+            }
+        });
 
     </script>
 
