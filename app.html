@@ -725,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.2 | 19/12/2025, 10:59</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.3 | 27/12/2025, 18:00</p>
             </main>
         </div>
 
@@ -1082,13 +1082,20 @@
 </div>
         
         <!-- INÍCIO: MENU DE DESPESAS MOVIDO PARA FORA DO HEADER -->
-        <div id="expenses-menu" class="hidden absolute w-56 bg-white rounded-md shadow-lg py-1 z-50">
-            <a href="javascript:void(0);" onclick="scrollToSectionAndClose('shared-expenses-panel', null); toggleExpensesMenu();" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
-                Despesas Gerais (Grupo)
+        <div id="expenses-menu" class="hidden absolute w-64 bg-white rounded-md shadow-xl py-1 z-50 ring-1 ring-black ring-opacity-5">
+            <a href="javascript:void(0);" onclick="scrollToSectionAndClose('shared-expenses-panel', null); toggleExpensesMenu();" class="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 border-b border-slate-100">
+                <div class="font-semibold">Despesas Gerais (Grupo)</div>
+                <div class="text-xs text-slate-500">Divisão de contas entre todos</div>
             </a>
-            <a href="javascript:void(0);" onclick="openMyExpensesModal(); toggleExpensesMenu();" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
-                Minhas Despesas (Privado)
+            <a href="javascript:void(0);" onclick="openMyExpensesModal(); toggleExpensesMenu();" class="block px-4 py-3 text-sm text-slate-700 hover:bg-slate-50">
+                <div class="font-semibold">Minhas Despesas (Privado)</div>
+                <div class="text-xs text-slate-500">Sua carteira pessoal</div>
             </a>
+            
+            <div id="shared-wallets-menu-container" class="hidden border-t border-slate-100 bg-slate-50">
+                <div class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Carteiras Compartilhadas</div>
+                <div id="shared-wallets-list"></div>
+            </div>
         </div>
         <!-- FIM: MENU DE DESPESAS MOVIDO -->
         
@@ -2075,6 +2082,10 @@
             <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-2xl m-4 flex flex-col max-h-[90vh]">
                 <h3 id="my-expenses-title" class="text-2xl font-semibold mb-2 text-slate-800">Minhas Despesas</h3>
                 <p id="my-expenses-trip-name" class="text-sm text-slate-500 mb-1"></p>
+                <button id="share-wallet-btn" onclick="openShareWalletModal()" class="flex items-center gap-2 text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-200 px-3 py-1.5 rounded-full transition-colors font-semibold">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2"/><line x1="12" x2="12" y1="15"/></svg>
+                    Compartilhar Carteira
+                </button>
                 <p id="my-expenses-total" class="text-lg font-bold text-blue-700 mb-4">Total: R$ 0,00</p>
 
                 <!-- Formulário de Adição (Otimizado para Mobile: 2x2) -->
@@ -2355,6 +2366,33 @@
                 <button id="info-modal-close-btn" onclick="closeModal('info-modal')" class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">
                     OK
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="share-wallet-modal" class="fixed inset-0 z-[60] hidden items-center justify-center modal-backdrop">
+        <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-sm m-4">
+            <h3 class="text-lg font-bold text-slate-800 mb-2">Compartilhar Carteira</h3>
+            <p class="text-sm text-slate-600 mb-4">Permitir que outro viajante veja e edite suas despesas privadas.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">Selecione o Viajante</label>
+                    <select id="share-wallet-user-select" class="w-full border-slate-300 rounded-md shadow-sm text-sm"></select>
+                </div>
+                
+                <button onclick="confirmShareWallet()" class="w-full bg-indigo-600 text-white font-semibold py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                    Confirmar Compartilhamento
+                </button>
+            </div>
+
+            <div class="mt-6 border-t pt-4">
+                <p class="text-xs font-bold text-slate-400 mb-2 uppercase">Acesso Permitido a:</p>
+                <div id="wallet-shared-list" class="space-y-2 text-sm text-slate-700"></div>
+            </div>
+
+            <div class="pt-4 flex justify-end">
+                <button onclick="closeModal('share-wallet-modal')" class="text-slate-500 hover:text-slate-800 text-sm font-medium">Fechar</button>
             </div>
         </div>
     </div>
@@ -8899,38 +8937,50 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
             ];
         }
-
-        // 4. FUNÇÃO DE RENDERIZAÇÃO (A MAIS IMPORTANTE)
-        // Pega os dados do 'userChecklistData' e constrói o HTML
+        
+        // 4. FUNÇÃO DE RENDERIZAÇÃO (Modificada para manter categorias fechadas)
         function renderChecklist(checklist) {
             const container = document.getElementById('checklist-container');
-            container.innerHTML = ''; // Limpa o container
-            
+
+            // --- NOVA LÓGICA: Salva o estado atual antes de limpar ---
+            const collapsedIndexes = new Set();
+            const currentSections = container.querySelectorAll('.checklist-section-item');
+            currentSections.forEach((section, index) => {
+                if (section.classList.contains('collapsed')) {
+                    collapsedIndexes.add(index);
+                }
+            });
+            // --------------------------------------------------------
+
+            container.innerHTML = ''; // Limpa o container para redesenhar
+
             if (!checklist || checklist.length === 0) {
-                 container.innerHTML = `<p class="text-center text-slate-500">Seu checklist está vazio. Adicione uma categoria para começar.</p>`;
-                 return;
+                container.innerHTML = `<p class="text-center text-slate-500">Seu checklist está vazio. Adicione uma categoria para começar.</p>`;
+                return;
             }
 
             checklist.forEach((section, sectionIndex) => {
                 const sectionElement = document.createElement('div');
-                // O estado inicial é expandido (sem a classe .collapsed)
-                sectionElement.className = 'checklist-section-item bg-white p-4 sm:p-6 rounded-xl shadow-lg';
+                
+                // --- NOVA LÓGICA: Restaura o estado 'collapsed' ---
+                // Se o índice estava na lista de fechados, adicionamos a classe novamente
+                const isCollapsed = collapsedIndexes.has(sectionIndex);
+                sectionElement.className = `checklist-section-item bg-white p-4 sm:p-6 rounded-xl shadow-lg ${isCollapsed ? 'collapsed' : ''}`;
+                // --------------------------------------------------
 
                 let itemsHtml = '';
                 const itemsArray = section.items || [];
-                
+
                 itemsArray.forEach((item, itemIndex) => {
                     const isChecked = item.isChecked;
                     itemsHtml += `
                         <div class="checklist-row-item flex items-center justify-between p-2 rounded-md hover:bg-slate-50 ${isChecked ? '' : 'bg-yellow-100'}">
                             <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="toggleItem(event, ${sectionIndex}, ${itemIndex})"
-                                    class="h-5 w-5 rounded text-blue-600 focus:ring-green-500 border-slate-400">
-                                
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} onclick="toggleItem(event, ${sectionIndex}, ${itemIndex})" class="h-5 w-5 rounded text-blue-600 focus:ring-green-500 border-slate-400">
                                 <span class="${isChecked ? 'text-slate-500 line-through' : 'font-bold text-red-700'}">
                                     ${item.name}
                                 </span>
-                                </label>
+                            </label>
                             <div class="flex items-center gap-2">
                                 <button onclick="editItem(${sectionIndex}, ${itemIndex})" class="text-slate-400 hover:text-blue-600 p-1" title="Editar item">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
@@ -8943,11 +8993,9 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     `;
                 });
 
-                // --- INÍCIO DA ATUALIZAÇÃO ---
                 sectionElement.innerHTML = `
                     <div class="flex justify-between items-center mb-4 cursor-pointer" onclick="toggleChecklistSection(this)">
                         <h2 class="text-xl font-bold text-slate-800">${section.sectionTitle}</h2>
-                        
                         <div class="flex items-center gap-3 flex-shrink-0">
                             <button onclick="event.stopPropagation(); editSection(${sectionIndex})" class="text-slate-500 hover:text-blue-600 font-medium text-sm p-1 flex items-center gap-1" title="Editar nome da categoria">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></svg>
@@ -8955,32 +9003,30 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                             <button onclick="event.stopPropagation(); deleteSection(${sectionIndex})" class="text-red-500 hover:text-red-700 font-medium text-sm p-1 flex items-center gap-1" title="Excluir categoria">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                             </button>
-                            
                             <svg class="chevron-icon text-slate-500" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
                         </div>
                     </div>
-
+                    
                     <div class="checklist-section-content">
                         <div class="space-y-2">
                             ${itemsHtml}
                         </div>
                         <form onsubmit="addItem(event, ${sectionIndex})" class="flex gap-2 mt-4 pt-4 border-t">
-                            <input type="text" placeholder="Adicionar novo item..." required
-                                class="flex-grow px-3 py-2 bg-slate-100 border border-slate-300 rounded-md shadow-sm text-sm">
+                            <input type="text" placeholder="Adicionar novo item..." required class="flex-grow px-3 py-2 bg-slate-100 border border-slate-300 rounded-md shadow-sm text-sm">
                             <button type="submit" class="bg-green-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
                                 Adicionar
                             </button>
                         </form>
                     </div>
                 `;
-                // --- FIM DA ATUALIZAÇÃO ---
 
                 container.appendChild(sectionElement);
             });
 
             const toggleBtn = document.getElementById('toggle-all-sections-btn');
             if(toggleBtn) toggleBtn.textContent = "Recolher Tudo";
-
+            
+            // Reaplica o filtro se estiver ativo (isso mantém a lógica de 'mostrar somente pendentes')
             applyChecklistFilter();
         }
 
@@ -9247,32 +9293,73 @@ window.saveDivider = async function(tripId, categoryKey, value) {
          * Mostra ou esconde o menu de despesas (Geral/Pessoal).
          * VERSÃO ATUALIZADA: Calcula a posição do menu flutuante.
          */
-        window.toggleExpensesMenu = () => {
+        window.toggleExpensesMenu = async () => {
             const menu = document.getElementById('expenses-menu');
             const button = document.getElementById('expenses-menu-btn');
             
             if (!menu || !button) return;
 
             if (menu.classList.contains('hidden')) {
-                // O menu está escondido, vamos mostrá-lo
-                
-                // 1. Calcula a posição do botão na tela
+                // 1. Posiciona o menu
                 const rect = button.getBoundingClientRect();
-                
-                // 2. Define a posição do menu flutuante
-                // rect.left = Posição X (horizontal) do botão
-                // rect.bottom = Posição Y (vertical) da base do botão
-                // window.scrollY = Quanto a página já foi rolada (para ajustar a posição Y)
                 menu.style.left = `${rect.left}px`;
-                menu.style.top = `${rect.bottom + window.scrollY + 5}px`; // 5px de espaço
+                menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
+                
+                // 2. Verifica carteiras compartilhadas com o usuário atual
+                const sharedListContainer = document.getElementById('shared-wallets-list');
+                const sharedMenuContainer = document.getElementById('shared-wallets-menu-container');
+                sharedListContainer.innerHTML = '<p class="text-xs text-slate-400 px-4 py-2">Carregando...</p>';
+                sharedMenuContainer.classList.remove('hidden');
 
-                // 3. Mostra o menu
+                try {
+                    // Busca permissões: trips/{tripId}/walletPermissions/{meuId}
+                    const permissionsRef = ref(db, `trips/${currentTripId}/walletPermissions/${currentUserId}`);
+                    const snapshot = await get(permissionsRef);
+                    
+                    sharedListContainer.innerHTML = '';
+                    
+                    if (snapshot.exists()) {
+                        const permissions = snapshot.val(); // { "userIdDoAmigo": true }
+                        const ownerIds = Object.keys(permissions);
+                        
+                        // Busca os nomes desses IDs na lista de viajantes da viagem
+                        const trip = tripsData.find(t => t.id === currentTripId);
+                        const travelers = trip.travelers || [];
+
+                        if (ownerIds.length > 0) {
+                            ownerIds.forEach(ownerId => {
+                                const traveler = travelers.find(t => t.uid === ownerId);
+                                const travelerName = traveler ? traveler.name : 'Usuário Desconhecido';
+                                
+                                const item = document.createElement('a');
+                                item.href = "javascript:void(0);";
+                                item.className = "block px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50 font-medium flex items-center gap-2";
+                                item.innerHTML = `
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8"/><line x1="19" x2="19" y1="14"/></svg>
+                                    Despesas de ${travelerName.split(' ')[0]}
+                                `;
+                                item.onclick = () => {
+                                    openMyExpensesModal(ownerId, travelerName);
+                                    toggleExpensesMenu();
+                                };
+                                sharedListContainer.appendChild(item);
+                            });
+                        } else {
+                            sharedMenuContainer.classList.add('hidden');
+                        }
+                    } else {
+                        sharedMenuContainer.classList.add('hidden');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    sharedMenuContainer.classList.add('hidden');
+                }
+
                 menu.classList.remove('hidden');
             } else {
-                // O menu está visível, vamos escondê-lo
                 menu.classList.add('hidden');
             }
-        }
+        };
 
         /**
         * Popula um <select> com a lista de moedas para despesas pessoais.
@@ -9296,39 +9383,62 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         /**
         * Configura os listeners (onValue) para despesas E categorias.
         */
-        function setupMyExpensesListeners(userId, tripId) {
-            // 1. Referência para as DESPESAS
-            myExpensesExpensesRef = ref(db, `users/${userId}/myExpenses/${tripId}/expenses`);
+        function setupMyExpensesListeners(walletOwnerId, tripId) {
+            // Desliga listeners antigos se houver
+            if (myExpensesExpensesRef) off(myExpensesExpensesRef);
+            if (myExpensesCategoriesRef) off(myExpensesCategoriesRef);
+
+            // NOVA ESTRUTURA: trips/{tripId}/privateWallets/{userId}
+            // Isso permite que as regras de segurança do Firebase (se configuradas para 'trips' serem públicas aos membros) funcionem.
+            const basePath = `trips/${tripId}/privateWallets/${walletOwnerId}`;
+            
+            myExpensesExpensesRef = ref(db, `${basePath}/expenses`);
+            myExpensesCategoriesRef = ref(db, `${basePath}/categories`);
+
+            // --- LÓGICA DE MIGRAÇÃO AUTOMÁTICA ---
+            // Apenas se for a MINHA carteira, verificamos se preciso migrar dados do local antigo
+            if (walletOwnerId === currentUserId) {
+                get(myExpensesExpensesRef).then(async (newSnapshot) => {
+                    if (!newSnapshot.exists()) {
+                        // Se não tem dados no novo local, verifica o antigo
+                        const oldPathRef = ref(db, `users/${currentUserId}/myExpenses/${tripId}`);
+                        const oldSnapshot = await get(oldPathRef);
+                        
+                        if (oldSnapshot.exists()) {
+                            console.log("Migrando despesas para nova estrutura compartilhável...");
+                            const oldData = oldSnapshot.val();
+                            
+                            // Copia para o novo local
+                            await set(ref(db, basePath), oldData);
+                            
+                            // Opcional: Remove do local antigo para evitar duplicação futura
+                            // await remove(oldPathRef); 
+                        }
+                    }
+                });
+            }
+            // --- FIM MIGRAÇÃO ---
+
             onValue(myExpensesExpensesRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const expensesObject = snapshot.val();
-                    myExpensesData = Object.keys(expensesObject).map(key => ({
-                        id: key,
-                        ...expensesObject[key]
-                    }));
+                    myExpensesData = Object.keys(expensesObject).map(key => ({ id: key, ...expensesObject[key] }));
                 } else {
                     myExpensesData = [];
                 }
-                // Re-renderiza a lista quando as despesas mudam
                 renderMyExpensesList(myExpensesData);
             });
 
-            // 2. Referência para as CATEGORIAS
-            myExpensesCategoriesRef = ref(db, `users/${userId}/myExpenses/${tripId}/categories`);
             onValue(myExpensesCategoriesRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const categoriesObject = snapshot.val();
-                    myExpensesCategories = Object.keys(categoriesObject).map(key => ({
-                        id: key,
-                        ...categoriesObject[key]
-                    }));
+                    myExpensesCategories = Object.keys(categoriesObject).map(key => ({ id: key, ...categoriesObject[key] }));
                 } else {
                     myExpensesCategories = [];
                 }
-                // Re-popula os dropdowns quando as categorias mudam
-                // (Isso é útil se o usuário criar uma categoria e abrir o modal de edição em seguida)
                 populateMyExpenseCategorySelect('my-expense-category', 'geral');
-                if (!document.getElementById('edit-my-expense-modal').classList.contains('hidden')) {
+                // Se estiver editando, atualiza o select do modal de edição também
+                if (!document.getElementById('edit-my-expense-modal').classList.contains('hidden') && currentEditingMyExpenseId) {
                     const expense = myExpensesData.find(e => e.id === currentEditingMyExpenseId);
                     populateMyExpenseCategorySelect('edit-my-expense-category', expense?.categoryId || 'geral');
                 }
@@ -9456,22 +9566,43 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         /**
         * Função principal para abrir o modal "Minhas Despesas". (MODIFICADA)
         */
-        window.openMyExpensesModal = () => {
+        let currentWalletOwnerId = null;
+
+        window.openMyExpensesModal = (ownerId = null, ownerName = null) => {
             const trip = tripsData.find(t => t.id === currentTripId);
             if (!trip) return;
 
+            // Se ownerId for nulo, é a MINHA carteira
+            currentWalletOwnerId = ownerId || currentUserId;
+            const isMyWallet = (currentWalletOwnerId === currentUserId);
+
+            // Configura Título e Botão de Compartilhar
+            const titleEl = document.getElementById('my-expenses-title');
+            const shareBtn = document.getElementById('share-wallet-btn');
+            
+            if (isMyWallet) {
+                titleEl.textContent = "Minhas Despesas";
+                titleEl.classList.remove('text-indigo-700');
+                titleEl.classList.add('text-slate-800');
+                shareBtn.classList.remove('hidden'); // Eu posso compartilhar minha carteira
+            } else {
+                titleEl.textContent = `Despesas de ${ownerName}`;
+                titleEl.classList.remove('text-slate-800');
+                titleEl.classList.add('text-indigo-700');
+                shareBtn.classList.add('hidden'); // Não posso compartilhar a carteira dos outros
+            }
+
             document.getElementById('my-expenses-trip-name').textContent = trip.name;
             document.getElementById('add-my-expense-form').reset();
-            
-            // Popula os selects do formulário de ADIÇÃO
+
             populateMyExpenseCurrencySelect('my-expense-currency', 'BRL');
-            populateMyExpenseCategorySelect('my-expense-category', 'geral'); // MODIFICADO
+            populateMyExpenseCategorySelect('my-expense-category', 'geral');
 
-            // Inicia os listeners
-            setupMyExpensesListeners(currentUserId, currentTripId); // MODIFICADO
-
+            // Inicia listeners apontando para o dono correto
+            setupMyExpensesListeners(currentWalletOwnerId, currentTripId);
+            
             openModal('my-expenses-modal');
-        }
+        };
 
         /**
         * Abre o modal para EDITAR uma despesa pessoal. (MODIFICADA)
@@ -9721,7 +9852,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             
             if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
                 // Referência direta ao campo 'name' da categoria
-                const categoryNameRef = ref(db, `users/${currentUserId}/myExpenses/${currentTripId}/categories/${categoryId}/name`);
+                const categoryNameRef = ref(db, `trips/${currentTripId}/privateWallets/${currentWalletOwnerId}/categories/${categoryId}/name`);
                 try {
                     await set(categoryNameRef, newName.trim());
                     // O listener 'onValue' vai atualizar 'myExpensesCategories'
@@ -9749,11 +9880,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 
                 // 2. Prepara as atualizações para mover as despesas
                 expensesToUpdate.forEach(exp => {
-                    updates[`users/${currentUserId}/myExpenses/${currentTripId}/expenses/${exp.id}/categoryId`] = 'geral';
+                    updates[`trips/${currentTripId}/privateWallets/${currentWalletOwnerId}/expenses/${exp.id}/categoryId`] = 'geral';
                 });
                 
                 // 3. Prepara a exclusão da categoria
-                updates[`users/${currentUserId}/myExpenses/${currentTripId}/categories/${categoryId}`] = null; // null = delete
+                updates[`trips/${currentTripId}/privateWallets/${currentWalletOwnerId}/categories/${categoryId}`] = null; // null = delete
 
                 try {
                     // 4. Envia todas as atualizações de uma vez
@@ -10096,6 +10227,100 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
             }
         });
+
+        window.openShareWalletModal = async () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            if (!trip) return;
+
+            // Popula o select com viajantes (exceto eu mesmo)
+            const select = document.getElementById('share-wallet-user-select');
+            select.innerHTML = '<option value="">Selecione...</option>';
+            
+            trip.travelers.forEach(t => {
+                if (t.uid !== currentUserId) {
+                    const option = document.createElement('option');
+                    option.value = t.uid;
+                    option.textContent = `${t.name} (${t.email})`;
+                    select.appendChild(option);
+                }
+            });
+
+            // Lista quem já tem acesso
+            renderSharedAccessList();
+            
+            openModal('share-wallet-modal');
+        };
+
+        async function renderSharedAccessList() {
+            const listContainer = document.getElementById('wallet-shared-list');
+            listContainer.innerHTML = 'Carregando...';
+
+            // Lê quem tem permissão na minha carteira
+            // Caminho: trips/{tripId}/privateWallets/{meuId}/sharedWith
+            const sharedWithRef = ref(db, `trips/${currentTripId}/privateWallets/${currentUserId}/sharedWith`);
+            const snapshot = await get(sharedWithRef);
+            
+            listContainer.innerHTML = '';
+            
+            if (snapshot.exists()) {
+                const sharedData = snapshot.val(); // { userId: true }
+                const trip = tripsData.find(t => t.id === currentTripId);
+                
+                Object.keys(sharedData).forEach(uid => {
+                    const traveler = trip.travelers.find(t => t.uid === uid);
+                    const name = traveler ? traveler.name : 'Usuário desconhecido';
+                    
+                    const item = document.createElement('div');
+                    item.className = 'flex justify-between items-center bg-slate-50 p-2 rounded';
+                    item.innerHTML = `
+                        <span>${name}</span>
+                        <button onclick="revokeWalletAccess('${uid}')" class="text-red-500 text-xs hover:underline">Remover</button>
+                    `;
+                    listContainer.appendChild(item);
+                });
+            } else {
+                listContainer.innerHTML = '<p class="text-slate-400 italic">Ninguém tem acesso ainda.</p>';
+            }
+        }
+
+        window.confirmShareWallet = async () => {
+            const targetUserId = document.getElementById('share-wallet-user-select').value;
+            if (!targetUserId) return alert("Selecione um viajante.");
+
+            const updates = {};
+            // 1. Marca na minha carteira que compartilhei com ele
+            updates[`trips/${currentTripId}/privateWallets/${currentUserId}/sharedWith/${targetUserId}`] = true;
+            
+            // 2. Cria um índice reverso para ele saber que tem permissão de ver minha carteira
+            // Isso facilita na hora de montar o menu dele
+            updates[`trips/${currentTripId}/walletPermissions/${targetUserId}/${currentUserId}`] = true;
+
+            try {
+                await update(ref(db), updates);
+                alert("Carteira compartilhada com sucesso!");
+                renderSharedAccessList(); // Atualiza a lista visual
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao compartilhar.");
+            }
+        };
+
+        window.revokeWalletAccess = async (targetUserId) => {
+            if(!confirm("Remover o acesso deste usuário?")) return;
+
+            const updates = {};
+            // Remove dos dois lugares
+            updates[`trips/${currentTripId}/privateWallets/${currentUserId}/sharedWith/${targetUserId}`] = null;
+            updates[`trips/${currentTripId}/walletPermissions/${targetUserId}/${currentUserId}`] = null;
+
+            try {
+                await update(ref(db), updates);
+                renderSharedAccessList();
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao remover acesso.");
+            }
+        };
 
     </script>
 
