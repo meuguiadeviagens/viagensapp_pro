@@ -9633,7 +9633,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 if (!myExpensesExpensesRef || !expenseId) return;
                 
                 // Cria a referência direta para o item
-                const expenseToDeleteRef = ref(db, `users/${currentUserId}/myExpenses/${currentTripId}/expenses/${expenseId}`);
+                const expenseToDeleteRef = ref(db, `trips/${currentTripId}/privateWallets/${currentWalletOwnerId}/expenses/${expenseId}`);
                 
                 try {
                     await remove(expenseToDeleteRef);
@@ -9723,7 +9723,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             };
 
             try {
-                const expenseToUpdateRef = ref(db, `users/${currentUserId}/myExpenses/${currentTripId}/expenses/${expenseId}`);
+                const expenseToUpdateRef = ref(db, `trips/${currentTripId}/privateWallets/${currentWalletOwnerId}/expenses/${expenseId}`);
                 await update(expenseToUpdateRef, updatedExpense);
                 
                 closeModal('edit-my-expense-modal');
