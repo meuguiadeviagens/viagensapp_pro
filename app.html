@@ -725,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.4 | 28/12/2025, 18:00</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.4 | 27/12/2025, 18:00</p>
             </main>
         </div>
 
@@ -9296,60 +9296,79 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         window.toggleExpensesMenu = async () => {
             const menu = document.getElementById('expenses-menu');
             const button = document.getElementById('expenses-menu-btn');
-            
             if (!menu || !button) return;
 
             if (menu.classList.contains('hidden')) {
-                // 1. Posiciona o menu
+                // Posiciona o menu
                 const rect = button.getBoundingClientRect();
                 menu.style.left = `${rect.left}px`;
                 menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
-                
-                // 2. Verifica carteiras compartilhadas com o usuário atual
+
                 const sharedListContainer = document.getElementById('shared-wallets-list');
                 const sharedMenuContainer = document.getElementById('shared-wallets-menu-container');
+                
                 sharedListContainer.innerHTML = '<p class="text-xs text-slate-400 px-4 py-2">Carregando...</p>';
                 sharedMenuContainer.classList.remove('hidden');
 
                 try {
-                    // Busca permissões: trips/{tripId}/walletPermissions/{meuId}
-                    const permissionsRef = ref(db, `trips/${currentTripId}/walletPermissions/${currentUserId}`);
-                    const snapshot = await get(permissionsRef);
+                    // Busca TODAS as carteiras compartilhadas da viagem
+                    const sharedWalletsRef = ref(db, `trips/${currentTripId}/sharedWallets`);
+                    const snapshot = await get(sharedWalletsRef);
                     
-                    sharedListContainer.innerHTML = '';
-                    
-                    if (snapshot.exists()) {
-                        const permissions = snapshot.val(); // { "userIdDoAmigo": true }
-                        const ownerIds = Object.keys(permissions);
-                        
-                        // Busca os nomes desses IDs na lista de viajantes da viagem
-                        const trip = tripsData.find(t => t.id === currentTripId);
-                        const travelers = trip.travelers || [];
+                    sharedListContainer.innerHTML = ''; // Limpa loading
 
-                        if (ownerIds.length > 0) {
-                            ownerIds.forEach(ownerId => {
-                                const traveler = travelers.find(t => t.uid === ownerId);
-                                const travelerName = traveler ? traveler.name : 'Usuário Desconhecido';
+                    let hasWallets = false;
+
+                    if (snapshot.exists()) {
+                        const wallets = snapshot.val();
+                        
+                        Object.entries(wallets).forEach(([walletId, walletData]) => {
+                            // Verifica se EU sou membro desta carteira
+                            if (walletData.members && walletData.members[currentUserId]) {
+                                hasWallets = true;
                                 
-                                const item = document.createElement('a');
-                                item.href = "javascript:void(0);";
-                                item.className = "block px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50 font-medium flex items-center gap-2";
-                                item.innerHTML = `
+                                // Cria o item da lista
+                                const itemContainer = document.createElement('div');
+                                itemContainer.className = "flex items-center justify-between px-4 py-2 hover:bg-indigo-50 border-b border-slate-100 last:border-0";
+
+                                // Botão para abrir a carteira
+                                const linkBtn = document.createElement('a');
+                                linkBtn.href = "javascript:void(0);";
+                                linkBtn.className = "text-sm text-indigo-700 font-medium flex items-center gap-2 flex-grow truncate";
+                                linkBtn.innerHTML = `
                                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8"/><line x1="19" x2="19" y1="14"/></svg>
-                                    Despesas de ${travelerName.split(' ')[0]}
+                                    ${walletData.name}
                                 `;
-                                item.onclick = () => {
-                                    openMyExpensesModal(ownerId, travelerName);
+                                linkBtn.onclick = () => {
+                                    // Abre como tipo 'shared', passando o ID e Nome
+                                    openMyExpensesModal(walletId, walletData.name, 'shared');
                                     toggleExpensesMenu();
                                 };
-                                sharedListContainer.appendChild(item);
-                            });
-                        } else {
-                            sharedMenuContainer.classList.add('hidden');
-                        }
-                    } else {
+
+                                itemContainer.appendChild(linkBtn);
+
+                                // Botão de Excluir (Só aparece se eu for o criador ou dono da viagem)
+                                // Para simplificar, vamos permitir que qualquer membro exclua por enquanto,
+                                // ou você pode checar: if (walletData.createdBy === currentUserId)
+                                const deleteBtn = document.createElement('button');
+                                deleteBtn.className = "text-slate-400 hover:text-red-600 p-1 ml-2";
+                                deleteBtn.title = "Excluir Carteira Compartilhada";
+                                deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+                                deleteBtn.onclick = (e) => {
+                                    e.stopPropagation();
+                                    deleteSharedWallet(walletId, walletData.name);
+                                };
+
+                                itemContainer.appendChild(deleteBtn);
+                                sharedListContainer.appendChild(itemContainer);
+                            }
+                        });
+                    }
+
+                    if (!hasWallets) {
                         sharedMenuContainer.classList.add('hidden');
                     }
+
                 } catch (e) {
                     console.error(e);
                     sharedMenuContainer.classList.add('hidden');
@@ -9381,48 +9400,25 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         }
 
         /**
-        * Configura os listeners (onValue) para despesas E categorias.
-        */
-        function setupMyExpensesListeners(walletOwnerId, tripId) {
+         * Configura os listeners para qualquer carteira (privada ou compartilhada)
+         * baseada no caminho (dbPath) fornecido.
+         */
+        function setupMyExpensesListeners(dbPath) {
             // Desliga listeners antigos se houver
             if (myExpensesExpensesRef) off(myExpensesExpensesRef);
             if (myExpensesCategoriesRef) off(myExpensesCategoriesRef);
 
-            // NOVA ESTRUTURA: trips/{tripId}/privateWallets/{userId}
-            // Isso permite que as regras de segurança do Firebase (se configuradas para 'trips' serem públicas aos membros) funcionem.
-            const basePath = `trips/${tripId}/privateWallets/${walletOwnerId}`;
-            
-            myExpensesExpensesRef = ref(db, `${basePath}/expenses`);
-            myExpensesCategoriesRef = ref(db, `${basePath}/categories`);
-
-            // --- LÓGICA DE MIGRAÇÃO AUTOMÁTICA ---
-            // Apenas se for a MINHA carteira, verificamos se preciso migrar dados do local antigo
-            if (walletOwnerId === currentUserId) {
-                get(myExpensesExpensesRef).then(async (newSnapshot) => {
-                    if (!newSnapshot.exists()) {
-                        // Se não tem dados no novo local, verifica o antigo
-                        const oldPathRef = ref(db, `users/${currentUserId}/myExpenses/${tripId}`);
-                        const oldSnapshot = await get(oldPathRef);
-                        
-                        if (oldSnapshot.exists()) {
-                            console.log("Migrando despesas para nova estrutura compartilhável...");
-                            const oldData = oldSnapshot.val();
-                            
-                            // Copia para o novo local
-                            await set(ref(db, basePath), oldData);
-                            
-                            // Opcional: Remove do local antigo para evitar duplicação futura
-                            // await remove(oldPathRef); 
-                        }
-                    }
-                });
-            }
-            // --- FIM MIGRAÇÃO ---
+            // Agora usamos o caminho passado como argumento
+            myExpensesExpensesRef = ref(db, `${dbPath}/expenses`);
+            myExpensesCategoriesRef = ref(db, `${dbPath}/categories`);
 
             onValue(myExpensesExpensesRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const expensesObject = snapshot.val();
-                    myExpensesData = Object.keys(expensesObject).map(key => ({ id: key, ...expensesObject[key] }));
+                    myExpensesData = Object.keys(expensesObject).map(key => ({
+                        id: key,
+                        ...expensesObject[key]
+                    }));
                 } else {
                     myExpensesData = [];
                 }
@@ -9432,12 +9428,15 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             onValue(myExpensesCategoriesRef, (snapshot) => {
                 if (snapshot.exists()) {
                     const categoriesObject = snapshot.val();
-                    myExpensesCategories = Object.keys(categoriesObject).map(key => ({ id: key, ...categoriesObject[key] }));
+                    myExpensesCategories = Object.keys(categoriesObject).map(key => ({
+                        id: key,
+                        ...categoriesObject[key]
+                    }));
                 } else {
                     myExpensesCategories = [];
                 }
                 populateMyExpenseCategorySelect('my-expense-category', 'geral');
-                // Se estiver editando, atualiza o select do modal de edição também
+                
                 if (!document.getElementById('edit-my-expense-modal').classList.contains('hidden') && currentEditingMyExpenseId) {
                     const expense = myExpensesData.find(e => e.id === currentEditingMyExpenseId);
                     populateMyExpenseCategorySelect('edit-my-expense-category', expense?.categoryId || 'geral');
@@ -9563,43 +9562,44 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             });
         }
 
-        /**
-        * Função principal para abrir o modal "Minhas Despesas". (MODIFICADA)
-        */
-        let currentWalletOwnerId = null;
+        // Variáveis globais de controle
+        let currentWalletPath = null;
+        let currentWalletType = 'private'; // 'private' ou 'shared'
 
-        window.openMyExpensesModal = (ownerId = null, ownerName = null) => {
+        window.openMyExpensesModal = (walletId = null, walletName = null, type = 'private') => {
             const trip = tripsData.find(t => t.id === currentTripId);
             if (!trip) return;
 
-            // Se ownerId for nulo, é a MINHA carteira
-            currentWalletOwnerId = ownerId || currentUserId;
-            const isMyWallet = (currentWalletOwnerId === currentUserId);
+            currentWalletType = type;
 
-            // Configura Título e Botão de Compartilhar
+            // Configura UI baseada no tipo
             const titleEl = document.getElementById('my-expenses-title');
             const shareBtn = document.getElementById('share-wallet-btn');
-            
-            if (isMyWallet) {
-                titleEl.textContent = "Minhas Despesas";
+
+            if (type === 'private') {
+                // Modo Privado: O ID é o ID do usuário (currentUserId)
+                currentWalletPath = `trips/${currentTripId}/privateWallets/${currentUserId}`;
+                titleEl.textContent = "Minhas Despesas (Privado)";
                 titleEl.classList.remove('text-indigo-700');
                 titleEl.classList.add('text-slate-800');
-                shareBtn.classList.remove('hidden'); // Eu posso compartilhar minha carteira
+                shareBtn.classList.remove('hidden'); // Pode compartilhar para virar pública
+                shareBtn.textContent = "Transformar em Compartilhada";
             } else {
-                titleEl.textContent = `Despesas de ${ownerName}`;
+                // Modo Compartilhado: O ID é o ID da carteira criada (pushId)
+                currentWalletPath = `trips/${currentTripId}/sharedWallets/${walletId}`;
+                titleEl.textContent = walletName || "Carteira Compartilhada";
                 titleEl.classList.remove('text-slate-800');
                 titleEl.classList.add('text-indigo-700');
-                shareBtn.classList.add('hidden'); // Não posso compartilhar a carteira dos outros
+                shareBtn.classList.add('hidden'); // Já é compartilhada
             }
 
             document.getElementById('my-expenses-trip-name').textContent = trip.name;
             document.getElementById('add-my-expense-form').reset();
-
             populateMyExpenseCurrencySelect('my-expense-currency', 'BRL');
             populateMyExpenseCategorySelect('my-expense-category', 'geral');
 
-            // Inicia listeners apontando para o dono correto
-            setupMyExpensesListeners(currentWalletOwnerId, currentTripId);
+            // Inicia listeners com o caminho calculado
+            setupMyExpensesListeners(currentWalletPath);
             
             openModal('my-expenses-modal');
         };
@@ -9633,7 +9633,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 if (!myExpensesExpensesRef || !expenseId) return;
                 
                 // Cria a referência direta para o item
-                const expenseToDeleteRef = ref(db, `trips/${currentTripId}/privateWallets/${currentWalletOwnerId}/expenses/${expenseId}`);
+                const expenseToDeleteRef = ref(db, `${currentWalletPath}/expenses/${expenseId}`);
                 
                 try {
                     await remove(expenseToDeleteRef);
@@ -9723,7 +9723,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             };
 
             try {
-                const expenseToUpdateRef = ref(db, `trips/${currentTripId}/privateWallets/${currentWalletOwnerId}/expenses/${expenseId}`);
+                const expenseToUpdateRef = ref(db, `${currentWalletPath}/expenses/${expenseId}`);
                 await update(expenseToUpdateRef, updatedExpense);
                 
                 closeModal('edit-my-expense-modal');
@@ -10284,24 +10284,62 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         }
 
         window.confirmShareWallet = async () => {
-            const targetUserId = document.getElementById('share-wallet-user-select').value;
-            if (!targetUserId) return alert("Selecione um viajante.");
+            const selectedUserId = document.getElementById('share-wallet-user-select').value;
+            if (!selectedUserId) return;
 
-            const updates = {};
-            // 1. Marca na minha carteira que compartilhei com ele
-            updates[`trips/${currentTripId}/privateWallets/${currentUserId}/sharedWith/${targetUserId}`] = true;
-            
-            // 2. Cria um índice reverso para ele saber que tem permissão de ver minha carteira
-            // Isso facilita na hora de montar o menu dele
-            updates[`trips/${currentTripId}/walletPermissions/${targetUserId}/${currentUserId}`] = true;
+            const trip = tripsData.find(t => t.id === currentTripId);
+            // Pega o nome do viajante selecionado para dar nome à carteira
+            const selectedTraveler = trip.travelers.find(t => t.uid === selectedUserId);
+            const partnerName = selectedTraveler ? selectedTraveler.name.split(' ')[0] : 'Viajante';
+            const myName = currentUserProfile.fullName.split(' ')[0];
+
+            // Nome sugerido para a nova carteira
+            const newWalletName = `Carteira: ${myName} & ${partnerName}`;
+
+            if (!confirm(`Isso criará uma NOVA carteira compartilhada chamada "${newWalletName}" com todos os seus itens atuais, e sua carteira privada ficará vazia novamente. Deseja continuar?`)) {
+                return;
+            }
 
             try {
-                await update(ref(db), updates);
-                alert("Carteira compartilhada com sucesso!");
-                renderSharedAccessList(); // Atualiza a lista visual
-            } catch (e) {
-                console.error(e);
-                alert("Erro ao compartilhar.");
+                // 1. Ler as despesas atuais da carteira privada
+                const privateWalletPath = `trips/${currentTripId}/privateWallets/${currentUserId}`;
+                const snapshot = await get(ref(db, privateWalletPath));
+                const privateData = snapshot.val() || {};
+                
+                // 2. Criar referência para a nova Carteira Compartilhada
+                const newWalletRef = push(ref(db, `trips/${currentTripId}/sharedWallets`));
+                const newWalletId = newWalletRef.key;
+
+                // 3. Montar o objeto da nova carteira
+                const newWalletData = {
+                    name: newWalletName,
+                    createdBy: currentUserId,
+                    createdAt: serverTimestamp(),
+                    members: {
+                        [currentUserId]: true,     // Eu tenho acesso
+                        [selectedUserId]: true     // O convidado tem acesso
+                    },
+                    // Copia as despesas e categorias existentes
+                    expenses: privateData.expenses || {},
+                    categories: privateData.categories || {}
+                };
+
+                // 4. Salvar a nova carteira
+                await set(newWalletRef, newWalletData);
+
+                // 5. LIMPAR a carteira privada antiga (resetar)
+                // Removemos apenas expenses e categories, mantendo o nó pai se quiser
+                await remove(ref(db, `${privateWalletPath}/expenses`));
+                // Opcional: limpar categorias personalizadas também se quiser resetar tudo
+                // await remove(ref(db, `${privateWalletPath}/categories`)); 
+
+                alert("Carteira compartilhada criada com sucesso!");
+                closeModal('share-wallet-modal');
+                closeModal('my-expenses-modal'); // Fecha para forçar atualização ou reabrir se quiser
+
+            } catch (error) {
+                console.error("Erro ao compartilhar carteira:", error);
+                alert("Erro ao criar carteira compartilhada.");
             }
         };
 
@@ -10319,6 +10357,24 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             } catch (e) {
                 console.error(e);
                 alert("Erro ao remover acesso.");
+            }
+        };
+
+        window.deleteSharedWallet = async (walletId, walletName) => {
+            const confirmMessage = `Tem certeza que deseja excluir a carteira "${walletName}"? Todas as despesas dentro dela serão apagadas para todos os participantes.`;
+            
+            if (confirm(confirmMessage)) {
+                try {
+                    const walletRef = ref(db, `trips/${currentTripId}/sharedWallets/${walletId}`);
+                    await remove(walletRef);
+                    // O menu não fecha automaticamente, então podemos atualizá-lo ou fechá-lo
+                    const menu = document.getElementById('expenses-menu');
+                    menu.classList.add('hidden'); // Fecha o menu para forçar reload na próxima abertura
+                    alert("Carteira excluída com sucesso.");
+                } catch (error) {
+                    console.error("Erro ao excluir carteira:", error);
+                    alert("Erro ao excluir carteira.");
+                }
             }
         };
 
