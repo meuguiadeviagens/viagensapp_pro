@@ -725,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.4 | 27/12/2025, 18:00</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.6 | 29/12/2025, 18:00</p>
             </main>
         </div>
 
@@ -9682,6 +9682,16 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 e.target.reset();
                 populateMyExpenseCurrencySelect('my-expense-currency', 'BRL');
                 populateMyExpenseCategorySelect('my-expense-category', 'geral'); 
+
+                // --- ADICIONE ESTE BLOCO ---
+                document.getElementById('info-modal-title').innerText = "Sucesso!";
+                document.getElementById('info-modal-message').innerText = "Despesa adicionada com sucesso!";
+                openModal('info-modal');
+                
+                // (Opcional) Fecha automaticamente após 1.5 segundos para não atrapalhar a digitação rápida
+                setTimeout(() => closeModal('info-modal'), 1500); 
+                // ---------------------------
+
             } catch (error) {
                 console.error("Erro ao adicionar despesa pessoal:", error);
                 alert("Não foi possível adicionar a despesa.");
@@ -9728,6 +9738,16 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 
                 closeModal('edit-my-expense-modal');
                 currentEditingMyExpenseId = null;
+
+                // --- ADICIONE ESTE BLOCO ---
+                document.getElementById('info-modal-title').innerText = "Sucesso!";
+                document.getElementById('info-modal-message').innerText = "Despesa atualizada com sucesso!";
+                openModal('info-modal');
+                
+                // (Opcional) Fecha automaticamente após 1.5 segundos
+                setTimeout(() => closeModal('info-modal'), 1500);
+                // ---------------------------
+
             } catch (error) {
                 console.error("Erro ao salvar despesa pessoal:", error);
                 alert("Não foi possível salvar as alterações.");
