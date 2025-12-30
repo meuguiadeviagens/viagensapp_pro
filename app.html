@@ -727,7 +727,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.8 | 30/12/2025, 18:35</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.9 | 30/12/2025, 20:35</p>
             </main>
         </div>
 
@@ -5733,8 +5733,17 @@ window.addEventListener('popstate', (event) => {
             let totalCost = 0;
             
             lodgings.forEach(l => {
+                // --- CORREÇÃO: Adicione esta verificação de segurança ---
+                if (!l.checkinDate || !l.checkoutDate) return; 
+                // --------------------------------------------------------
+
                 let checkin = new Date(l.checkinDate + 'T00:00:00Z');
                 const checkout = new Date(l.checkoutDate + 'T00:00:00Z');
+
+                // --- CORREÇÃO: Verifique se as datas são válidas ---
+                if (isNaN(checkin.getTime()) || isNaN(checkout.getTime())) return;
+                // ---------------------------------------------------
+
                 while (checkin < checkout) {
                     coveredNights.add(checkin.toISOString().split('T')[0]);
                     checkin.setUTCDate(checkin.getUTCDate() + 1);
@@ -8104,11 +8113,19 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     Object.keys(updatedActivities).forEach(key => {
                         const activity = updatedActivities[key];
                         if (activity.date) {
-                            // 1. Converte a data da atividade para timestamp
+                            // 1. Tenta criar a data
                             const actDate = new Date(activity.date + 'T00:00:00Z').getTime();
-                            // 2. Aplica a diferença
+
+                            // 2. Se a data original for inválida, pula essa atividade (não tenta reagendar)
+                            if (isNaN(actDate)) return; 
+
+                            // 3. Aplica a diferença
                             const newActDate = new Date(actDate + timeDiff);
-                            // 3. Converte de volta para string YYYY-MM-DD
+
+                            // 4. Se o resultado for inválido, também protege
+                            if (isNaN(newActDate.getTime())) return;
+
+                            // 5. Converte de volta com segurança
                             activity.date = newActDate.toISOString().split('T')[0];
                         }
                     });
