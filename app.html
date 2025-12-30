@@ -725,7 +725,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.6 | 29/12/2025, 18:00</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.7 | 30/12/2025, 18:00</p>
             </main>
         </div>
 
@@ -2395,6 +2395,28 @@
                 <button onclick="closeModal('share-wallet-modal')" class="text-slate-500 hover:text-slate-800 text-sm font-medium">Fechar</button>
             </div>
         </div>
+
+        <div id="offline-alert" class="hidden fixed bottom-4 right-4 z-[9999] bg-red-600 text-white px-4 py-3 rounded-lg shadow-2xl flex items-start gap-3 transition-all duration-300 max-w-sm border border-red-700">
+            <div class="flex-shrink-0 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
+                </svg>
+            </div>
+            
+            <div class="flex-1">
+                <h3 class="font-bold text-sm">Sem conexão</h3>
+                <p class="text-xs mt-1 text-red-50 leading-relaxed">
+                    Você está offline. Anotações, edições e novas despesas <strong>não serão salvas</strong>. Por favor, use um documento externo temporariamente.
+                </p>
+            </div>
+
+            <button onclick="document.getElementById('offline-alert').classList.add('hidden')" class="text-white hover:text-red-200 focus:outline-none transition-colors p-1 -mt-1 -mr-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </div>
+
     </div>
 
 
@@ -2557,6 +2579,29 @@
                 console.error("Erro ao salvar log de atividade:", error);
             }
         }
+
+        /**
+         * Verifica o estado da conexão e mostra/esconde o alerta.
+         */
+        function checkConnectivity() {
+            const alertBox = document.getElementById('offline-alert');
+            
+            if (!navigator.onLine) {
+                // Se estiver SEM internet, remove a classe 'hidden' para mostrar o alerta
+                alertBox.classList.remove('hidden');
+            } else {
+                // Se a internet VOLTAR, esconde o alerta automaticamente (boa prática de UX)
+                alertBox.classList.add('hidden');
+            }
+        }
+
+        // 1. Verificação Instantânea (Event Listeners)
+        // Dispara assim que o navegador detecta que caiu ou voltou
+        window.addEventListener('offline', checkConnectivity); // Caiu a net -> Mostra
+        window.addEventListener('online', checkConnectivity);  // Voltou a net -> Esconde
+
+        // 2. Verificação inicial ao carregar a página
+        window.addEventListener('load', checkConnectivity);
 
         /**
          * Abre o modal "Novidades" e renderiza o log de atividades.
