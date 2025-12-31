@@ -727,7 +727,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.10 | 31/12/2025, 09:15</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.11 | 31/12/2025, 16:15</p>
             </main>
         </div>
 
@@ -891,10 +891,10 @@
             <section id="pendencias-panel" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mt-6 mb-6 transition-all duration-300">
                 <header class="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50 transition-colors" onclick="toggleGenericPanel('pendencias-panel')">
                     <div class="flex items-center gap-3">
-                        <div class="bg-red-100 p-2 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                        <div id="pendencias-icon-bg" class="bg-red-100 p-2 rounded-lg transition-colors">
+                            <svg id="pendencias-icon-svg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 transition-colors"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
                         </div>
-                        <h2 class="text-lg font-bold text-red-800">Pendências</h2>
+                        <h2 id="pendencias-title" class="text-lg font-bold text-red-800 transition-colors">Pendências</h2>
                     </div>
                     <button id="pendencias-toggle-btn" class="text-slate-400 hover:text-slate-600 transition-transform duration-300">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
@@ -10521,12 +10521,36 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         // 1. Renderizar Lista (Botões sempre visíveis)
         window.renderPendencias = (trip) => {
             const list = document.getElementById('pendencias-list');
-            if (!list) return;
-            list.innerHTML = '';
+            
+            // Captura os elementos do cabeçalho pelos novos IDs
+            const iconBg = document.getElementById('pendencias-icon-bg');
+            const iconSvg = document.getElementById('pendencias-icon-svg');
+            const title = document.getElementById('pendencias-title');
 
+            if (!list) return;
+            
+            list.innerHTML = '';
             const pendencias = trip.pendencias || [];
 
+            // LÓGICA DE CORES
             if (pendencias.length === 0) {
+                // --- ESTADO: TUDO RESOLVIDO (Verde/Preto) ---
+                if (iconBg) {
+                    iconBg.classList.remove('bg-red-100');
+                    iconBg.classList.add('bg-green-100');
+                }
+                if (iconSvg) {
+                    iconSvg.classList.remove('text-red-600');
+                    iconSvg.classList.add('text-green-600');
+                    // Opcional: Trocar ícone de alerta por check
+                    iconSvg.innerHTML = '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'; 
+                }
+                if (title) {
+                    title.classList.remove('text-red-800');
+                    title.classList.add('text-slate-800'); // Cor preta/cinza escuro
+                }
+
+                // Mensagem de lista vazia
                 list.innerHTML = `
                     <li class="text-center py-4 bg-green-50 rounded-lg border border-green-100">
                         <p class="text-green-700 font-medium flex items-center justify-center gap-2">
@@ -10535,32 +10559,46 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                         </p>
                     </li>
                 `;
-                return;
-            }
+            } else {
+                // --- ESTADO: COM PENDÊNCIAS (Vermelho) ---
+                if (iconBg) {
+                    iconBg.classList.remove('bg-green-100');
+                    iconBg.classList.add('bg-red-100');
+                }
+                if (iconSvg) {
+                    iconSvg.classList.remove('text-green-600');
+                    iconSvg.classList.add('text-red-600');
+                    // Volta para o ícone de alerta original
+                    iconSvg.innerHTML = '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>';
+                }
+                if (title) {
+                    title.classList.remove('text-slate-800');
+                    title.classList.add('text-red-800');
+                }
 
-            pendencias.forEach((item, index) => {
-                const li = document.createElement('li');
-                li.className = 'flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-red-200 transition-colors group';
-                
-                // AQUI MUDAMOS O CSS DOS BOTÕES: Removemos 'opacity-0' e 'group-hover'
-                li.innerHTML = `
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="bg-white p-2 rounded-full border border-slate-200 text-red-600">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                // Renderiza a lista de pendências
+                pendencias.forEach((item, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200 hover:border-red-200 transition-colors group';
+                    li.innerHTML = `
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <div class="bg-white p-2 rounded-full border border-slate-200 text-red-600">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                            </div>
+                            <span class="font-medium text-slate-700 truncate">${escapeHtml(item.name)}</span>
                         </div>
-                        <span class="font-medium text-slate-700 truncate">${escapeHtml(item.name)}</span>
-                    </div>
-                    <div class="flex items-center gap-2"> 
-                        <button onclick="openEditPendenciaModal(${index})" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-                        </button>
-                        <button onclick="deletePendencia(${index})" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                        </button>
-                    </div>
-                `;
-                list.appendChild(li);
-            });
+                        <div class="flex items-center gap-2">
+                            <button onclick="openEditPendenciaModal(${index})" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                            </button>
+                            <button onclick="deletePendencia(${index})" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            </button>
+                        </div>
+                    `;
+                    list.appendChild(li);
+                });
+            }
         }
 
         // 2. Adicionar Pendência (Com Registro em Novidades)
