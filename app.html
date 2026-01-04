@@ -727,7 +727,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.11 | 31/12/2025, 16:15</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.12 | 04/01/2026, 15:28</p>
             </main>
         </div>
 
@@ -6016,6 +6016,7 @@ let dividerHtml = '';
             document.getElementById('documents-panel').classList.add('collapsed'); //remove mantém maximizado ao iniciar
             document.getElementById('spending-panel').classList.add('collapsed'); // add faz iniciar minimizado
             document.getElementById('notes-panel').classList.remove('collapsed');
+            document.getElementById('pendencias-panel').classList.add('collapsed');
 
             // Carrega os dados da viagem
             renderTripDetails(tripId);
@@ -10531,6 +10532,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             
             list.innerHTML = '';
             const pendencias = trip.pendencias || [];
+
+            // Atualiza o título com a contagem
+            if (title) {
+                title.textContent = `Pendências (${pendencias.length})`;
+            }
 
             // LÓGICA DE CORES
             if (pendencias.length === 0) {
