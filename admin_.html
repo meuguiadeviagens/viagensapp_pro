@@ -668,6 +668,11 @@
                         uid,
                         name: profile.fullName || "Sem nome",
                         email: profile.email || "Sem email",
+                        phone: profile.phone || profile.phoneNumber || profile.telefone || "Não informado",
+                        country: profile.country || profile.pais || "Não informado",
+                        city: profile.city || profile.cidade || "",
+                        state: profile.state || profile.estado || "",
+                        passport: profile.passport || profile.passaporte || "Não informado",
                         licenseType: license.type || 'gratuito',
                         expires: license.expires ? new Date(license.expires).toLocaleDateString('pt-BR') : 'N/A',
                         expiresTimestamp: license.expires || null,
@@ -1329,6 +1334,21 @@
                 }
             }
 
+            let locationDisplay = [];
+                if (user.city) locationDisplay.push(user.city);
+                if (user.state) locationDisplay.push(user.state);
+                
+                let locationString = locationDisplay.join(' / '); // Junta cidade e estado com barra
+                
+                if (user.country && user.country !== "Não informado") {
+                    // Se tiver texto antes, adiciona traço. Se não, só põe o país.
+                    locationString += (locationString ? ` - ${user.country}` : user.country);
+                } 
+                
+                if (!locationString) {
+                    locationString = "Não informado";
+                }
+
             detailsContent.innerHTML = `
                 <div class="flex flex-col border-b pb-3">
                     <span class="text-sm font-medium text-slate-500">Nome</span>
@@ -1338,11 +1358,25 @@
                     <span class="text-sm font-medium text-slate-500">Email</span>
                     <p class="text-base text-slate-700 break-words">${user.email}</p>
                 </div>
+                
+                <div class="grid grid-cols-2 gap-4 border-b pb-3">
+                    <div class="flex flex-col">
+                        <span class="text-sm font-medium text-slate-500">Telefone</span>
+                        <p class="text-base text-slate-700">${user.phone}</p>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-medium text-slate-500">Passaporte</span>
+                        <p class="text-base text-slate-700">${user.passport}</p>
+                    </div>
+                </div>
+                <div class="flex flex-col border-b pb-3">
+                    <span class="text-sm font-medium text-slate-500">Localização (Cidade/Estado - País)</span>
+                    <p class="text-base text-slate-700">${locationString}</p>
+                </div>
                 <div class="flex flex-col border-b pb-3">
                     <span class="text-sm font-medium text-slate-500">UID</span>
                     <p class="text-sm text-slate-600 font-mono break-words">${user.uid}</p>
                 </div>
-                <!-- ADICIONE ESTE BLOCO -->
                 <div class="flex flex-col border-b pb-3">
                     <span class="text-sm font-medium text-slate-500">Conta Criada em</span>
                     <p class="text-base text-slate-700">${accountDateFormatted}</p>
@@ -2399,7 +2433,7 @@
         // --- FIM: LÓGICA DE NOTIFICAÇÃO EM MASSA ---
 
     </script>
-<br><center><p>V. 1.0.1 - 02/12/2025 18:06</p></center><br>
+<br><center><p>V. 1.2.0 - 20/01/2026 10:42</p></center><br>
 
 <script>
       if ('serviceWorker' in navigator) {
