@@ -727,7 +727,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.12 | 04/01/2026, 15:28</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.13 | 20/01/2026, 09:23</p>
             </main>
         </div>
 
@@ -2307,7 +2307,7 @@
         <div id="upgrade-plan-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
         <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-3xl m-4 max-h-[90vh] overflow-y-auto">
             <h3 class="text-2xl font-semibold mb-4">Adquirir Acesso Premium</h3>
-            <p class="text-slate-600 mb-6">No plano gratuito, a duração máxima da viagem é de 7 dias.<br>Desbloqueie viagens com duração ilimitada e planeje sem restrições.</p>
+            <p class="text-slate-600 mb-6">No plano gratuito, você só poderá criar/manter 1 viagem por ano.<br>Por favor, exclua a viagem existente antes de criar uma nova.<br>Você também poderá desbloquear viagens com duração ilimitada e planejar sem restrições.</p>
             
 
             <div id="credit-usage-section" class="hidden mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6 shadow-sm">
@@ -7842,15 +7842,40 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 const MS_PER_DAY = 1000 * 60 * 60 * 24;
                 const diffDays = Math.floor((utc2 - utc1) / MS_PER_DAY) + 1;
                 
-                if (diffDays > 7) {
-                    //alert("Plano Gratuito: A duração máxima da viagem é de 7 dias...");
-                    
-                    tripIdPendingUpgrade = newTripId;     
-                    pendingFormId = 'add-trip-form'; // <-- ADICIONE ISSO
-                    
-                    prepareUpgradeModal();
-                    openModal('upgrade-plan-modal'); 
-                    return;
+               //LIMITAÇão DE VIAGENS DE 7 DIAS
+                // if (diffDays > 7) {
+               //     //alert("Plano Gratuito: A duração máxima da viagem é de 7 dias...");
+               //     
+               //     tripIdPendingUpgrade = newTripId;     
+               //     pendingFormId = 'add-trip-form'; // <-- ADICIONE ISSO
+               //     
+               //     prepareUpgradeModal();
+               //     openModal('upgrade-plan-modal'); 
+                //    return;
+              //  }
+
+              // Pega o ano da data de início escolhida pelo usuário
+                // Adicionamos 'T00:00:00' para garantir a leitura correta do ano localmente
+                const newTripYear = new Date(startDateStr + 'T00:00:00').getFullYear();
+
+                // Filtra as viagens que já existem na memória (tripsData)
+                const tripsInSameYear = tripsData.filter(t => {
+                    // 1. A viagem deve pertencer ao usuário ('owner')
+                    // Se o usuário for apenas convidado (viewer/editor), não conta para a cota dele.
+                    const isOwner = t.members && t.members[user.uid] === 'owner';
+                    if (!isOwner) return false;
+
+                    // 2. A viagem deve ser no mesmo ano da nova
+                    // t.startDate geralmente é salvo como timestamp no Firebase
+                    const tDate = new Date(t.startDate); 
+                    return tDate.getFullYear() === newTripYear;
+                });
+
+               // Se já existir 1 ou mais viagens próprias neste ano, bloqueia.
+                if (tripsInSameYear.length >= 1) {
+                    //alert(`⚠️ Limite do Plano Gratuito\n\nVocê pode criar/manter apenas 1 viagem por ano no plano gratuito.\nVocê já possui uma viagem cadastrada em ${newTripYear}. Edite ela para corresponder à nova viagem ou assine um plano para criar viagens ilimitadas.`);
+                    openModal('upgrade-plan-modal');
+                    return; // Interrompe o salvamento
                 }
             }
 
@@ -8086,16 +8111,37 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     
                     const diffDays = Math.floor((utc2 - utc1) / MS_PER_DAY) + 1;
 
-                    if (diffDays > 7) {
-                        //alert("Plano Gratuito: A duração máxima da viagem é de 7 dias...");
-                        
-                        tripIdPendingUpgrade = currentTripId;
-                        pendingFormId = 'edit-trip-form'; // <-- ADICIONE ISSO
-                        
-                        prepareUpgradeModal();
+                    const newTripYear = new Date(startDateStr + 'T00:00:00').getFullYear();
+
+                    // Verifica se ao mudar a data, o usuário está invadindo um ano onde já tem viagem
+                    const tripsInSameYear = tripsData.filter(t => {
+                        // Ignora a própria viagem que está sendo editada
+                        if (t.id === currentTripId) return false;
+
+                        const isOwner = t.members && t.members[auth.currentUser.uid] === 'owner';
+                        if (!isOwner) return false;
+
+                        const tDate = new Date(t.startDate);
+                        return tDate.getFullYear() === newTripYear;
+                    });
+
+                  //  if (diffDays > 7) {
+                  //      //alert("Plano Gratuito: A duração máxima da viagem é de 7 dias...");
+                  //      
+                  //      tripIdPendingUpgrade = currentTripId;
+                  //      pendingFormId = 'edit-trip-form'; // <-- ADICIONE ISSO
+                  //      
+                  //      prepareUpgradeModal();
+                  //      openModal('upgrade-plan-modal');
+                  //      return;
+                  //  }
+
+                    if (tripsInSameYear.length >= 1) {
+                        //alert(`⚠️ Limite do Plano Gratuito\n\nVocê já possui outra viagem em ${newTripYear}. Não é possível mover esta viagem para esse ano.`);
                         openModal('upgrade-plan-modal');
-                        return;
+                        return;                        
                     }
+
                 }
                 
                 // --- LÓGICA PARA MOVER AS ATIVIDADES ---
