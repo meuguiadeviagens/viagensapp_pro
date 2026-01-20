@@ -727,7 +727,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.14 | 20/01/2026, 11:23</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.15 | 20/01/2026, 18:23</p>
             </main>
         </div>
 
@@ -767,6 +767,10 @@
                         <h3 class="text-xl font-bold text-slate-800">Dados de Emergência</h3>
                         <p class="text-xs text-slate-500">Selecione um viajante para ver/editar.</p>
                     </div>
+                    <button onclick="addEmergencyDependent()" class="mt-4 w-full flex items-center justify-center gap-2 py-2 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:border-blue-400 hover:text-blue-600 transition-colors font-medium">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="16"/><line x1="8" x2="16" y1="12" y2="12"/></svg>
+                        Adicionar Dependente / Outro
+                    </button>
                     <button onclick="closeModal('emergency-list-modal')" class="ml-auto text-slate-400 hover:text-slate-600">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                     </button>
@@ -797,6 +801,18 @@
                     placeholder="Ex:&#10;Passaporte: FA123456&#10;Seguro: Allianz 99999&#10;Alergia: Dipirona&#10;Contato Mãe: (61) 99999-9999"
                 ></textarea>
 
+                <div id="save-default-option-container" class="hidden mt-3 flex items-center gap-2 p-2 bg-blue-50 rounded-md border border-blue-100">
+                    <input type="checkbox" id="save-as-default-check" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <label for="save-as-default-check" class="text-sm text-blue-800 cursor-pointer select-none">
+                        Salvar estes dados no meu perfil para usar em outras viagens
+                    </label>
+                </div>
+
+                <button id="btn-load-saved-data" onclick="loadSavedEmergencyData()" class="hidden flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg transition-colors font-medium text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    Carregar Padrão
+                </button>
+                
                 <div class="pt-4 flex justify-end gap-3 mt-2">
                     <button type="button" onclick="saveTravelerDetails()" class="flex-1 sm:flex-none px-6 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors shadow-md">
                         Salvar Informações
@@ -2593,6 +2609,8 @@
         let tripIdPendingUpgrade = null;
         let pendingFormId = null; // <-- NOVA VARIÁVEL
         let currentEditingTravelerIndex = null;
+        let currentEditingEmergencyId = null;
+        let currentEditingEmergencyType = 'traveler'; // 'traveler' ou 'dependent'
 
 
         // Constante com as moedas permitidas
@@ -10816,7 +10834,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
         }
 
-        // 1. Abre a lista de nomes
+        // 1. Função para abrir a lista
         window.openEmergencyInfoModal = () => {
             const trip = tripsData.find(t => t.id === currentTripId);
             if (!trip) return;
@@ -10824,100 +10842,199 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const listContainer = document.getElementById('emergency-travelers-list');
             listContainer.innerHTML = '';
 
-            const travelers = trip.travelers || [];
+            // A. Lista Viajantes Cadastrados (Com login)
+            (trip.travelers || []).forEach(t => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-blue-50 cursor-pointer border border-slate-200 transition-colors';
+                item.onclick = () => openTravelerDetails(t.uid, t.name, 'traveler');
+                
+                // Verifica se já tem dados salvos para mostrar um ícone de "Check"
+                const hasData = trip.emergencyData && trip.emergencyData[t.uid];
+                const statusIcon = hasData 
+                    ? `<span class="text-green-600 bg-green-100 p-1 rounded-full"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>`
+                    : `<span class="text-slate-300"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>`;
 
-            if (travelers.length === 0) {
-                listContainer.innerHTML = '<div class="text-center p-6 text-slate-500 bg-slate-50 rounded-lg">Nenhum viajante cadastrado.</div>';
-            } else {
-                travelers.forEach((traveler, index) => {
-                    const item = document.createElement('button');
-                    // Estilo de botão de lista clicável
-                    item.className = "w-full flex items-center justify-between p-4 bg-white border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all group text-left shadow-sm";
-                    item.onclick = () => openTravelerDetails(index);
-                    
-                    const initials = traveler.name.substring(0, 2).toUpperCase();
-                    
-                    // Verifica se já tem info para mostrar um ícone indicativo
-                    const hasInfo = traveler.emergencyInfo && traveler.emergencyInfo.trim().length > 0;
-                    const statusIcon = hasInfo 
-                        ? `<span class="text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded-full flex items-center gap-1"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Info Salva</span>` 
-                        : `<span class="text-xs text-slate-400">Vazio</span>`;
-
-                    item.innerHTML = `
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-sm group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                ${initials}
-                            </div>
-                            <div>
-                                <div class="font-semibold text-slate-700 group-hover:text-blue-700">${traveler.name}</div>
-                                ${statusIcon}
-                            </div>
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
+                            ${t.name.substring(0,2).toUpperCase()}
                         </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-300 group-hover:text-blue-500"><path d="m9 18 6-6-6-6"/></svg>
-                    `;
-                    listContainer.appendChild(item);
+                        <span class="font-medium text-slate-700">${t.name}</span>
+                    </div>
+                    ${statusIcon}
+                `;
+                listContainer.appendChild(item);
+            });
+
+            // B. Lista Dependentes (Salvos na viagem, mas sem login)
+            if (trip.emergencyData) {
+                Object.entries(trip.emergencyData).forEach(([id, data]) => {
+                    if (data.type === 'dependent') {
+                        const item = document.createElement('div');
+                        item.className = 'flex items-center justify-between p-3 bg-orange-50 rounded-lg hover:bg-orange-100 cursor-pointer border border-orange-200 transition-colors mt-2';
+                        item.onclick = () => openTravelerDetails(id, data.name, 'dependent');
+                        
+                        item.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-orange-200 flex items-center justify-center text-orange-800 font-bold text-xs">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="font-medium text-slate-700">${data.name}</span>
+                                    <span class="text-[10px] uppercase font-bold text-orange-600 tracking-wide">Dependente</span>
+                                </div>
+                            </div>
+                            <button onclick="event.stopPropagation(); deleteDependent('${id}')" class="p-2 text-slate-400 hover:text-red-600"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/></svg></button>
+                        `;
+                        listContainer.appendChild(item);
+                    }
                 });
             }
-            
-            // Garante que o modal de detalhes esteja fechado e abre o de lista
-            closeModal('traveler-details-modal');
+
             openModal('emergency-list-modal');
         };
 
-        // 2. Abre o detalhe de um viajante específico
-        window.openTravelerDetails = (index) => {
-            const trip = tripsData.find(t => t.id === currentTripId);
-            if (!trip || !trip.travelers[index]) return;
-
-            currentEditingTravelerIndex = index;
-            const traveler = trip.travelers[index];
-
-            // Preenche os dados no modal 2
-            document.getElementById('detail-traveler-name').innerText = traveler.name;
-            document.getElementById('detail-traveler-info').value = traveler.emergencyInfo || '';
-
-            // Troca os modais (fecha lista, abre detalhe)
-            closeModal('emergency-list-modal');
-            // Pequeno delay para transição suave (opcional, mas evita bugs visuais de scroll)
-            setTimeout(() => openModal('traveler-details-modal'), 100);
-        };
-
-        // 3. Botão "Voltar" do modal de detalhes
-        window.backToEmergencyList = () => {
-            closeModal('traveler-details-modal');
-            setTimeout(() => openModal('emergency-list-modal'), 100);
-        };
-
-        // 4. Salvar no Firebase
-        window.saveTravelerDetails = async () => {
-            if (currentEditingTravelerIndex === null) return;
-
-            const infoText = document.getElementById('detail-traveler-info').value;
+        // 2. Adicionar Dependente
+        window.addEmergencyDependent = () => {
+            const name = prompt("Nome do dependente (ex: Filha, Avó):");
+            if (!name) return;
             
-            // Caminho exato no Firebase para atualizar SÓ o campo emergencyInfo desse viajante
-            // Isso é mais eficiente do que reescrever todo o objeto da viagem
-            const updates = {};
-            updates[`trips/${currentTripId}/travelers/${currentEditingTravelerIndex}/emergencyInfo`] = infoText;
+            // Gera ID único
+            const newId = `dep_${Date.now()}`;
+            // Abre direto o modal de edição
+            openTravelerDetails(newId, name, 'dependent');
+        };
 
-            const btn = document.querySelector('#traveler-details-modal button[onclick="saveTravelerDetails()"]');
-            const originalText = btn.innerText;
-            btn.innerText = "Salvando...";
-            btn.disabled = true;
+        // 3. Abrir Detalhes (Carrega Dados)
+        window.openTravelerDetails = async (id, name, type) => {
+            // 1. Define quem estamos editando nas variáveis globais
+            currentEditingEmergencyId = id;
+            currentEditingEmergencyType = type;
+            
+            // 2. Atualiza a interface básica (Nome e limpa o campo de texto)
+            document.getElementById('detail-traveler-name').textContent = name;
+            const textArea = document.getElementById('detail-traveler-info');
+            textArea.value = "Carregando...";
+
+            // 3. Referências aos elementos de controle (Checkbox e Botão de Carregar)
+            const checkboxContainer = document.getElementById('save-default-option-container');
+            const checkbox = document.getElementById('save-as-default-check');
+            const btnLoad = document.getElementById('btn-load-saved-data');
+            
+            // 4. Lógica de Visibilidade:
+            // Só mostramos as opções de "Perfil Padrão" (Salvar ou Carregar)
+            // se o usuário estiver editando a SI MESMO (type === 'traveler' e ID igual ao logado).
+            if (type === 'traveler' && id === currentUserId) {
+                // É o próprio usuário: Mostra tudo
+                checkboxContainer.classList.remove('hidden');
+                btnLoad.classList.remove('hidden'); 
+                
+                // Reseta o checkbox para desmarcado por segurança
+                checkbox.checked = false; 
+            } else {
+                // É outro viajante ou um dependente: Esconde tudo
+                checkboxContainer.classList.add('hidden');
+                btnLoad.classList.add('hidden');
+            }
+
+            // 5. Busca os dados JÁ SALVOS NESTA VIAGEM (se houver)
+            const trip = tripsData.find(t => t.id === currentTripId);
+            let currentData = '';
+            
+            if (trip && trip.emergencyData && trip.emergencyData[id]) {
+                currentData = trip.emergencyData[id].info;
+            }
+
+            // 6. Preenche o textarea
+            textArea.value = currentData || '';
+            
+            // 7. Troca os modais (Fecha a lista, abre o detalhe)
+            closeModal('emergency-list-modal');
+            openModal('traveler-details-modal');
+        };
+
+        // 4. Salvar Detalhes
+        window.saveTravelerDetails = async () => {
+            if (!currentTripId || !currentEditingEmergencyId) return;
+            
+            const info = document.getElementById('detail-traveler-info').value;
+            const name = document.getElementById('detail-traveler-name').textContent;
+            const saveAsDefault = document.getElementById('save-as-default-check').checked;
+
+            const updates = {};
+            
+            // A. Salva dentro da viagem
+            updates[`trips/${currentTripId}/emergencyData/${currentEditingEmergencyId}`] = {
+                name: name,
+                info: info,
+                type: currentEditingEmergencyType,
+                updatedAt: serverTimestamp()
+            };
+
+            // B. Se marcou o checkbox, salva no perfil do usuário
+            if (saveAsDefault && currentEditingEmergencyType === 'traveler' && currentEditingEmergencyId === currentUserId) {
+                updates[`users/${currentUserId}/savedEmergencyData`] = info;
+            }
 
             try {
                 await update(ref(db), updates);
-                
-                // Sucesso: volta para a lista
-                backToEmergencyList();
-                
-                // (Opcional) Feedback visual rápido poderia ser adicionado aqui
-                
+                alert("Dados salvos com sucesso!");
+                closeModal('traveler-details-modal');
+                openEmergencyInfoModal(); // Reabre a lista atualizada
             } catch (error) {
                 console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar. Verifique sua conexão.");
+                alert("Erro ao salvar.");
+            }
+        };
+
+        window.deleteDependent = async (id) => {
+            if(confirm("Remover este dependente?")) {
+                await remove(ref(db, `trips/${currentTripId}/emergencyData/${id}`));
+                openEmergencyInfoModal();
+            }
+        };
+
+        window.backToEmergencyList = () => {
+            closeModal('traveler-details-modal');
+            openEmergencyInfoModal();
+        };      
+
+        window.loadSavedEmergencyData = async () => {
+            // Feedback visual de carregamento
+            const btn = document.getElementById('btn-load-saved-data');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<svg class="animate-spin h-4 w-4 text-amber-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Buscando...`;
+
+            try {
+                // Busca em: users/{SEU_ID}/savedEmergencyData
+                const snapshot = await get(ref(db, `users/${currentUserId}/savedEmergencyData`));
+                
+                if (snapshot.exists()) {
+                    const dadosSalvos = snapshot.val();
+                    const textarea = document.getElementById('detail-traveler-info');
+                    
+                    // Se já tiver texto escrito, pergunta antes de substituir
+                    if (textarea.value && textarea.value.trim() !== "" && textarea.value !== dadosSalvos) {
+                        if (!confirm("Isso vai substituir o texto atual pelos seus dados padrão salvos. Deseja continuar?")) {
+                            btn.innerHTML = originalText;
+                            return;
+                        }
+                    }
+
+                    textarea.value = dadosSalvos;
+                    
+                    // Pequeno efeito visual para mostrar que mudou
+                    textarea.classList.add('bg-amber-50');
+                    setTimeout(() => textarea.classList.remove('bg-amber-50'), 500);
+                    
+                } else {
+                    alert("Você ainda não salvou nenhum dado padrão. Marque a caixa 'Salvar como padrão' ao salvar na próxima vez.");
+                }
+            } catch (error) {
+                console.error("Erro ao carregar dados:", error);
+                alert("Erro ao buscar seus dados salvos.");
             } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         };
 
