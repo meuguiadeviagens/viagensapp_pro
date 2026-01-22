@@ -727,18 +727,19 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.17 | 21/01/2026, 11:23</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.18 | 21/01/2026, 21:55</p>
             </main>
         </div>
 
         
         <div id="activity-color-menu" class="hidden fixed z-[1000] bg-white shadow-lg rounded-lg border border-slate-200 p-2 space-y-1">
             <div class="px-2 py-1 text-xs font-semibold text-slate-500">Mudar cor</div>
-            <div class="flex gap-2 px-2">
+            <div class="flex gap-2 px-2"> <!-- CORES DO POPUP ATIVIDADES DO ROTEIRO -->
                 <div onclick="setActivityColor('#FFD7FF')" class="w-6 h-6 rounded-full bg-pink-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
                 <div onclick="setActivityColor('#F5DEB3')" class="w-6 h-6 rounded-full bg-orange-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
                 <div onclick="setActivityColor('#bbf7d0')" class="w-6 h-6 rounded-full bg-green-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
                 <div onclick="setActivityColor('#d1d5db')" class="w-6 h-6 rounded-full bg-slate-300 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
+                <div onclick="setActivityColor('glass')" class="w-6 h-6 rounded-full bg-slate-500/30 cursor-pointer border border-white hover:scale-110 transition-transform" title="Transparente (Estilo Padrão)"></div>
             </div>
             <div class="border-t my-1"></div>
             <button onclick="setActivityColor('clear')" class="w-full text-left text-sm text-slate-700 px-2 py-1 rounded hover:bg-slate-100">Limpar cor</button>
@@ -755,6 +756,24 @@
             </div>
             <div class="border-t my-1"></div>
             <button onclick="setDocumentColor('clear')" class="w-full text-left text-sm text-slate-700 px-2 py-1 rounded hover:bg-slate-100">Limpar cor</button>
+        </div>
+
+        <div id="header-btn-color-menu" class="hidden absolute z-50 bg-white rounded-lg shadow-xl border border-slate-200 p-3 w-48 animate-fade-in">
+            <div class="text-xs font-semibold text-slate-500 mb-2 px-1">Cor do Botão</div>
+            
+            <div class="grid grid-cols-5 gap-2">
+                <div onclick="setHeaderBtnColor('glass')" class="w-6 h-6 rounded-full bg-slate-500/30 cursor-pointer border border-slate-200 hover:scale-110 transition-transform shadow-inner" title="Transparente"></div>
+
+                <div onclick="setHeaderBtnColor('#ef4444')" class="w-6 h-6 rounded-full bg-red-500 cursor-pointer border border-transparent hover:scale-110 transition-transform"></div>
+                <div onclick="setHeaderBtnColor('#f97316')" class="w-6 h-6 rounded-full bg-orange-500 cursor-pointer border border-transparent hover:scale-110 transition-transform"></div>
+                <div onclick="setHeaderBtnColor('#eab308')" class="w-6 h-6 rounded-full bg-yellow-500 cursor-pointer border border-transparent hover:scale-110 transition-transform"></div>
+                <div onclick="setHeaderBtnColor('#22c55e')" class="w-6 h-6 rounded-full bg-green-500 cursor-pointer border border-transparent hover:scale-110 transition-transform"></div>
+                <div onclick="setHeaderBtnColor('#06b6d4')" class="w-6 h-6 rounded-full bg-cyan-500 cursor-pointer border border-transparent hover:scale-110 transition-transform"></div>
+                <div onclick="setHeaderBtnColor('#3b82f6')" class="w-6 h-6 rounded-full bg-blue-500 cursor-pointer border border-transparent hover:scale-110 transition-transform"></div>
+                <div onclick="setHeaderBtnColor('#a855f7')" class="w-6 h-6 rounded-full bg-purple-500 cursor-pointer border border-transparent hover:scale-110 transition-transform"></div>
+                <div onclick="setHeaderBtnColor('#ec4899')" class="w-6 h-6 rounded-full bg-pink-500 cursor-pointer border border-transparent hover:scale-110 transition-transform"></div>
+                <div onclick="setHeaderBtnColor('#64748b')" class="w-6 h-6 rounded-full bg-slate-500 cursor-pointer border border-transparent hover:scale-110 transition-transform"></div>
+            </div>
         </div>
 
         <div id="emergency-list-modal" class="fixed inset-0 z-[60] hidden items-center justify-center modal-backdrop p-4">
@@ -948,10 +967,7 @@
                         <span>Novidades</span>
                         <span id="activity-log-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
                     </button>
-                    <button id="custom-link-btn" style="display: none;" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-link"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
-                        <span></span>
-                    </button>
+                    <div id="header-custom-buttons-container" class="flex gap-2"></div>
 
                 </div>
             </header>
@@ -1735,16 +1751,14 @@
                     
                 </div>
                 </div>                
-             <div class="border-t pt-4 mt-2">
-                    <label class="block text-sm font-medium text-slate-600 mb-1">Botão de Link Personalizado (Opcional)</label>
-                    <div>
-                        <label for="edit-trip-link-text" class="block text-xs font-medium text-slate-500">Texto do Botão</label>
-                        <input type="text" id="edit-trip-link-text" placeholder="Ex: OneDrive, GoogleDrive, etc..." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm">
+               <div class="border-t pt-4 mt-2">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-sm font-medium text-slate-600">Botões de Link Personalizados</label>
+                        <button type="button" onclick="addCustomButtonRow()" class="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200 font-semibold transition-colors">
+                            + Adicionar Botão
+                        </button>
                     </div>
-                    <div class="mt-2">
-                        <label for="edit-trip-link-url" class="block text-xs font-medium text-slate-500">URL do Link</label>
-                        <input type="url" id="edit-trip-link-url" placeholder="https://..." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm">
-                    </div>
+                    <div id="custom-buttons-list" class="space-y-3"></div>
                 </div>
                 <div class="pt-6 flex justify-end gap-3">
                     <button type="button" onclick="closeModal('edit-trip-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Cancelar</button>
@@ -2612,6 +2626,7 @@
         let currentEditingTravelerIndex = null;
         let currentEditingEmergencyId = null;
         let currentEditingEmergencyType = 'traveler'; // 'traveler' ou 'dependent'
+        let currentContextMenuButtonIndex = null;
 
 
         // Constante com as moedas permitidas
@@ -4125,6 +4140,36 @@ window.addEventListener('popstate', (event) => {
 
                     const isReorganizingActive = document.getElementById('daily-itinerary-list').classList.contains('is-reorganizing');
                     
+                    // --- NOVO BLOCO: Verifica clique nos botões personalizados do cabeçalho ---
+                    const headerBtn = e.target.closest('.custom-header-btn');
+    
+                    if (headerBtn && !isReorganizingActive) {
+                        e.preventDefault();
+                        
+                        // Garante que os OUTROS menus estão fechados
+                        documentMenu.classList.add('hidden');
+                        document.getElementById('activity-color-menu').classList.add('hidden'); // Fecha menu de atividades
+                        contextMenu.classList.add('hidden');
+                        
+                        currentContextMenuActivityId = null;
+                        currentContextMenuDocumentId = null;
+
+                        // Define qual botão estamos editando
+                        currentContextMenuButtonIndex = parseInt(headerBtn.dataset.btnIndex);
+
+                        // --- AQUI ESTÁ A MUDANÇA PRINCIPAL ---
+                        // Seleciona o NOVO MENU
+                        const btnColorMenu = document.getElementById('header-btn-color-menu');
+                        
+                        // Posiciona
+                        btnColorMenu.style.top = `${e.clientY}px`;
+                        btnColorMenu.style.left = `${e.clientX}px`;
+                        
+                        // Exibe
+                        btnColorMenu.classList.remove('hidden');
+                        return;
+                    }
+                    
                     // 1. Verifica se foi um clique em ATIVIDADE
                     const activityItem = e.target.closest('.activity-item[data-iseditable="true"]');
                     if (activityItem && !isReorganizingActive) {
@@ -4156,10 +4201,12 @@ window.addEventListener('popstate', (event) => {
                     }
 
                     // 3. Se não foi em nenhum, esconde ambos
+                    currentContextMenuButtonIndex = null;
                     contextMenu.classList.add('hidden');
                     documentMenu.classList.add('hidden');
                     currentContextMenuActivityId = null;
                     currentContextMenuDocumentId = null;
+                    document.getElementById('header-btn-color-menu').classList.add('hidden');
                 });
                 
                 // Listener global para fechar o menu ao clicar em qualquer outro lugar
@@ -5030,13 +5077,53 @@ window.addEventListener('popstate', (event) => {
             document.getElementById('details-title').textContent = trip.name;
             document.getElementById('details-dates').textContent = `${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}`;
             
-            const customLinkBtn = document.getElementById('custom-link-btn');
-            if (trip.customLinkText && trip.customLinkUrl) {
-                customLinkBtn.style.display = 'flex';
-                customLinkBtn.querySelector('span').textContent = trip.customLinkText;
-                customLinkBtn.onclick = () => window.open(trip.customLinkUrl, '_blank');
-            } else {
-                customLinkBtn.style.display = 'none';
+            const headerButtonsContainer = document.getElementById('header-custom-buttons-container');
+            headerButtonsContainer.innerHTML = ''; 
+
+            const createHeaderBtn = (text, url, index, color) => {
+                const btn = document.createElement('button');
+                
+                // Classes base
+                let classes = "custom-header-btn flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg transition-colors ";
+                
+                // Lógica de Cor
+                if (!color || color === 'glass' || color === 'clear') {
+                    // Estilo padrão (Transparente/Glass)
+                    classes += "bg-white/20 text-white hover:bg-white/30";
+                    btn.style.backgroundColor = '';
+                    btn.style.color = '';
+                } else {
+                    // Cor Sólida Personalizada
+                    classes += "hover:opacity-90 shadow-sm"; 
+                    btn.style.backgroundColor = color;
+                    btn.style.color = '#1e293b'; // Texto escuro (slate-800) para contraste
+                }
+                
+                btn.className = classes;
+                btn.dataset.btnIndex = index; // Importante para saber qual editar
+                
+                // Ação do clique esquerdo (Abrir Link)
+                btn.onclick = () => window.open(url, '_blank');
+                
+                // Prevenir menu padrão ao clicar com direito (já tratado no listener global, mas reforça)
+                btn.oncontextmenu = (e) => { e.preventDefault(); };
+
+                btn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
+                    <span>${text}</span>
+                `;
+                return btn;
+            };
+
+            // Renderiza botões usando a nova lógica
+            if (trip.customButtons && Array.isArray(trip.customButtons)) {
+                trip.customButtons.forEach((btn, index) => {
+                    // Passamos o índice e a cor salva
+                    headerButtonsContainer.appendChild(createHeaderBtn(btn.text, btn.url, index, btn.color));
+                });
+            } else if (trip.customLinkText && trip.customLinkUrl) {
+                // Fallback para formato antigo (índice 0, sem cor)
+                headerButtonsContainer.appendChild(createHeaderBtn(trip.customLinkText, trip.customLinkUrl, 0, null));
             }
 
             renderPendencias(trip);
@@ -6345,9 +6432,25 @@ let dividerHtml = '';
             startDateInput.value = timestampToISODate(trip.startDate);
             document.getElementById('edit-trip-end-date').value = timestampToISODate(trip.endDate);
             imageInput.value = trip.imageUrl || '';
-            document.getElementById('edit-trip-link-text').value = trip.customLinkText || '';
-            document.getElementById('edit-trip-link-url').value = trip.customLinkUrl || '';
+            //document.getElementById('edit-trip-link-text').value = trip.customLinkText || '';
+            //document.getElementById('edit-trip-link-url').value = trip.customLinkUrl || '';
 
+            // LIMPAR E POPULAR A LISTA DE BOTÕES
+            const buttonsContainer = document.getElementById('custom-buttons-list');
+            buttonsContainer.innerHTML = ''; // Limpa anteriores
+
+            // Se a viagem já tiver o novo formato (array)
+            if (trip.customButtons && Array.isArray(trip.customButtons)) {
+                trip.customButtons.forEach(btn => addCustomButtonRow(btn.text, btn.url));
+            } 
+            // Se tiver o formato antigo (migração automática visual)
+            else if (trip.customLinkText && trip.customLinkUrl) {
+                addCustomButtonRow(trip.customLinkText, trip.customLinkUrl);
+            } else {
+                // Se não tiver nada, não adiciona nenhuma linha (ou adicione uma vazia se preferir)
+                // addCustomButtonRow(); 
+            }
+            
             // --- INÍCIO DA NOVA LÓGICA DO AVISO ---
             const noticeElement = document.getElementById('purchased-trip-notice');
             if (isPurchasedTrip) {
@@ -7674,6 +7777,25 @@ let dividerHtml = '';
         };
 
         window.setActivityColor = async (color) => {
+            // CASO 1: Alterando cor de um BOTÃO DE CABEÇALHO
+            if (currentContextMenuButtonIndex !== null && currentTripId) {
+                const trip = tripsData.find(t => t.id === currentTripId);
+                const buttons = trip.customButtons || [];
+
+                if (buttons[currentContextMenuButtonIndex]) {
+                    // Atualiza a cor (se for 'clear', remove a propriedade)
+                    buttons[currentContextMenuButtonIndex].color = (color === 'clear') ? undefined : color;
+
+                    const tripRef = ref(db, `trips/${currentTripId}`);
+                    await update(tripRef, { "customButtons": buttons });
+                }
+
+                document.getElementById('activity-color-menu').classList.add('hidden');
+                currentContextMenuButtonIndex = null;
+                return;
+            }
+
+            // CASO 2: Alterando cor de uma ATIVIDADE
             if (!currentContextMenuActivityId || !currentTripId) return;
 
             const trip = tripsData.find(t => t.id === currentTripId);
@@ -7697,6 +7819,30 @@ let dividerHtml = '';
             document.getElementById('activity-color-menu').classList.add('hidden');
             currentContextMenuActivityId = null;
         }
+
+        window.setHeaderBtnColor = async (color) => {
+            // Verifica se temos um índice e uma viagem selecionada
+            if (currentContextMenuButtonIndex !== null && currentTripId) {
+                const trip = tripsData.find(t => t.id === currentTripId);
+                if (!trip) return;
+
+                const buttons = trip.customButtons || [];
+
+                // Atualiza a cor se o botão existir
+                if (buttons[currentContextMenuButtonIndex]) {
+                    // Se for 'glass', salvamos essa string, senão a cor hex
+                    buttons[currentContextMenuButtonIndex].color = color;
+
+                    // Salva no Firebase
+                    const tripRef = ref(db, `trips/${currentTripId}`);
+                    await update(tripRef, { "customButtons": buttons });
+                }
+            }
+
+            // Esconde o menu e reseta o índice
+            document.getElementById('header-btn-color-menu').classList.add('hidden');
+            currentContextMenuButtonIndex = null;
+        };
 
         window.insertNewDay = async (index) => {
             const trip = tripsData.find(t => t.id === currentTripId);
@@ -8163,12 +8309,22 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
             }
 
-            // 2. Define o objeto 'updates' apenas com os campos SEMPRE permitidos
+            // 2.1. Coleta os dados dos novos inputs
+            const customButtons = [];
+            document.querySelectorAll('#custom-buttons-list .custom-btn-row').forEach(row => {
+                const text = row.querySelector('.btn-text-input').value.trim();
+                const url = row.querySelector('.btn-url-input').value.trim();
+                if (text && url) {
+                    customButtons.push({ text, url });
+                }
+            });
+
+            // 2.2. Atualize o objeto 'updates' para incluir o novo array
+            // (Remova customLinkText e customLinkUrl do objeto updates antigo)
             const updates = {
                 destination: document.getElementById('edit-trip-destination').value,
                 endDate: new Date(document.getElementById('edit-trip-end-date').value + 'T00:00:00Z').getTime(),
-                customLinkText: document.getElementById('edit-trip-link-text').value.trim(),
-                customLinkUrl: document.getElementById('edit-trip-link-url').value.trim(),
+                customButtons: customButtons // <--- Campo novo
             };
 
             // 3. Só adiciona os campos "sensíveis" ao 'updates' se NÃO estiverem travados
@@ -11051,6 +11207,28 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 window.open(link, '_blank'); // Abre o link numa nova aba
             }
             // Se não tiver link, o clique passa direto e ativa o onclick da linha (que abre o modal)
+        };
+
+        window.addCustomButtonRow = (text = '', url = '') => {
+            const container = document.getElementById('custom-buttons-list');
+            const rowId = Date.now() + Math.random().toString(16).slice(2);
+            
+            const div = document.createElement('div');
+            div.className = "flex gap-2 items-start custom-btn-row";
+            div.id = `row-${rowId}`;
+            
+            div.innerHTML = `
+                <div class="flex-1">
+                    <input type="text" value="${text}" placeholder="Texto (ex: Drive)" class="btn-text-input block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm">
+                </div>
+                <div class="flex-1">
+                    <input type="url" value="${url}" placeholder="URL (https://...)" class="btn-url-input block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm">
+                </div>
+                <button type="button" onclick="document.getElementById('row-${rowId}').remove()" class="text-red-500 hover:text-red-700 p-2" title="Remover">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            `;
+            container.appendChild(div);
         };
 
     </script>
