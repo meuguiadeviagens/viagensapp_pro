@@ -219,6 +219,23 @@
                 page-break-inside: auto !important;
             }
 
+            /* Força a seção de emergência a ser a ÚLTIMA coisa e em nova página */
+            #print-emergency-section {
+                display: block !important;
+                order: 9999 !important; /* Número bem alto para ir para o final */
+                page-break-before: always !important;
+                border: none !important;
+            }
+
+            /* Garante que o texto dentro quebre linha corretamente */
+            .emergency-print-item {
+                break-inside: avoid !important;
+                border: 1px solid #000 !important;
+                margin-bottom: 1rem !important;
+                padding: 1rem !important;
+                border-radius: 8px !important;
+            }
+
         }
 
 
@@ -727,7 +744,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.18 | 21/01/2026, 21:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.19 | 21/01/2026, 21:55</p>
             </main>
         </div>
 
@@ -958,7 +975,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sticky-note"><path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></svg>
                         <span>Anotações</span>
                     </button>
-                    <button onclick="window.print()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
+                    <button onclick="printTripWithEmergency()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-printer"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
                         <span>PDF Offline</span>
                     </button>
@@ -1116,66 +1133,66 @@
                 <div class="panel-content mt-4">
    
                     <div id="add-expense-panel" class="bg-slate-50 border border-slate-200 rounded-lg mb-6 collapsed">
-        <div class="flex justify-between items-center cursor-pointer p-4" onclick="toggleGenericPanel('add-expense-panel')">
-            <h3 class="font-semibold text-lg text-slate-800">Adicionar Nova Despesa</h3>
-            <button class="panel-toggle-btn text-slate-500 hover:text-slate-800 p-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"></path></svg>
-            </button>
-        </div>       
-        
-        <div id="add-expense-content" class="px-4 pb-4">
-            <form id="add-expense-form" class="space-y-4 border-t pt-4">
-                <div>
-                    <label for="expense-description" class="block text-sm font-medium text-slate-600">Descrição</label>
-                    <input type="text" id="expense-description" placeholder="Ex: Mercado" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
-                </div>
+            <div class="flex justify-between items-center cursor-pointer p-4" onclick="toggleGenericPanel('add-expense-panel')">
+                <h3 class="font-semibold text-lg text-slate-800">Adicionar Nova Despesa</h3>
+                <button class="panel-toggle-btn text-slate-500 hover:text-slate-800 p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"></path></svg>
+                </button>
+            </div>       
+            
+            <div id="add-expense-content" class="px-4 pb-4">
+                <form id="add-expense-form" class="space-y-4 border-t pt-4">
+                    <div>
+                        <label for="expense-description" class="block text-sm font-medium text-slate-600">Descrição</label>
+                        <input type="text" id="expense-description" placeholder="Ex: Mercado" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
+                    </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="expense-amount" class="block text-sm font-medium text-slate-600">Valor Total</label>
-                        <input type="number" id="expense-amount" placeholder="150.00" min="0.01" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
-                    </div>
-                    <div>
-                        <label for="expense-currency" class="block text-sm font-medium text-slate-600">Moeda</label>
-                        <select id="expense-currency" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required=""></select>
-                        <input type="text" id="expense-currency-custom" maxlength="6" placeholder="Ex: ARS" class="hidden mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm">
-                    </div>
-                </div>
-                
-                <div class="bg-green-50 p-3 rounded-md border border-green-200">
-                    <label class="block text-sm font-medium text-slate-700 font-semibold">Quem Pagou? (Credores)</label>
-                    <div id="expense-payers-checkboxes" class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="expense-amount" class="block text-sm font-medium text-slate-600">Valor Total</label>
+                            <input type="number" id="expense-amount" placeholder="150.00" min="0.01" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
                         </div>
+                        <div>
+                            <label for="expense-currency" class="block text-sm font-medium text-slate-600">Moeda</label>
+                            <select id="expense-currency" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required=""></select>
+                            <input type="text" id="expense-currency-custom" maxlength="6" placeholder="Ex: ARS" class="hidden mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm">
+                        </div>
+                    </div>
                     
-                    <div id="expense-payers-split-container" class="hidden space-y-3 mt-4 p-3 bg-green-100 border border-green-300 rounded-md">
-                        <h4 class="text-sm font-semibold text-slate-700">Dividir o valor pago entre os credores:</h4>
-                        <div id="expense-payers-split-inputs" class="space-y-2">
+                    <div class="bg-green-50 p-3 rounded-md border border-green-200">
+                        <label class="block text-sm font-medium text-slate-700 font-semibold">Quem Pagou? (Credores)</label>
+                        <div id="expense-payers-checkboxes" class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
                             </div>
-                        <div class="text-right text-sm font-medium">
-                            <span class="text-slate-600">Total dividido: </span>
-                            <span id="expense-payers-split-total" class="font-bold text-slate-800">R$ 0,00</span>
-                            <p id="expense-payers-split-warning" class="text-red-600 font-semibold hidden">O total dividido não bate com o Valor Total da despesa!</p>
+                        
+                        <div id="expense-payers-split-container" class="hidden space-y-3 mt-4 p-3 bg-green-100 border border-green-300 rounded-md">
+                            <h4 class="text-sm font-semibold text-slate-700">Dividir o valor pago entre os credores:</h4>
+                            <div id="expense-payers-split-inputs" class="space-y-2">
+                                </div>
+                            <div class="text-right text-sm font-medium">
+                                <span class="text-slate-600">Total dividido: </span>
+                                <span id="expense-payers-split-total" class="font-bold text-slate-800">R$ 0,00</span>
+                                <p id="expense-payers-split-warning" class="text-red-600 font-semibold hidden">O total dividido não bate com o Valor Total da despesa!</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="bg-red-50 p-3 rounded-md border border-red-200 mt-4">
-                    <div class="flex justify-between items-center">
-                        <label class="block text-sm font-medium text-slate-700 font-semibold">Quem deve pagar? (Incluir o credor também se for o caso)</label>
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" id="select-all-participants" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                            <label for="select-all-participants" class="text-sm font-medium text-slate-600 cursor-pointer">Marcar Todos</label>
+                    
+                    <div class="bg-red-50 p-3 rounded-md border border-red-200 mt-4">
+                        <div class="flex justify-between items-center">
+                            <label class="block text-sm font-medium text-slate-700 font-semibold">Quem deve pagar? (Incluir o credor também se for o caso)</label>
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="select-all-participants" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                <label for="select-all-participants" class="text-sm font-medium text-slate-600 cursor-pointer">Marcar Todos</label>
+                            </div>
                         </div>
+                        <div id="expense-participants-checkboxes" class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+                            </div>
                     </div>
-                    <div id="expense-participants-checkboxes" class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-                        </div>
-                </div>
 
-                <div class="text-right">
-                    <button type="submit" class="bg-indigo-600 text-white font-semibold px-5 py-2 rounded-lg shadow-md hover:bg-indigo-700 transition-colors">Adicionar Despesa</button>
-                </div>
-            </form>
-        </div>
+                    <div class="text-right">
+                        <button type="submit" class="bg-indigo-600 text-white font-semibold px-5 py-2 rounded-lg shadow-md hover:bg-indigo-700 transition-colors">Adicionar Despesa</button>
+                    </div>
+                </form>
+            </div>           
     </div>
 
     <h4 class="text-lg font-semibold text-slate-800 mb-3">Despesas em grupo adicionadas:</h4>
@@ -1197,6 +1214,8 @@
     </div>
    </section>
  </div>
+  <section id="print-emergency-section" class="hidden mt-8 bg-white p-6 rounded-xl border-2 border-red-100">
+        </section>
 </div>
         
         <!-- INÍCIO: MENU DE DESPESAS MOVIDO PARA FORA DO HEADER -->
@@ -4146,27 +4165,49 @@ window.addEventListener('popstate', (event) => {
                     if (headerBtn && !isReorganizingActive) {
                         e.preventDefault();
                         
-                        // Garante que os OUTROS menus estão fechados
+                        // Fecha outros menus
                         documentMenu.classList.add('hidden');
-                        document.getElementById('activity-color-menu').classList.add('hidden'); // Fecha menu de atividades
+                        document.getElementById('activity-color-menu').classList.add('hidden');
                         contextMenu.classList.add('hidden');
                         
                         currentContextMenuActivityId = null;
                         currentContextMenuDocumentId = null;
 
-                        // Define qual botão estamos editando
                         currentContextMenuButtonIndex = parseInt(headerBtn.dataset.btnIndex);
 
-                        // --- AQUI ESTÁ A MUDANÇA PRINCIPAL ---
-                        // Seleciona o NOVO MENU
                         const btnColorMenu = document.getElementById('header-btn-color-menu');
                         
-                        // Posiciona
-                        btnColorMenu.style.top = `${e.clientY}px`;
-                        btnColorMenu.style.left = `${e.clientX}px`;
+                        // --- LÓGICA DE POSICIONAMENTO INTELIGENTE ---
                         
-                        // Exibe
+                        // 1. Torna visível mas totalmente transparente para podermos medir a largura/altura
+                        btnColorMenu.style.opacity = '0';
                         btnColorMenu.classList.remove('hidden');
+
+                        // 2. Pega as dimensões do menu e da tela
+                        const menuWidth = btnColorMenu.offsetWidth;
+                        const menuHeight = btnColorMenu.offsetHeight;
+                        const screenWidth = window.innerWidth;
+                        const screenHeight = window.innerHeight;
+
+                        // 3. Define posição inicial (onde foi o clique)
+                        let left = e.clientX;
+                        let top = e.clientY;
+
+                        // 4. Ajuste Horizontal: Se passar da borda direita, joga para a esquerda do mouse
+                        if (left + menuWidth > screenWidth) {
+                            left = e.clientX - menuWidth;
+                        }
+
+                        // 5. Ajuste Vertical: Se passar da borda inferior, joga para cima do mouse
+                        if (top + menuHeight > screenHeight) {
+                            top = e.clientY - menuHeight;
+                        }
+
+                        // 6. Aplica a posição final e restaura a opacidade
+                        btnColorMenu.style.left = `${left}px`;
+                        btnColorMenu.style.top = `${top}px`;
+                        btnColorMenu.style.opacity = '1';
+
                         return;
                     }
                     
@@ -4213,6 +4254,7 @@ window.addEventListener('popstate', (event) => {
                 window.addEventListener('click', (e) => {
                     const activityMenu = document.getElementById('activity-color-menu');
                     const documentMenu = document.getElementById('document-color-menu'); // Pega o novo menu
+                    const btnMenu = document.getElementById('header-btn-color-menu');
 
                     // Fecha se clicar fora do menu de atividades
                     if (activityMenu && !activityMenu.contains(e.target)) {
@@ -4224,6 +4266,12 @@ window.addEventListener('popstate', (event) => {
                     if (documentMenu && !documentMenu.contains(e.target)) {
                         documentMenu.classList.add('hidden');
                         currentContextMenuDocumentId = null;
+                    }
+
+                    // Verifica se o menu existe, se está visível e se o clique NÃO foi dentro dele
+                    if (btnMenu && !btnMenu.classList.contains('hidden') && !btnMenu.contains(e.target)) {
+                        btnMenu.classList.add('hidden');
+                        currentContextMenuButtonIndex = null; // Limpa a seleção para evitar erros
                     }
                 }, true);
 
@@ -11229,6 +11277,83 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 </button>
             `;
             container.appendChild(div);
+        };
+
+        window.printTripWithEmergency = () => {
+            const container = document.getElementById('print-emergency-section');
+            const trip = tripsData.find(t => t.id === currentTripId);
+
+            if (!container || !trip) {
+                window.print();
+                return;
+            }
+
+            container.innerHTML = '';
+
+            // Verifica se emergencyData existe
+            if (!trip.emergencyData || Object.keys(trip.emergencyData).length === 0) {
+                container.style.display = 'none'; // Garante que não ocupe espaço se vazio
+                window.print();
+                return;
+            }
+
+            // Título da seção
+            let htmlContent = `
+                <div class="mb-6 border-b-2 border-slate-800 pb-2">
+                    <h2 class="text-3xl font-bold text-slate-900">🚨 Dados de Emergência</h2>
+                    <p class="text-slate-600">Informações confidenciais dos viajantes.</p>
+                </div>
+                <div class="space-y-4">
+            `;
+
+            // Flag para saber se achamos algo útil
+            let hasContent = false;
+
+            Object.values(trip.emergencyData).forEach(data => {
+                // CORREÇÃO: Tenta pegar o texto de várias propriedades possíveis
+                // O textarea tem id "detail-traveler-info", então provavelmente salvou como 'info' ou o valor direto.
+                let rawText = data.info || data.text || data.description || data.value || '';
+                
+                // Se ainda estiver vazio, mas tiver nome, pode ser um dependente só com nome
+                if (!rawText && data.type === 'dependent') {
+                    rawText = "Dependente cadastrado (sem dados adicionais).";
+                }
+
+                if (rawText) {
+                    hasContent = true;
+                    const infoText = rawText.replace(/\n/g, '<br>');
+                    const typeLabel = data.type === 'dependent' ? 'Dependente / Outro' : 'Viajante';
+                    
+                    htmlContent += `
+                        <div class="emergency-print-item bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <div class="flex justify-between items-center mb-2 border-b border-slate-200 pb-2">
+                                <h3 class="text-xl font-bold text-slate-800">${data.name}</h3>
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 bg-slate-200 px-2 py-1 rounded">${typeLabel}</span>
+                            </div>
+                            <div class="text-sm text-slate-800 leading-relaxed font-mono">
+                                ${infoText}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            htmlContent += `</div>`;
+
+            if (hasContent) {
+                container.innerHTML = htmlContent;
+                // Força display block para impressão via style inline para garantir
+                container.style.display = 'block'; 
+            } else {
+                container.style.display = 'none';
+            }
+
+            // Pequeno delay para garantir que o navegador renderizou o DOM antes de imprimir
+            setTimeout(() => {
+                window.print();
+                // Opcional: Esconder novamente após imprimir, se desejar limpar a tela
+                // container.style.display = 'none'; 
+            }, 100);
         };
 
     </script>
