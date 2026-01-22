@@ -744,7 +744,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.19 | 21/01/2026, 21:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.20 | 21/01/2026, 21:55</p>
             </main>
         </div>
 
@@ -4651,6 +4651,8 @@ window.addEventListener('popstate', (event) => {
             updates[`/trips/${currentTripId}/members/${travelerUidToRemove}`] = null; // null para deletar
             // Lado 3: Remove a viagem da lista 'memberOf' do viajante
             updates[`/users/${travelerUidToRemove}/memberOf/${currentTripId}`] = null; 
+            // Lado 4: Remove os dados pessoais/emergência armazenados nesta viagem
+            updates[`/trips/${currentTripId}/emergencyData/${travelerUidToRemove}`] = null;
 
             await update(ref(db), updates);
             
@@ -11307,7 +11309,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             let htmlContent = `
                 <div class="mb-6 border-b-2 border-slate-800 pb-2">
                     <h2 class="text-3xl font-bold text-slate-900">🚨 Dados de Emergência</h2>
-                    <p class="text-slate-600">Informações confidenciais dos viajantes.</p>
+                    <p class="text-slate-600">Informações pessoais dos viajantes.</p>
                 </div>
                 <div class="space-y-4">
             `;
