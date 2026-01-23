@@ -744,7 +744,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.21 | 22/01/2026, 21:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.22 | 23/01/2026, 19:55</p>
             </main>
         </div>
 
@@ -4373,6 +4373,27 @@ window.addEventListener('popstate', (event) => {
                         await set(ref(db, `users/${userId}/profile`), profileData);
                         // Operação 2: Salva o índice de e-mail
                         await set(ref(db, `emailToUid/${encodedEmail}`), userId);
+
+                        // --- INÍCIO: NOTIFICAÇÃO PARA O ADMIN (GABRIEL) ---
+                        const adminEmail = 'gabriel.angst@hotmail.com';
+                        const adminEmailB64 = btoa(adminEmail.toLowerCase()); // Converte para o formato usado no banco
+
+                        // Busca o UID do Gabriel pelo e-mail
+                        get(ref(db, `emailToUid/${adminEmailB64}`)).then((adminSnap) => {
+                            if (adminSnap.exists()) {
+                                const adminUid = adminSnap.val();
+                                
+                                // Cria a notificação na pasta do admin
+                                const newNotifRef = push(ref(db, `users/${adminUid}/notifications`));
+                                set(newNotifRef, {
+                                    message: `🎉 Novo usuário cadastrado: ${profileData.fullName} (${email})`,
+                                    timestamp: serverTimestamp(),
+                                    isRead: false,
+                                    type: 'system_alert' // Opcional: para diferenciar tipos no futuro
+                                }).catch(err => console.error("Erro ao notificar admin:", err));
+                            }
+                        });
+                        // --- FIM: NOTIFICAÇÃO PARA O ADMIN ---
                         
                         alert('Conta criada com sucesso! Você já está logado.');
                     } catch (error) {
