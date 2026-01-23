@@ -744,7 +744,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.20 | 21/01/2026, 21:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.21 | 22/01/2026, 21:55</p>
             </main>
         </div>
 
@@ -6491,8 +6491,9 @@ let dividerHtml = '';
 
             // Se a viagem já tiver o novo formato (array)
             if (trip.customButtons && Array.isArray(trip.customButtons)) {
-                trip.customButtons.forEach(btn => addCustomButtonRow(btn.text, btn.url));
-            } 
+            // Alteração: Passamos 'btn.color' como terceiro argumento
+            trip.customButtons.forEach(btn => addCustomButtonRow(btn.text, btn.url, btn.color));
+        }
             // Se tiver o formato antigo (migração automática visual)
             else if (trip.customLinkText && trip.customLinkUrl) {
                 addCustomButtonRow(trip.customLinkText, trip.customLinkUrl);
@@ -8364,8 +8365,13 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             document.querySelectorAll('#custom-buttons-list .custom-btn-row').forEach(row => {
                 const text = row.querySelector('.btn-text-input').value.trim();
                 const url = row.querySelector('.btn-url-input').value.trim();
+                
+                // Alteração: Recupera a cor salva no dataset
+                const color = row.dataset.color || null; 
+
                 if (text && url) {
-                    customButtons.push({ text, url });
+                    // Alteração: Inclui a cor no objeto salvo
+                    customButtons.push({ text, url, color });
                 }
             });
 
@@ -11265,14 +11271,20 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             // Se não tiver link, o clique passa direto e ativa o onclick da linha (que abre o modal)
         };
 
-        window.addCustomButtonRow = (text = '', url = '') => {
+        // Alteração: Aceita o parâmetro 'color' e salva no dataset da div
+        window.addCustomButtonRow = (text = '', url = '', color = null) => {
             const container = document.getElementById('custom-buttons-list');
             const rowId = Date.now() + Math.random().toString(16).slice(2);
-            
             const div = document.createElement('div');
             div.className = "flex gap-2 items-start custom-btn-row";
-            div.id = `row-${rowId}`;
             
+            // LINHA NOVA: Guarda a cor escondida nesse elemento
+            if (color) {
+                div.dataset.color = color;
+            }
+
+            div.id = `row-${rowId}`;
+            // ... (o restante do código div.innerHTML permanece igual) ...
             div.innerHTML = `
                 <div class="flex-1">
                     <input type="text" value="${text}" placeholder="Texto (ex: Drive)" class="btn-text-input block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm text-sm">
