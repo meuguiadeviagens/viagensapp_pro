@@ -672,6 +672,21 @@
                 <label for="signup-phone" class="block text-sm font-medium text-slate-600">Telefone</label>
                 <input type="tel" id="signup-phone" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
             </div>
+            <div>
+                <label for="signup-source" class="block text-sm font-medium text-slate-600">Como conheceu o site?</label>
+                <select id="signup-source" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md">
+                    <option value="" disabled selected>Selecione uma opção</option>
+                    <option value="Google">Pesquisa no Google</option>
+                    <option value="Instagram">Instagram / Redes Sociais</option>
+                    <option value="Amigo">Indicação de Amigo</option>
+                    <option value="Anuncio">Anúncio</option>
+                    <option value="other">Outro</option>
+                </select>
+            </div>
+            <div id="signup-source-other-container" class="hidden mt-2">
+                <label for="signup-source-other" class="block text-sm font-medium text-slate-600">Por favor, especifique:</label>
+                <input type="text" id="signup-source-other" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" placeholder="Ex: Vi no Youtube, Blog X...">
+            </div>
             <div class="flex flex-col md:flex-row justify-end gap-3 pt-4">
                 <button id="cancel-signup-btn" type="button" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Voltar</button>
                 <button id="confirm-signup-btn" type="submit" class="px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700">Finalizar Cadastro</button>
@@ -744,7 +759,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.22 | 23/01/2026, 19:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.23 | 23/01/2026, 20:55</p>
             </main>
         </div>
 
@@ -4343,6 +4358,12 @@ window.addEventListener('popstate', (event) => {
             e.preventDefault();
             const email = document.getElementById('signup-email').value.trim();
             const password = document.getElementById('signup-password').value;
+
+            const sourceValue = document.getElementById('signup-source').value;
+            const otherValue = document.getElementById('signup-source-other').value;
+            // Lógica: Se for 'other', salva o que a pessoa digitou. Senão, salva a opção do select.
+            const finalReferral = (sourceValue === 'other') ? otherValue : sourceValue;
+
             const profileData = {
                 email: email,
                 fullName: document.getElementById('signup-fullname').value,
@@ -4352,6 +4373,7 @@ window.addEventListener('popstate', (event) => {
                 country: document.getElementById('signup-country').value,
                 city: document.getElementById('signup-city').value,
                 phone: document.getElementById('signup-phone').value,
+                referralSource: finalReferral || "Não informado",
                 AccountDateAdded: serverTimestamp()
             };
             if (!email || !password || !profileData.fullName || !profileData.birthDate || !profileData.cpf) {
@@ -4412,6 +4434,27 @@ window.addEventListener('popstate', (event) => {
                     }
                 });
         });
+
+        // Lógica para mostrar/esconder o campo "Outro" no cadastro (Como conheceu o app?)
+        const sourceSelect = document.getElementById('signup-source');
+        const otherContainer = document.getElementById('signup-source-other-container');
+        const otherInput = document.getElementById('signup-source-other');
+
+        if (sourceSelect && otherContainer) {
+            sourceSelect.addEventListener('change', function() {
+                if (this.value === 'other') {
+                    // Se escolheu 'Outro', mostra o campo e torna obrigatório
+                    otherContainer.classList.remove('hidden');
+                    otherInput.setAttribute('required', 'true');
+                    otherInput.focus();
+                } else {
+                    // Se escolheu qualquer outra coisa, esconde e limpa
+                    otherContainer.classList.add('hidden');
+                    otherInput.removeAttribute('required');
+                    otherInput.value = ''; 
+                }
+            });
+        }
 
        
         // Adicione este listener junto com os outros no final do script
