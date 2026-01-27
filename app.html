@@ -759,20 +759,30 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.23 | 23/01/2026, 20:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.24 | 26/01/2026, 20:55</p>
             </main>
         </div>
 
         
-        <div id="activity-color-menu" class="hidden fixed z-[1000] bg-white shadow-lg rounded-lg border border-slate-200 p-2 space-y-1">
+        <div id="activity-color-menu" class="hidden fixed z-[1000] bg-white shadow-lg rounded-lg border border-slate-200 p-2 space-y-2">
             <div class="px-2 py-1 text-xs font-semibold text-slate-500">Mudar cor</div>
-            <div class="flex gap-2 px-2"> <!-- CORES DO POPUP ATIVIDADES DO ROTEIRO -->
-                <div onclick="setActivityColor('#FFD7FF')" class="w-6 h-6 rounded-full bg-pink-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
-                <div onclick="setActivityColor('#F5DEB3')" class="w-6 h-6 rounded-full bg-orange-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
-                <div onclick="setActivityColor('#bbf7d0')" class="w-6 h-6 rounded-full bg-green-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
-                <div onclick="setActivityColor('#d1d5db')" class="w-6 h-6 rounded-full bg-slate-300 cursor-pointer border border-slate-300 hover:scale-110 transition-transform"></div>
+            
+            <div class="flex gap-2 px-2">
+                <div onclick="setActivityColor('#FFD7FF')" class="w-6 h-6 rounded-full bg-pink-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Rosa"></div>
+                <div onclick="setActivityColor('#F5DEB3')" class="w-6 h-6 rounded-full bg-orange-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Trigo"></div>
+                <div onclick="setActivityColor('#bbf7d0')" class="w-6 h-6 rounded-full bg-green-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Verde"></div>
+                <div onclick="setActivityColor('#d1d5db')" class="w-6 h-6 rounded-full bg-slate-300 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Cinza"></div>
                 <div onclick="setActivityColor('glass')" class="w-6 h-6 rounded-full bg-slate-500/30 cursor-pointer border border-white hover:scale-110 transition-transform" title="Transparente (Estilo Padrão)"></div>
             </div>
+
+            <div class="flex gap-2 px-2">
+                <div onclick="setActivityColor('#BFDBFE')" class="w-6 h-6 rounded-full bg-blue-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Azul"></div>
+                <div onclick="setActivityColor('#E9D5FF')" class="w-6 h-6 rounded-full bg-purple-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Roxo"></div>
+                <div onclick="setActivityColor('#FECACA')" class="w-6 h-6 rounded-full bg-red-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Vermelho"></div>
+                <div onclick="setActivityColor('#FEF08A')" class="w-6 h-6 rounded-full bg-yellow-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Amarelo"></div>
+                <div onclick="setActivityColor('#A5F3FC')" class="w-6 h-6 rounded-full bg-cyan-200 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Ciano"></div>
+            </div>
+
             <div class="border-t my-1"></div>
             <button onclick="setActivityColor('clear')" class="w-full text-left text-sm text-slate-700 px-2 py-1 rounded hover:bg-slate-100">Limpar cor</button>
         </div>
@@ -5640,6 +5650,7 @@ window.addEventListener('popstate', (event) => {
             const totalTripDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             let dayCounter = 1;
             let currentDate = new Date(trip.startDate);
+            let currentCityColor = 'transparent';
 
             // Ponto de inserção inicial
             container.insertAdjacentHTML('beforeend', `<div class="insertion-point" onclick="insertNewDay(0)">
@@ -5671,12 +5682,27 @@ window.addEventListener('popstate', (event) => {
                 // Gera HTML dos eventos do dia
                 let eventsHtml = dayEvents.map(event => {
                     const { isEditable, ...eventData } = event.data;
-                    const { imageUrl, isClosedToday, closedDays, ...restEventData } = eventData; // Extrai closedDays aqui
+                    const { imageUrl, isClosedToday, closedDays, ...restEventData } = eventData;
+                    
                     const datasetAttributes = Object.entries(restEventData)
                         .map(([key, value]) => `data-${key.toLowerCase()}="${String(value || '').replace(/"/g, '&quot;')}"`)
                         .join(' ');
-                    // Adiciona o atributo data-closeddays se existir
+
                     const closedDaysAttr = closedDays && closedDays.length > 0 ? `data-closeddays='${JSON.stringify(closedDays)}'` : '';
+
+                    // --- LÓGICA NOVA DAS BARRAS LATERAIS ---
+                    // 1. Se a atividade for uma "Cidade", atualizamos a cor atual
+                    if (event.data.type === 'Cidade') {
+                        // Usa a cor salva ou amarelo padrão se não tiver
+                        currentCityColor = event.data.bgColor || '#F4C664';
+                    }
+
+                    // 2. Define o estilo da barra lateral se tivermos uma cor ativa
+                    let borderStyle = '';
+                    if (currentCityColor && currentCityColor !== 'transparent') {
+                        borderStyle = `border-left: 6px solid ${currentCityColor};`;
+                    }
+                    // ----------------------------------------
 
                     let bgColorStyle = '';
                     if (event.data.bgColor) {
@@ -5688,52 +5714,51 @@ window.addEventListener('popstate', (event) => {
                     const time = event.dateTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
                     const closedClasses = isClosedToday ? 'text-red-600 font-bold' : '';
 
-                    // Retorna o HTML do item
+                    // Retorna o HTML do item (Adicionamos ${borderStyle} no style)
                     return `
-                    <div
-                        class="activity-item flex items-center justify-between gap-4 p-2 rounded-md cursor-pointer hover:bg-slate-100"
-                        style="${bgColorStyle}"
-                        onclick='openViewActivityModal(this)'
-                        data-icon='${event.icon}'
-                        data-time="${time}"
-                        data-name="${(event.name || '').replace(/"/g, '&quot;')}"
-                        data-description="${(event.description || '').replace(/"/g, '&quot;')}"
-                        data-iseditable="${isEditable}"
-                        data-activity-id="${eventData.id || ''}"
-                        data-imageurl="${imageUrl || ''}"
-                        data-bgcolor="${event.data.bgColor || ''}"
-                        data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
-                        data-created-at="${event.data.createdAt || ''}"
-                        data-day-counter="${dayCounter}" 
-                        data-total-trip-days="${totalTripDays}"
-                        ${datasetAttributes}
-                        ${closedDaysAttr} /* Adiciona o atributo data-closeddays */
-                    >
-                        <div class="flex items-center gap-3 flex-1 min-w-0">
-                             <svg class="activity-drag-handle" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-                            <span class="font-bold text-sm w-12 text-right flex-shrink-0">${time}</span>
-                            <div class="flex items-center gap-2 text-slate-500 flex-shrink-0 cursor-pointer hover:scale-125 transition-transform" 
-                                onclick="handleActivityIconClick(event, '${(event.data.link || '').replace(/'/g, "\\'")}')" 
-                                title="${event.data.link ? 'Clique para abrir o link' : 'Ver detalhes'}">
-                                ${event.icon || ''}
+                        <div class="activity-item flex items-center justify-between gap-4 p-2 rounded-md cursor-pointer hover:bg-slate-100" 
+                            style="${bgColorStyle} ${borderStyle}" 
+                            onclick='openViewActivityModal(this)'
+                            data-icon='${event.icon}'
+                            data-time="${time}"
+                            data-name="${(event.name || '').replace(/"/g, '&quot;')}"
+                            data-description="${(event.description || '').replace(/"/g, '&quot;')}"
+                            data-iseditable="${isEditable}"
+                            data-activity-id="${eventData.id || ''}"
+                            data-imageurl="${imageUrl || ''}"
+                            data-bgcolor="${event.data.bgColor || ''}"
+                            data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
+                            data-created-at="${event.data.createdAt || ''}"
+                            data-day-counter="${dayCounter}" 
+                            data-total-trip-days="${totalTripDays}"
+                            ${datasetAttributes}
+                            ${closedDaysAttr}
+                        >
+                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                                <svg class="activity-drag-handle" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                                <span class="font-bold text-sm w-12 text-right flex-shrink-0">${time}</span>
+                                <div class="flex items-center gap-2 text-slate-500 flex-shrink-0 cursor-pointer hover:scale-125 transition-transform" onclick="handleActivityIconClick(event, '${(event.data.link || '').replace(/'/g, "\\'")}')" title="${event.data.link ? 'Clique para abrir o link' : 'Ver detalhes'}">
+                                    ${event.icon || ''}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm text-slate-700 truncate">
+                                        <strong class="font-semibold ${closedClasses}">${event.name}</strong> 
+                                        ${event.description ? ` | ${event.description}` : ''}
+                                    </p>
+                                </div>
                             </div>
-                            <p class="text-sm text-slate-700 truncate">
-                                <strong class="font-semibold ${closedClasses}">${event.name}</strong>
-                                ${event.description ? ` | ${event.description}` : ''}
-                            </p>
+                            ${(isEditable && !isReadOnly) ? `
+                                <div class="activity-actions-print flex gap-2 items-center flex-shrink-0">
+                                    <button onclick="event.stopPropagation(); openEditActivityModal('${event.data.id}')" class="text-slate-500 hover:text-blue-600 p-1" title="Editar Atividade">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); deleteActivity('${event.data.id}')" class="text-slate-500 hover:text-red-600 p-1" title="Excluir Atividade">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                    </button>
+                                </div>
+                            ` : ''}
                         </div>
-                        ${(isEditable && !isReadOnly) ? `
-                            <div class="activity-actions-print flex gap-2 items-center flex-shrink-0"> 
-                                <button onclick="event.stopPropagation(); openEditActivityModal('${event.data.id}')" class="text-slate-500 hover:text-blue-600 p-1" title="Editar Atividade">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                            </button>
-                            <button onclick="event.stopPropagation(); deleteActivity('${event.data.id}')" class="text-slate-500 hover:text-red-600 p-1" title="Excluir Atividade">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                            </button>
-                        </div>
-                        ` : ''}
-                    </div>
-                `;
+                    `;
                 }).join('');
 
                 // Mensagem se não houver eventos
