@@ -320,12 +320,10 @@
             background-color: rgba(0, 0, 0, 0.5);
             transition: opacity 0.3s ease-in-out;
         }
+        /* Código alterado para ficarem sempre visíveis */
         .trip-card-action-button {
-            opacity: 0;
+            opacity: 1; /* Mudamos de 0 para 1 */
             transition: opacity 0.3s ease-in-out;
-        }
-        .trip-card:hover .trip-card-action-button {
-            opacity: 1;
         }
         .icon-picker-option {
             transition: all 0.2s ease-in-out;
@@ -759,7 +757,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.28 | 29/01/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.29 | 29/01/2026, 07:55</p>
             </main>
         </div>
 
@@ -4322,41 +4320,57 @@ window.addEventListener('popstate', (event) => {
                 // Listener global para fechar o menu ao clicar em qualquer outro lugar
                 window.addEventListener('click', (e) => {
                     const activityMenu = document.getElementById('activity-color-menu');
-                    const documentMenu = document.getElementById('document-color-menu'); // Pega o novo menu
-                    const btnMenu = document.getElementById('header-btn-color-menu');
+                    const documentMenu = document.getElementById('document-color-menu');
+                    const btnMenu = document.getElementById('header-btn-color-menu'); 
+                    const expensesMenu = document.getElementById('expenses-menu');
+                    const expensesBtn = document.getElementById('expenses-menu-btn');
 
-                    // Lógica para fechar o menu padrão de atividades
-                    if (activityMenu && !activityMenu.contains(e.target)) {
-                        activityMenu.classList.add('hidden');
-                        
-                        // Só limpamos o ID se o OUTRO menu (de cidade) TAMBÉM estiver fechado ou não existir
-                        if (!cityMenu || cityMenu.classList.contains('hidden')) {
-                            currentContextMenuActivityId = null;
+                    // 1. Menu de Atividades (Botão Direito)
+                    if (activityMenu && !activityMenu.classList.contains('hidden')) {
+                        // Se clicou fora do menu
+                        if (!activityMenu.contains(e.target)) {
+                            activityMenu.classList.add('hidden');
+                            
+                            // Só limpamos o ID se o clique NÃO foi em outra atividade (para permitir troca rápida)
+                            if (!e.target.closest('.activity-item')) {
+                                currentContextMenuActivityId = null;
+                            }
                         }
                     }
 
-                    // --- Lógica para fechar o menu de Cidades (header-btn-color-menu) ---
-                    if (cityMenu && !cityMenu.contains(e.target) && !cityMenu.classList.contains('hidden')) {
-                        cityMenu.classList.add('hidden');
-                        
-                        // Só limpamos o ID se o menu padrão TAMBÉM estiver fechado
-                        if (!activityMenu || activityMenu.classList.contains('hidden')) {
-                            currentContextMenuActivityId = null;
+                    // 2. Menu de Documentos
+                    if (documentMenu && !documentMenu.classList.contains('hidden')) {
+                        if (!documentMenu.contains(e.target)) {
+                            documentMenu.classList.add('hidden');
+                            currentContextMenuDocumentId = null;
                         }
                     }
 
-                    // Fecha menu de documentos
-                    if (documentMenu && !documentMenu.contains(e.target)) {
-                        documentMenu.classList.add('hidden');
-                        currentContextMenuDocumentId = null;
+                    // 3. Menu do Header (Botões coloridos) - CORREÇÃO AQUI
+                    if (btnMenu && !btnMenu.classList.contains('hidden')) {
+                        // Verifica se clicou DENTRO do menu
+                        const isClickInsideMenu = btnMenu.contains(e.target);
+                        
+                        // Verifica se clicou NO BOTÃO que abre o menu (importante!)
+                        const isClickOnTrigger = e.target.closest('.trip-btn-context');
+
+                        // Se não foi nem no menu, nem no botão que abre ele -> Fecha.
+                        if (!isClickInsideMenu && !isClickOnTrigger) {
+                            btnMenu.classList.add('hidden');
+                            currentContextMenuButtonIndex = null;
+                        }
                     }
 
-                    // Verifica se o menu existe, se está visível e se o clique NÃO foi dentro dele
-                    if (btnMenu && !btnMenu.classList.contains('hidden') && !btnMenu.contains(e.target)) {
-                        btnMenu.classList.add('hidden');
-                        currentContextMenuButtonIndex = null; // Limpa a seleção para evitar erros
+                    // 4. Menu de Despesas
+                    if (expensesMenu && !expensesMenu.classList.contains('hidden')) {
+                        const isClickOnBtn = expensesBtn && expensesBtn.contains(e.target);
+                        const isClickInside = expensesMenu.contains(e.target);
+                        
+                        if (!isClickOnBtn && !isClickInside) {
+                            expensesMenu.classList.add('hidden');
+                        }
                     }
-                }, true);
+                });
 
                 loadSuggestedItineraries();
                 setupTripsListener(); 
