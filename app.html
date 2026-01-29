@@ -759,7 +759,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.26 | 28/01/2026, 20:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.27 | 29/01/2026, 07:55</p>
             </main>
         </div>
 
@@ -5744,54 +5744,116 @@ window.addEventListener('popstate', (event) => {
                 const time = event.dateTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
                 const closedClasses = isClosedToday ? 'text-red-400 font-bold' : ''; // Vermelho mais claro se fundo for escuro? Pode manter red-600 ou ajustar.
 
-                return `
-                    <div class="activity-item flex items-center justify-between gap-4 p-2 rounded-md cursor-pointer ${hoverClass}" 
-                        style="${bgColorStyle} ${borderStyle}" 
-                        onclick='openViewActivityModal(this)'
-                        data-icon='${event.icon}'
-                        data-time="${time}"
-                        data-name="${(event.name || '').replace(/"/g, '&quot;')}"
-                        data-description="${(event.description || '').replace(/"/g, '&quot;')}"
-                        data-iseditable="${isEditable}"
-                        data-activity-id="${eventData.id || ''}"
-                        data-imageurl="${imageUrl || ''}"
-                        data-bgcolor="${event.data.bgColor || ''}"
-                        data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
-                        data-created-at="${event.data.createdAt || ''}"
-                        data-day-counter="${dayCounter}" 
-                        data-total-trip-days="${totalTripDays}"
-                        ${datasetAttributes}
-                        ${closedDaysAttr}
-                    >
-                        <div class="flex items-center gap-3 flex-1 min-w-0">
-                            <svg class="activity-drag-handle ${iconColorClass}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                // --- INÍCIO DA ALTERAÇÃO (FOTO NO TOPO PARA CIDADES) ---
+                    const isCityWithImage = event.data.type === 'Cidade' && imageUrl && imageUrl.trim() !== '';
+
+                    if (isCityWithImage) {
+                        // --- LAYOUT FINAL: SEM BORDA SUPERIOR + CORREÇÃO FORÇADA DE IMPRESSÃO ---
+                        
+                        // Define a cor explicitamente para usar com !important
+                        const textColorStyle = isDark ? '#ffffff' : '#000000';
+                        const descColorStyle = isDark ? '#e2e8f0' : '#475569'; // slate-200 ou slate-600
+
+                        return `
+                        <div class="relative group cursor-pointer transition-transform hover:scale-[1.01] rounded-xl shadow-sm mb-6 break-inside-avoid" 
+                             style="margin-top: 24px;"
+                             onclick='openViewActivityModal(this)'
+                             data-icon='${event.icon}' 
+                             data-time="${time}" 
+                             data-name="${(event.name || '').replace(/"/g, '&quot;')}" 
+                             data-description="${(event.description || '').replace(/"/g, '&quot;')}" 
+                             data-iseditable="${isEditable}" 
+                             data-activity-id="${eventData.id || ''}" 
+                             data-imageurl="${imageUrl || ''}" 
+                             data-bgcolor="${event.data.bgColor || ''}"
+                             data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
+                             data-created-at="${event.data.createdAt || ''}"
+                             data-day-counter="${dayCounter}"
+                             data-total-trip-days="${totalTripDays}"
+                             ${datasetAttributes} ${closedDaysAttr}>
                             
-                            <span class="font-bold text-sm w-12 text-right flex-shrink-0 ${timeColorClass}">${time}</span>
-                            
-                            <div class="flex items-center gap-2 ${iconColorClass} flex-shrink-0 cursor-pointer hover:scale-125 transition-transform" onclick="handleActivityIconClick(event, '${(event.data.link || '').replace(/'/g, "\\'")}')" title="${event.data.link ? 'Clique para abrir o link' : 'Ver detalhes'}">
-                                ${event.icon || ''}
+                            <div class="w-full h-24 overflow-hidden rounded-t-xl relative border-x border-t border-gray-100/50 bg-gray-100">
+                                <img src="${imageUrl}" alt="${event.name}" class="w-full h-full object-cover">
+                                
+                                ${(isEditable && !isReadOnly) ? `
+                                <div class="absolute top-2 right-2 flex gap-1.5 z-10 print:hidden">
+                                    <button onclick="event.stopPropagation(); openEditActivityModal('${eventData.id}')" class="bg-white/90 text-blue-600 p-1 rounded-full hover:bg-white shadow-sm" title="Editar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); deleteActivity('${eventData.id}')" class="bg-white/90 text-red-600 p-1 rounded-full hover:bg-white shadow-sm" title="Excluir">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                    </button>
+                                </div>
+                                ` : ''}
                             </div>
-                            
-                            <div class="min-w-0 flex-1">
-                                <p class="text-sm ${descColorClass} truncate">
-                                    <strong class="font-semibold ${closedClasses} ${isClosedToday ? '' : titleColorClass}">${event.name}</strong> 
-                                    ${event.description ? ` | ${event.description}` : ''}
-                                </p>
+
+                            <div class="p-3 rounded-b-xl flex items-center gap-3 border-x border-b border-gray-100/50" 
+                                 style="${bgColorStyle}; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                                
+                                <div class="p-1.5 bg-white/40 backdrop-blur-sm rounded-full flex-shrink-0" 
+                                     style="color: ${textColorStyle} !important;">
+                                    ${event.icon || ''} 
+                                </div>
+                                
+                                <div class="min-w-0 flex-1">
+                                    <h3 class="font-bold text-base leading-tight truncate" 
+                                        style="color: ${textColorStyle} !important;">
+                                        ${event.name}
+                                    </h3>
+                                    
+                                    <p class="text-xs truncate" 
+                                       style="color: ${descColorStyle} !important;">
+                                        ${time} • ${event.description || 'Explorar a cidade'}
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                        
-                        ${(isEditable && !isReadOnly) ? `
+                        `;
+                    } else {
+                        // LAYOUT ORIGINAL (MANTIDO NO ELSE)
+                        return `
+                        <div class="activity-item flex items-center justify-between gap-4 p-2 rounded-md cursor-pointer ${hoverClass}" style="${bgColorStyle} ${borderStyle}" 
+                             onclick='openViewActivityModal(this)' 
+                             data-icon='${event.icon}' 
+                             data-time="${time}" 
+                             data-name="${(event.name || '').replace(/"/g, '&quot;')}" 
+                             data-description="${(event.description || '').replace(/"/g, '&quot;')}" 
+                             data-iseditable="${isEditable}" 
+                             data-activity-id="${eventData.id || ''}" 
+                             data-imageurl="${imageUrl || ''}" 
+                             data-bgcolor="${event.data.bgColor || ''}"
+                             data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
+                             data-created-at="${event.data.createdAt || ''}"
+                             data-day-counter="${dayCounter}"
+                             data-total-trip-days="${totalTripDays}"
+                             ${datasetAttributes} ${closedDaysAttr}
+                        >
+                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                                <svg class="activity-drag-handle ${iconColorClass}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                                <span class="font-bold text-sm w-12 text-right flex-shrink-0 ${timeColorClass}">${time}</span>
+                                <div class="flex items-center gap-2 ${iconColorClass} flex-shrink-0 cursor-pointer hover:scale-125 transition-transform" onclick="handleActivityIconClick(event, '${(event.data.link || '').replace(/'/g, "\\'")}')" title="${event.data.link ? 'Clique para abrir o link' : 'Ver detalhes'}">
+                                    ${event.icon || ''}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm ${descColorClass} truncate">
+                                        <strong class="font-semibold ${closedClasses} ${isClosedToday ? '' : titleColorClass}">${event.name}</strong>
+                                        ${event.description ? ` | ${event.description}` : ''}
+                                    </p>
+                                </div>
+                            </div>
+                            ${(isEditable && !isReadOnly) ? `
                             <div class="activity-actions-print flex gap-2 items-center flex-shrink-0">
-                                <button onclick="event.stopPropagation(); openEditActivityModal('${event.data.id}')" class="${iconColorClass} hover:text-blue-400 p-1" title="Editar Atividade">
+                                <button onclick="event.stopPropagation(); openEditActivityModal('${eventData.id}')" class="${iconColorClass} hover:text-blue-400 p-1" title="Editar Atividade">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                                 </button>
-                                <button onclick="event.stopPropagation(); deleteActivity('${event.data.id}')" class="${iconColorClass} hover:text-red-400 p-1" title="Excluir Atividade">
+                                <button onclick="event.stopPropagation(); deleteActivity('${eventData.id}')" class="${iconColorClass} hover:text-red-400 p-1" title="Excluir Atividade">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                                 </button>
                             </div>
-                        ` : ''}
-                    </div>
-                `;
+                            ` : ''}
+                        </div>
+                        `;
+                    }
             }).join('');
 
                 // Mensagem se não houver eventos
