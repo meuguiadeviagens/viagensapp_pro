@@ -759,7 +759,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.27 | 29/01/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.28 | 29/01/2026, 07:55</p>
             </main>
         </div>
 
@@ -800,6 +800,7 @@
             <button onclick="setDocumentColor('clear')" class="w-full text-left text-sm text-slate-700 px-2 py-1 rounded hover:bg-slate-100">Limpar cor</button>
         </div>
 
+        <!-- cor das atividades de CIDADE city color-->
         <div id="header-btn-color-menu" class="hidden absolute z-50 bg-white rounded-lg shadow-xl border border-slate-200 p-3 w-48 animate-fade-in">
             <div class="text-xs font-semibold text-slate-500 mb-2 px-1">Cor do Botão</div>
             
@@ -4241,17 +4242,57 @@ window.addEventListener('popstate', (event) => {
                     
                     // 1. Verifica se foi um clique em ATIVIDADE
                     const activityItem = e.target.closest('.activity-item[data-iseditable="true"]');
+            
                     if (activityItem && !isReorganizingActive) {
-                        e.preventDefault(); // Impede o menu padrão do navegador
+                        e.preventDefault();
                         
-                        documentMenu.classList.add('hidden'); // Esconde o outro menu
+                        // Fecha outros menus
+                        const docMenu = document.getElementById('document-color-menu');
+                        if(docMenu) docMenu.classList.add('hidden');
+                        
+                        const btnMenu = document.getElementById('header-btn-color-menu');
+                        if(btnMenu) btnMenu.classList.add('hidden');
+                        
                         currentContextMenuDocumentId = null;
-
                         currentContextMenuActivityId = activityItem.dataset.activityId;
-                        contextMenu.style.top = `${e.clientY}px`;
-                        contextMenu.style.left = `${e.clientX}px`;
-                        contextMenu.classList.remove('hidden');
-                        return; // Para a execução
+
+                        const colorMenu = document.getElementById('activity-color-menu');
+                        if (colorMenu) {
+                            // --- CORREÇÃO DE POSIÇÃO (NÃO SAIR DA TELA) ---
+                            
+                            // 1. Remove hidden temporariamente (invisível) para medir o tamanho real do menu
+                            colorMenu.style.visibility = 'hidden';
+                            colorMenu.classList.remove('hidden');
+                            
+                            const menuWidth = colorMenu.offsetWidth || 200; // Largura do menu
+                            const menuHeight = colorMenu.offsetHeight || 200; // Altura do menu
+                            const screenWidth = window.innerWidth;
+                            const screenHeight = window.innerHeight;
+                            const padding = 10; // Margem de segurança da borda
+                            
+                            // 2. Calcula posição X (Horizontal)
+                            let leftPos = e.clientX;
+                            // Se o menu for ultrapassar a borda direita...
+                            if (leftPos + menuWidth + padding > screenWidth) {
+                                // ...posiciona ele à esquerda do cursor
+                                leftPos = leftPos - menuWidth;
+                            }
+
+                            // 3. Calcula posição Y (Vertical)
+                            let topPos = e.clientY;
+                            // Se o menu for ultrapassar a borda inferior...
+                            if (topPos + menuHeight + padding > screenHeight) {
+                                // ...joga ele para cima do cursor
+                                topPos = topPos - menuHeight;
+                            }
+
+                            // 4. Aplica as posições e torna visível
+                            colorMenu.style.left = `${leftPos}px`;
+                            colorMenu.style.top = `${topPos}px`;
+                            colorMenu.style.visibility = 'visible';
+                        }
+                        
+                        return;
                     }
 
                     // 2. Verifica se foi um clique em DOCUMENTO
@@ -4284,13 +4325,27 @@ window.addEventListener('popstate', (event) => {
                     const documentMenu = document.getElementById('document-color-menu'); // Pega o novo menu
                     const btnMenu = document.getElementById('header-btn-color-menu');
 
-                    // Fecha se clicar fora do menu de atividades
+                    // Lógica para fechar o menu padrão de atividades
                     if (activityMenu && !activityMenu.contains(e.target)) {
                         activityMenu.classList.add('hidden');
-                        currentContextMenuActivityId = null;
+                        
+                        // Só limpamos o ID se o OUTRO menu (de cidade) TAMBÉM estiver fechado ou não existir
+                        if (!cityMenu || cityMenu.classList.contains('hidden')) {
+                            currentContextMenuActivityId = null;
+                        }
                     }
-                    
-                    // Fecha se clicar fora do menu de documentos
+
+                    // --- Lógica para fechar o menu de Cidades (header-btn-color-menu) ---
+                    if (cityMenu && !cityMenu.contains(e.target) && !cityMenu.classList.contains('hidden')) {
+                        cityMenu.classList.add('hidden');
+                        
+                        // Só limpamos o ID se o menu padrão TAMBÉM estiver fechado
+                        if (!activityMenu || activityMenu.classList.contains('hidden')) {
+                            currentContextMenuActivityId = null;
+                        }
+                    }
+
+                    // Fecha menu de documentos
                     if (documentMenu && !documentMenu.contains(e.target)) {
                         documentMenu.classList.add('hidden');
                         currentContextMenuDocumentId = null;
@@ -5748,14 +5803,13 @@ window.addEventListener('popstate', (event) => {
                     const isCityWithImage = event.data.type === 'Cidade' && imageUrl && imageUrl.trim() !== '';
 
                     if (isCityWithImage) {
-                        // --- LAYOUT FINAL: SEM BORDA SUPERIOR + CORREÇÃO FORÇADA DE IMPRESSÃO ---
+                        // --- LAYOUT FINAL: COM A CLASSE 'activity-item' REINSERIDA ---
                         
-                        // Define a cor explicitamente para usar com !important
                         const textColorStyle = isDark ? '#ffffff' : '#000000';
-                        const descColorStyle = isDark ? '#e2e8f0' : '#475569'; // slate-200 ou slate-600
+                        const descColorStyle = isDark ? '#e2e8f0' : '#475569';
 
                         return `
-                        <div class="relative group cursor-pointer transition-transform hover:scale-[1.01] rounded-xl shadow-sm mb-6 break-inside-avoid" 
+                        <div class="activity-item relative group cursor-pointer transition-transform hover:scale-[1.01] rounded-xl shadow-sm mb-6 break-inside-avoid" 
                              style="margin-top: 24px;"
                              onclick='openViewActivityModal(this)'
                              data-icon='${event.icon}' 
