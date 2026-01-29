@@ -759,7 +759,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.25 | 27/01/2026, 08:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.26 | 28/01/2026, 20:55</p>
             </main>
         </div>
 
@@ -3592,7 +3592,10 @@ window.addEventListener('popstate', (event) => {
             const expenseListContainer = document.getElementById('shared-expenses-list');
 
             // 2. Popula os campos do formulário de ADIÇÃO
-            populateCurrencySelect('expense-currency', 'expense-currency-custom');
+            // Lê do objeto trip ou usa BRL se não existir
+            const savedCurrency = trip.lastCurrency || "BRL"; 
+            // Passamos essa variável como 3º parâmetro
+            populateCurrencySelect('expense-currency', 'expense-currency-custom', savedCurrency);
             payersContainer.innerHTML = ''; // <-- Limpa o novo container
             participantsContainer.innerHTML = '';
 
@@ -8863,10 +8866,31 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const currentExpenses = trip.sharedExpenses || [];
             currentExpenses.push(newExpense);
             const tripRef = ref(db, `trips/${currentTripId}`);
-            const updates = { "sharedExpenses": currentExpenses };
+            // [ALTERAÇÃO] Adicionamos o campo "lastCurrency" no pacote de atualização
+            const updates = { 
+                "sharedExpenses": currentExpenses,
+                "lastCurrency": currency 
+            };
             await update(tripRef, updates);
 
-            e.target.reset(); // Limpa o formulário
+            e.target.reset(); // O formulário limpa tudo (volta para BRL)
+
+            // [CORREÇÃO] Restaura a última moeda utilizada imediatamente
+            const currencySelectEl = document.getElementById('expense-currency');
+            const currencyCustomInput = document.getElementById('expense-currency-custom');
+            
+            // Verifica se a moeda usada (variável 'currency') existe nas opções padrão
+            const optionExists = [...currencySelectEl.options].some(o => o.value === currency);
+            
+            if (optionExists) {
+                currencySelectEl.value = currency;
+                currencyCustomInput.classList.add('hidden');
+            } else {
+                // Se for uma moeda customizada, seleciona 'custom' e preenche o texto
+                currencySelectEl.value = 'custom';
+                currencyCustomInput.value = currency;
+                currencyCustomInput.classList.remove('hidden');
+            }
 
             // 5. Reseta os checkboxes "Marcar Todos"
             document.getElementById('select-all-participants').checked = true;
