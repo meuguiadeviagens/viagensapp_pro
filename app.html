@@ -197,17 +197,42 @@
                 flex-direction: column !important;
             }
 
-            /* 2. Define a ordem de impressão padrão dos elementos */
-            #details-view > header { order: 1 !important; } /* Cabeçalho */
-            #details-view > main { order: 2 !important; }   /* Voos, Transportes, Hosp. */
-            #documents-panel { order: 3 !important; }
-            #daily-itinerary-panel { order: 4 !important; }
-            #spending-panel { order: 5 !important; }        /* <--- Gastos vem primeiro */
-            #shared-expenses-panel { order: 6 !important; } /* <--- Divisão em segundo */
+            /* 2. Define a ORDEM exata dos elementos */
+            /* 1º: Cabeçalho da Viagem */
+            #details-view > header,
+            #details-header { 
+                order: 1 !important; 
+            }
 
-            /* 3. Joga o painel de ANOTAÇÕES para o FIM da fila */
+            /* 2º: Pendências (Abaixo do menu, antes dos voos) */
+            #pendencias-panel {
+                order: 2 !important;
+                display: block !important; /* Garante que aparece */
+                margin-bottom: 20px !important;
+                page-break-inside: avoid !important;
+                border: 1px solid #ddd !important; /* Opcional: borda para destacar */
+                border-radius: 8px !important;
+            }
+
+            /* 3º: O bloco principal que contém Voos, Transporte e Hospedagem */
+            #details-view > main { 
+                order: 3 !important; 
+            }
+
+            /* 4º em diante: Os outros painéis */
+            #documents-panel { order: 4 !important; }
+            #daily-itinerary-panel { order: 5 !important; }
+            #spending-panel { order: 6 !important; }
+            #shared-expenses-panel { order: 7 !important; }
+
+            /* Anotações vai para o final */
             #notes-panel {
-                order: 99 !important; /* Um número alto joga para o fim */
+                order: 99 !important;
+            }
+
+            /* Seção de emergência (se selecionada) fica por último */
+            #print-emergency-section {
+                order: 100 !important;
             }
 
             /* 4. Limpa qualquer regra de quebra que possa ter sobrado */
@@ -234,6 +259,25 @@
                 margin-bottom: 1rem !important;
                 padding: 1rem !important;
                 border-radius: 8px !important;
+            }
+
+            /* Regra para ocultar seções desmarcadas pelo usuário */
+            #documents-panel.print-hidden,
+            #spending-panel.print-hidden,
+            #shared-expenses-panel.print-hidden,
+            #notes-panel.print-hidden,
+            #print-emergency-section.print-hidden {
+                display: none !important;
+            }
+
+            /* Regra para forçar o painel de Pendências a expandir na impressão */
+            #pendencias-panel.collapsed #pendencias-content {
+                display: block !important;
+                max-height: none !important;
+                opacity: 1 !important;
+                overflow: visible !important;
+                visibility: visible !important;
+                margin-top: 1rem !important; /* Ajuste para dar um respiro se necessário */
             }
 
         }
@@ -757,7 +801,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.32 | 30/01/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.33 | 30/01/2026, 10:55</p>
             </main>
         </div>
 
@@ -1317,6 +1361,48 @@
             </button>
             <button type="button" onclick="closeModal('notifications-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">
                 Fechar
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="print-options-modal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-4">
+    <div class="bg-white rounded-lg shadow-2xl p-6 w-full max-w-sm">
+        <h3 class="text-xl font-bold text-slate-800 mb-4">Personalizar Impressão</h3>
+        <p class="text-sm text-slate-600 mb-4">Selecione quais seções você deseja incluir no PDF:</p>
+        
+        <div class="space-y-3 mb-6">
+            <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg">
+                <input type="checkbox" id="print-check-documents" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300" checked>
+                <span class="text-slate-700 font-medium">Documentos</span>
+            </label>
+            
+            <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg">
+                <input type="checkbox" id="print-check-spending" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300" checked>
+                <span class="text-slate-700 font-medium">Gastos Previstos</span>
+            </label>
+            
+            <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg">
+                <input type="checkbox" id="print-check-shared" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300" checked>
+                <span class="text-slate-700 font-medium">Divisão de Despesas</span>
+            </label>
+            
+            <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg">
+                <input type="checkbox" id="print-check-notes" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300" checked>
+                <span class="text-slate-700 font-medium">Anotações</span>
+            </label>
+            
+            <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg">
+                <input type="checkbox" id="print-check-emergency" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300">
+                <span class="text-slate-700 font-medium">Dados Pessoais de Emergência</span>
+            </label>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-2 border-t">
+            <button onclick="closeModal('print-options-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-lg hover:bg-slate-300 font-medium transition-colors">Cancelar</button>
+            <button onclick="confirmPrintTrip()" class="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+                Gerar PDF
             </button>
         </div>
     </div>
@@ -11581,7 +11667,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             container.appendChild(div);
         };
 
-        window.printTripWithEmergency = () => {
+        window.printTripWithEmergency = async () => {
             const container = document.getElementById('print-emergency-section');
             const trip = tripsData.find(t => t.id === currentTripId);
 
@@ -11652,10 +11738,12 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             // Pequeno delay para garantir que o navegador renderizou o DOM antes de imprimir
             setTimeout(() => {
-                window.print();
+                //window.print();
                 // Opcional: Esconder novamente após imprimir, se desejar limpar a tela
                 // container.style.display = 'none'; 
             }, 100);
+
+            openModal('print-options-modal');
         };
 
         window.openTripExpensesQuick = (event, tripId) => {
@@ -11743,6 +11831,48 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             };
 
             tryOpenMenu();
+        };
+
+        window.confirmPrintTrip = () => {
+            // Mapeamento: ID do Checkbox => ID do Painel HTML
+            const sectionMap = {
+                'print-check-documents': 'documents-panel',
+                'print-check-spending': 'spending-panel',
+                'print-check-shared': 'shared-expenses-panel',
+                'print-check-notes': 'notes-panel',
+                'print-check-emergency': 'print-emergency-section'
+            };
+
+            // Aplica a classe 'print-hidden' baseada na seleção
+            for (const [checkboxId, panelId] of Object.entries(sectionMap)) {
+                const checkbox = document.getElementById(checkboxId);
+                const panel = document.getElementById(panelId);
+                
+                if (checkbox && panel) {
+                    if (!checkbox.checked) {
+                        panel.classList.add('print-hidden');
+                    } else {
+                        panel.classList.remove('print-hidden');
+                    }
+                }
+            }
+
+            // Fecha o modal
+            closeModal('print-options-modal');
+
+            // Aguarda um breve momento para o modal fechar visualmente e chama a impressão
+            setTimeout(() => {
+                window.print();
+                
+                // Opcional: Remove as classes depois de imprimir para restaurar a visualização normal
+                // (Isso evita que o painel suma da tela se o usuário cancelar a impressão e continuar navegando)
+                setTimeout(() => {
+                    for (const panelId of Object.values(sectionMap)) {
+                        const panel = document.getElementById(panelId);
+                        if(panel) panel.classList.remove('print-hidden');
+                    }
+                }, 1000);
+            }, 300);
         };
 
     </script>
