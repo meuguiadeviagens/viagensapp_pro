@@ -125,11 +125,17 @@
             /* * Regra 6: Evita quebras de página ruins no meio dos itens
             */
             section,
-            .day-panel,
+            /*.day-panel,*/
             .activity-item,
             .document-item,
             .note-item-container {
                 page-break-inside: avoid !important;
+            }
+
+            /* Nova regra: 6.1 Permite que atividades longas continuem na próxima página */
+            .activity-item {
+                page-break-inside: auto !important;
+                break-inside: auto !important;
             }
 
             /* * Regra 7: Garante que o texto do roteiro quebre a linha (remove o "truncate")
@@ -801,7 +807,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.34 | 31/01/2026, 20:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.35 | 01/02/2026, 20:55</p>
             </main>
         </div>
 
@@ -1393,12 +1399,12 @@
             </label>
             
             <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg">
-                <input type="checkbox" id="print-check-spending" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300" checked>
+                <input type="checkbox" id="print-check-spending" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300" >
                 <span class="text-slate-700 font-medium">Gastos Previstos</span>
             </label>
             
             <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg">
-                <input type="checkbox" id="print-check-shared" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300" checked>
+                <input type="checkbox" id="print-check-shared" class="h-5 w-5 rounded text-blue-600 focus:ring-blue-500 border-gray-300" >
                 <span class="text-slate-700 font-medium">Divisão de Despesas</span>
             </label>
             
@@ -5990,7 +5996,7 @@ window.addEventListener('popstate', (event) => {
                     } else {
                         // LAYOUT ORIGINAL (MANTIDO NO ELSE)
                         return `
-                        <div class="activity-item flex items-center justify-between gap-4 p-2 rounded-md cursor-pointer ${hoverClass}" style="${bgColorStyle} ${borderStyle}" 
+                        <div class="activity-item flex items-start justify-between gap-4 p-2 rounded-md cursor-pointer ${hoverClass}" style="${bgColorStyle} ${borderStyle}" 
                              onclick='openViewActivityModal(this)' 
                              data-icon='${event.icon}' 
                              data-time="${time}" 
@@ -6006,7 +6012,7 @@ window.addEventListener('popstate', (event) => {
                              data-total-trip-days="${totalTripDays}"
                              ${datasetAttributes} ${closedDaysAttr}
                         >
-                            <div class="flex items-center gap-3 flex-1 min-w-0">
+                            <div class="flex items-start gap-3 flex-1 min-w-0">
                                 <svg class="activity-drag-handle ${iconColorClass}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
                                 <span class="font-bold text-sm w-12 text-right flex-shrink-0 ${timeColorClass}">${time}</span>
                                 <div class="flex items-center gap-2 ${iconColorClass} flex-shrink-0 cursor-pointer hover:scale-125 transition-transform" onclick="handleActivityIconClick(event, '${(event.data.link || '').replace(/'/g, "\\'")}')" title="${event.data.link ? 'Clique para abrir o link' : 'Ver detalhes'}">
