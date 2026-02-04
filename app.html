@@ -392,7 +392,7 @@
         #documents-panel.collapsed #documents-content,
         #pendencias-panel.collapsed #pendencias-content,
         #spending-panel.collapsed #spending-content,
-        #notes-panel.collapsed #notes-content
+        #notes-panel.collapsed #notes-content,
         #shared-expenses-panel.collapsed .panel-content {
             max-height: 0;
             opacity: 0;
@@ -405,6 +405,7 @@
             transition: transform 0.3s ease-in-out;
         }
         #add-expense-panel.collapsed .panel-toggle-btn svg, /* Adicione esta linha */
+        #shared-expenses-panel.collapsed .panel-toggle-btn svg,
         #documents-panel.collapsed #documents-toggle-btn svg,
         #pendencias-panel.collapsed #pendencias-toggle-btn svg,
         #spending-panel.collapsed #spending-toggle-btn svg,
@@ -807,7 +808,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.35 | 01/02/2026, 20:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.36 | 04/02/2026, 10:55</p>
             </main>
         </div>
 
@@ -2462,7 +2463,7 @@
         <!-- FIM: MODAL EDITAR MINHA DESPESA -->
 
 <div id="edit-profile-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
-    <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4">
+    <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4 max-h-[90vh] overflow-y-auto">
         <h3 class="text-2xl font-semibold mb-6">Alterar Meus Dados</h3>
         <form id="edit-profile-form" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
