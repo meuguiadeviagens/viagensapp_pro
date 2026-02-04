@@ -808,7 +808,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.36 | 04/02/2026, 10:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.37 | 04/02/2026, 19:55</p>
             </main>
         </div>
 
@@ -5202,34 +5202,42 @@ window.addEventListener('popstate', (event) => {
             const tripCard = document.createElement('div');
             tripCard.className = 'trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative';
             tripCard.onclick = () => showTripDetails(trip.id);
-            
-            // 1. Pega o papel (role) do usuário atual nesta viagem
-            const userRole = (currentUserId && trip.members) ? trip.members[currentUserId] : null;
 
-            // --- INÍCIO DA LÓGICA DE NOTIFICAÇÃO (BOLINHA VERMELHA/VERDE) ---
-            let notificationBadgeHtml = '';
+            // --- 1. LÓGICA NOVA: Contagem de Viajantes ---
+            const travelersCount = trip.travelers ? trip.travelers.length : 1;
+
+            // --- 2. LÓGICA NOVA: Faixa de Dias ---
+            const status = getTripStatus(trip.startDate);
+            let countdownHtml = '';
             
-            // Usa a função auxiliar criada no Passo 2
+            if (status) {
+                // ALTERAÇÃO: Removido 'absolute', 'bottom-0', 'z-20', etc.
+                // Adicionado 'py-0.5' para ficar uma faixa mais fina e elegante
+                countdownHtml = `
+                <div class="w-full py-0.5 px-3 text-center ${status.classes}">
+                    <p class="text-[10px] font-bold uppercase tracking-wide">${status.text}</p>
+                </div>`;
+            }
+
+            // ... (Lógica existente de papéis e badges) ...
+            const userRole = (currentUserId && trip.members) ? trip.members[currentUserId] : null;
+            
+            let notificationBadgeHtml = '';
             if (checkTripHasNews(trip)) {
                 notificationBadgeHtml = `
-                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-yellow-300 bg-green-700 rounded-full shadow-sm animate-pulse" title="Novas alterações nesta viagem">
-                        Novidades
-                    </span>`;
+                <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-yellow-300 bg-green-700 rounded-full shadow-sm animate-pulse" title="Novas alterações nesta viagem">
+                    Novidades
+                </span>`;
             }
-            // --- FIM DA LÓGICA DE NOTIFICAÇÃO ---
 
-            // --- NOVO: LÓGICA DO BADGE "AVULSA" ---
             let avulsaBadgeHtml = '';
-            // Verifica se a licença e a lista de compradas existem, e se este ID está lá
             if (currentUserLicense && currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[trip.id]) {
                 avulsaBadgeHtml = `
-                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-purple-700 bg-purple-100 border border-purple-200 rounded-full shadow-sm" title="Esta viagem foi adquirida de forma avulsa">
-                        Avulsa
-                    </span>`;
+                <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-purple-700 bg-purple-100 border border-purple-200 rounded-full shadow-sm">
+                    Avulsa
+                </span>`;
             }
-            // --- FIM LÓGICA AVULSA ---
 
-            // Lógica para encontrar o nome do dono
             let ownerDisplayName = 'Carregando...';
             if (trip.members && trip.travelers) {
                 const ownerUid = Object.keys(trip.members).find(uid => trip.members[uid] === 'owner');
@@ -5245,39 +5253,37 @@ window.addEventListener('popstate', (event) => {
                 }
             }
 
-            // Lógica do ícone de visualização
             let viewOnlyIconHtml = '';
-            if (userRole === 'viewer') { 
+            if (userRole === 'viewer') {
                 viewOnlyIconHtml = `
-                    <div class="absolute bottom-3 right-3 z-10" title="Apenas visualização">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 bg-white/70 backdrop-blur-sm p-1 rounded-full">
-                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                    </div>
+                <div class="absolute bottom-3 right-3 z-10" title="Apenas visualização">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-red-600 bg-white/70 backdrop-blur-sm p-1 rounded-full">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </div>
                 `;
-            }            
-            
-            // Lógica do botão Excluir/Sair
+            }
+
             let deleteButtonHtml = '';
             if (userRole === 'owner') {
                 deleteButtonHtml = `
-                    <button onclick="deleteTrip(event, '${trip.id}')" title="Excluir Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                    </button>
+                <button onclick="deleteTrip(event, '${trip.id}')" title="Excluir Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                </button>
                 `;
             } else if (userRole === 'editor' || userRole === 'viewer') {
                 deleteButtonHtml = `
-                    <button onclick="deleteTrip(event, '${trip.id}')" title="Sair da Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-                    </button>
+                <button onclick="deleteTrip(event, '${trip.id}')" title="Sair da Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                </button>
                 `;
             }
 
             const expenseShortcutHtml = `
-                <button onclick="openTripExpensesQuick(event, '${trip.id}')" title="Ver Despesas" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dollar-sign"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                </button>
+            <button onclick="openTripExpensesQuick(event, '${trip.id}')" title="Ver Despesas" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </button>
             `;
 
             let imageContainerClasses = 'h-48';
@@ -5288,33 +5294,48 @@ window.addEventListener('popstate', (event) => {
                 imageContainerClasses = 'h-24';
                 textContainerClasses = 'p-4';
                 titleClasses = 'text-xl';
-
+                
                 const today = new Date();
-                today.setUTCHours(0, 0, 0, 0);
+                today.setUTCHours(0,0,0,0);
                 const tripEndDate = new Date(trip.endDate);
-
                 if (tripEndDate < today) {
                     imageContainerClasses += ' grayscale';
                 }
             }
 
             const isFavorite = userFavoriteTrips.has(trip.id);
-            const starIcon = isFavorite ?
-                `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` :
+            const starIcon = isFavorite ? 
+                `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` : 
                 `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
 
+            // --- HTML MODIFICADO ABAIXO ---
             tripCard.innerHTML = `
-                <button onclick="toggleFeatured(event, '${trip.id}')" class="absolute top-3 left-3 z-10 w-8 h-8 flex items-center justify-center bg-white/70 backdrop-blur-sm text-yellow-500 rounded-full hover:bg-white transition-colors">
+                <button onclick="toggleFeatured(event, '${trip.id}')" class="absolute top-3 left-3 z-30 w-8 h-8 flex items-center justify-center bg-white/70 backdrop-blur-sm text-yellow-500 rounded-full hover:bg-white transition-colors">
                     ${starIcon}
                 </button>
-                <div class="absolute top-3 right-3 z-10 flex gap-2">
+
+                <div class="absolute top-3 right-3 z-30 flex gap-2">
                     <button onclick="duplicateTrip(event, '${trip.id}')" title="Duplicar Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
                     </button>
                     ${deleteButtonHtml}
                     ${expenseShortcutHtml}
                 </div>
-                <div class="${imageContainerClasses} bg-cover bg-center transition-all duration-300" style="background-image: url('${trip.imageUrl}')"></div>
+
+                <div class="${imageContainerClasses} bg-cover bg-center transition-all duration-300 relative" style="background-image: url('${trip.imageUrl}')">
+                    
+                    <div class="absolute top-14 right-3 z-20 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 shadow-sm border border-slate-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        <span class="text-[10px] font-bold text-slate-700">${travelersCount}</span>
+                    </div>
+
+                    </div>
+
+                ${countdownHtml}
+                </div>
+
                 <div class="${textContainerClasses}">
                     <div class="flex items-center justify-between mb-1">
                         <h3 class="${titleClasses} font-bold text-slate-900 truncate max-w-[60%]">${trip.name}</h3>
@@ -5323,15 +5344,14 @@ window.addEventListener('popstate', (event) => {
                             ${notificationBadgeHtml}
                         </div>
                     </div>
-                    
                     <p class="text-slate-500 text-sm truncate">Criado por ${ownerDisplayName}</p>
-                    
                     <div class="mt-2 text-xs font-medium text-slate-600">
-                    ${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}
+                        ${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}
                     </div>
                     ${viewOnlyIconHtml}
                 </div>
             `;
+
             return tripCard;
         }
 
@@ -12016,6 +12036,39 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             } finally {
                 if(okBtn) okBtn.innerHTML = originalText;
             }
+        }
+
+        // Função para calcular os dias restantes e a cor da faixa
+        function getTripStatus(dateString) {
+            if (!dateString) return null;
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const tripDate = new Date(dateString);
+            if (isNaN(tripDate.getTime())) return null;
+
+            const diffTime = tripDate - today;
+            const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            // Regra nova: 
+            // Se a data já passou (daysLeft < 0) OU 
+            // se faltam mais de 60 dias (daysLeft > 60), não retorna nada.
+            if (daysLeft < 0 || daysLeft > 60) return null;
+
+            let classes = "";
+            
+            if (daysLeft < 31) {
+                classes = "bg-red-600 text-white"; // Urgente (< 31)
+            } else {
+                // Se chegou aqui, é porque está entre 31 e 60 (o filtro > 60 barrou o resto)
+                classes = "bg-yellow-400 text-slate-900"; 
+            }
+
+            return {
+                text: daysLeft === 0 ? "É hoje!" : `Faltam ${daysLeft} dias`,
+                classes: classes
+            };
         }
 
     </script>
