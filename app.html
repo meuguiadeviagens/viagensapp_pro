@@ -808,7 +808,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.37 | 04/02/2026, 19:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.38 | 04/02/2026, 21:55</p>
             </main>
         </div>
 
@@ -12052,17 +12052,17 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
             // Regra nova: 
-            // Se a data já passou (daysLeft < 0) OU 
-            // se faltam mais de 60 dias (daysLeft > 60), não retorna nada.
-            if (daysLeft < 0 || daysLeft > 60) return null;
+            // Se já passou (daysLeft < 0) OU falta mais de 90 dias, não mostra nada.
+            if (daysLeft < 0 || daysLeft > 90) return null;
 
             let classes = "";
             
             if (daysLeft < 31) {
-                classes = "bg-red-600 text-white"; // Urgente (< 31)
+                classes = "bg-red-600 text-white";       // Urgente (0-30)
+            } else if (daysLeft < 61) {
+                classes = "bg-yellow-400 text-slate-900"; // Atenção (31-60)
             } else {
-                // Se chegou aqui, é porque está entre 31 e 60 (o filtro > 60 barrou o resto)
-                classes = "bg-yellow-400 text-slate-900"; 
+                classes = "bg-green-600 text-white";     // Destaque (61-90)
             }
 
             return {
