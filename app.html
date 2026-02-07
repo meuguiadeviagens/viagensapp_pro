@@ -820,7 +820,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.38 | 04/02/2026, 21:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.39 | 07/02/2026, 21:55</p>
             </main>
         </div>
 
@@ -8859,43 +8859,53 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
                 }
                 
-                // --- LÓGICA PARA MOVER AS ATIVIDADES ---
+                // --- LÓGICA PARA MOVER AS ATIVIDADES (COM CONFIRMAÇÃO) ---
                 const newStartDateStr = document.getElementById('edit-trip-start-date').value;
                 const newStartDateTimestamp = new Date(newStartDateStr + 'T00:00:00Z').getTime();
                 const oldStartDateTimestamp = trip.startDate;
 
-                // Se a data de início mudou, ajustamos as atividades
+                // Se a data de início mudou e existem atividades, perguntamos o que fazer
                 if (oldStartDateTimestamp !== newStartDateTimestamp && trip.activities) {
-                    // Calcula a diferença em milissegundos
-                    const timeDiff = newStartDateTimestamp - oldStartDateTimestamp;
-
-                    // Cria uma cópia profunda das atividades para modificar
-                    // (Funciona tanto se for Array quanto Objeto no Firebase)
-                    const updatedActivities = JSON.parse(JSON.stringify(trip.activities));
                     
-                    // Itera sobre as chaves (seja array ou objeto)
-                    Object.keys(updatedActivities).forEach(key => {
-                        const activity = updatedActivities[key];
-                        if (activity.date) {
-                            // 1. Tenta criar a data
-                            const actDate = new Date(activity.date + 'T00:00:00Z').getTime();
+                    // Pergunta ao usuário se deseja mover
+                    const shouldMoveActivities = confirm(
+                        "Você alterou a data de início da viagem.\n\n" +
+                        "Deseja mover as atividades para acompanhar a nova data ou prefere mantê-las nas datas em que foram cadastradas?\n\n" +
+                        "• OK: Move todas as atividades de acordo com a nova data.\n" +
+                        "• Cancelar: Mantém as datas fixas (útil se você apenas quer adicionar dias antes da data antiga, por exemplo)."
+                    );
 
-                            // 2. Se a data original for inválida, pula essa atividade (não tenta reagendar)
-                            if (isNaN(actDate)) return; 
+                    if (shouldMoveActivities) {
+                        // Calcula a diferença em milissegundos
+                        const timeDiff = newStartDateTimestamp - oldStartDateTimestamp;
 
-                            // 3. Aplica a diferença
-                            const newActDate = new Date(actDate + timeDiff);
+                        // Cria uma cópia profunda das atividades para modificar
+                        const updatedActivities = JSON.parse(JSON.stringify(trip.activities));
 
-                            // 4. Se o resultado for inválido, também protege
-                            if (isNaN(newActDate.getTime())) return;
+                        // Itera sobre as chaves (seja array ou objeto)
+                        Object.keys(updatedActivities).forEach(key => {
+                            const activity = updatedActivities[key];
+                            if (activity.date) {
+                                // 1. Tenta criar a data
+                                const actDate = new Date(activity.date + 'T00:00:00Z').getTime();
+                                
+                                // 2. Se a data original for inválida, pula essa atividade
+                                if (isNaN(actDate)) return;
 
-                            // 5. Converte de volta com segurança
-                            activity.date = newActDate.toISOString().split('T')[0];
-                        }
-                    });
+                                // 3. Aplica a diferença
+                                const newActDate = new Date(actDate + timeDiff);
 
-                    // Adiciona as atividades atualizadas ao pacote de envio
-                    updates.activities = updatedActivities;
+                                // 4. Se o resultado for inválido, também protege
+                                if (isNaN(newActDate.getTime())) return;
+
+                                // 5. Converte de volta com segurança
+                                activity.date = newActDate.toISOString().split('T')[0];
+                            }
+                        });
+
+                        // Adiciona as atividades atualizadas ao pacote de envio
+                        updates.activities = updatedActivities;
+                    }
                 }
                 // --- FIM DA LÓGICA PARA MOVER AS ATIVIDADES ---
 
