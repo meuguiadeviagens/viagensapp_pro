@@ -820,7 +820,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.39 | 07/02/2026, 21:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.40 | 10/02/2026, 21:55</p>
             </main>
         </div>
 
@@ -3661,6 +3661,9 @@ window.addEventListener('popstate', (event) => {
             tree: `<span style="font-size: 18px;">🌳</span>`,
 
             cake: `<span style="font-size: 18px;">🥐</span>`,
+
+            cruz: `<span style="font-size: 18px;"> ⛪︎</span>`,
+            estacionamento: `<span style="font-size: 18px;">🅴</span>`,
             
             //sun virou um metrô/trem
             sun: `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><path d="M8 15h.01"/><path d="M16 15h.01"/></svg>`,
@@ -5350,7 +5353,7 @@ window.addEventListener('popstate', (event) => {
 
                 <div class="${textContainerClasses}">
                     <div class="flex items-center justify-between mb-1">
-                        <h3 class="${titleClasses} font-bold text-slate-900 truncate max-w-[60%]">${trip.name}</h3>
+                        <h3 class="${titleClasses} font-bold text-slate-900 truncate flex-1 min-w-0 mr-2">${trip.name}</h3>
                         <div class="flex items-center flex-shrink-0">
                             ${avulsaBadgeHtml}
                             ${notificationBadgeHtml}
@@ -6277,7 +6280,7 @@ window.addEventListener('popstate', (event) => {
                 building: ICONS.building, tree: ICONS.tree, leaf: ICONS.leaf, sun: ICONS.sun, 
                 mountain: ICONS.mountain, ferris_wheel: ICONS.ferris_wheel, basketball: ICONS.basketball, 
                 waves: ICONS.waves, car: ICONS.car, square_m: ICONS.square_m,
-                outro: ICONS.outro
+                outro: ICONS.outro, cruz: ICONS.cruz, estacionamento: ICONS.estacionamento
             };
             
             const noteIconOptions = {
