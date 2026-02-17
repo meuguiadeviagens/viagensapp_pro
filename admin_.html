@@ -269,9 +269,38 @@
                         <div id="country-suggestions-list" class="hidden absolute z-10 w-full bg-white border border-slate-300 rounded-md mt-1 max-h-40 overflow-y-auto shadow-lg">
                             </div>
                     </div>
+                    <div>
+                        <label for="city-image-url" class="block text-sm font-medium text-slate-600">URL da Imagem da Cidade</label>
+                        <input type="url" id="city-image-url" placeholder="https://exemplo.com/foto.jpg" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md">
+                    </div>
                     <div class="pt-6 flex justify-end gap-3">
                         <button type="button" onclick="closeModal('add-city-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
                         <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Salvar Cidade</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="edit-city-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-md m-4">
+                <h3 class="text-xl sm:text-2xl font-semibold mb-6">Editar Cidade</h3>
+                <form id="edit-city-form" class="space-y-4">
+                    <input type="hidden" id="edit-city-id">
+                    <div>
+                        <label for="edit-city-name" class="block text-sm font-medium text-slate-600">Nome da Cidade</label>
+                        <input type="text" id="edit-city-name" class="mt-1 block w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-md" readonly>
+                    </div>
+                    <div>
+                        <label for="edit-city-country" class="block text-sm font-medium text-slate-600">País</label>
+                        <input type="text" id="edit-city-country" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
+                    </div>
+                    <div>
+                        <label for="edit-city-image-url" class="block text-sm font-medium text-slate-600">🌄 URL da Imagem da Cidade</label>
+                        <input type="url" id="edit-city-image-url" placeholder="https://exemplo.com/foto.jpg" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md">
+                    </div>
+                    <div class="pt-6 flex justify-end gap-3">
+                        <button type="button" onclick="closeModal('edit-city-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Salvar Alterações</button>
                     </div>
                 </form>
             </div>
@@ -1701,10 +1730,15 @@
                     item.classList.add('selected');
                 }
                 item.innerHTML = `
-                    <span>${city.cityName}</span>
-                    <button onclick="event.stopPropagation(); deleteCity('${cityId}')" class="text-red-400 hover:text-red-700 p-1 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                    </button>
+                    <span class="truncate mr-2">${city.cityName}</span>
+                    <div class="flex gap-1 flex-shrink-0">
+                        <button onclick="event.stopPropagation(); openEditCityModal('${cityId}')" class="text-blue-400 hover:text-blue-700 p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                        </button>
+                        <button onclick="event.stopPropagation(); deleteCity('${cityId}')" class="text-red-400 hover:text-red-700 p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
+                    </div>
                 `;
                 item.addEventListener('click', () => selectCity(cityId));
                 listContainer.appendChild(item);
@@ -1767,6 +1801,7 @@
         document.getElementById('add-city-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const cityName = document.getElementById('city-name').value.trim();
+            const cityImageUrl = document.getElementById('city-image-url').value;      
             const country = document.getElementById('city-country').value.trim();
             if (!cityName || !country) return;
 
@@ -1777,7 +1812,9 @@
                 return;
             }
 
-            const newCity = { cityName, country, activities: [] };
+            
+
+            const newCity = { cityName, country, cityImageUrl, activities: [] };
             await set(ref(db, `suggestedItineraries/${cityId}`), newCity);
             closeModal('add-city-modal');
         });
@@ -2448,8 +2485,44 @@
         }
         // --- FIM: LÓGICA DE NOTIFICAÇÃO EM MASSA ---
 
+
+        // Função para abrir o modal com os dados atuais da cidade
+        window.openEditCityModal = (cityId) => {
+            const city = suggestedItinerariesData[cityId];
+            if (!city) return;
+
+            document.getElementById('edit-city-id').value = cityId;
+            document.getElementById('edit-city-name').value = city.cityName;
+            document.getElementById('edit-city-country').value = city.country;
+            document.getElementById('edit-city-image-url').value = city.imageUrl || ''; // Carrega a URL se já existir
+
+            openModal('edit-city-modal');
+        };
+
+        // Listener para salvar as alterações da cidade
+        document.getElementById('edit-city-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const cityId = document.getElementById('edit-city-id').value;
+            const country = document.getElementById('edit-city-country').value.trim();
+            const imageUrl = document.getElementById('edit-city-image-url').value.trim();
+
+            try {
+                // Atualiza apenas os campos específicos sem apagar as atividades
+                await update(ref(db, `suggestedItineraries/${cityId}`), {
+                    country: country,
+                    imageUrl: imageUrl
+                });
+                
+                alert("Cidade atualizada com sucesso!");
+                closeModal('edit-city-modal');
+            } catch (error) {
+                console.error("Erro ao atualizar cidade:", error);
+                alert("Erro ao salvar. Verifique o console.");
+            }
+        });
+
     </script>
-<br><center><p>V. 1.2.3 - 10/02/2026 21:42</p></center><br>
+<br><center><p>V. 1.2.4 - 17/02/2026 21:42</p></center><br>
 
 <script>
       if ('serviceWorker' in navigator) {
