@@ -821,7 +821,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.43 | 17/02/2026, 16:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.44 | 17/02/2026, 16:55</p>
             </main>
         </div>
 
@@ -1993,18 +1993,20 @@
                     <label for="activity-time" class="block text-sm font-medium text-slate-600">Horário*</label>
                     <input type="time" id="activity-time" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
                 </div>
-                 <div>
-                    <label for="activity-name" class="block text-sm font-medium text-slate-600">Nome da Atividade*</label>
-                    <input type="text" id="activity-name" placeholder="Ex: Visita ao Coliseu" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
-                </div>
                 <div>
-                    <label for="activity-type" class="block text-sm font-medium text-slate-600">Tipo de Atividade</label>
+                    <label for="activity-type" class="block text-sm font-medium text-slate-600">Tipo de Atividade*</label>
                     <select id="activity-type" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
                         <option value="Passeio">Passeio</option>
                         <option value="Cidade">Cidade</option>
                         <option value="Outro">Outro</option>
                     </select>
                 </div>
+                <div class="relative">
+                    <label for="activity-name" class="block text-sm font-medium text-slate-600">Nome da Atividade*</label>
+                    <input type="text" id="activity-name" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required placeholder="Ex: Museu do Louvre ou Paris">
+                    <div id="activity-name-suggestions" class="hidden absolute z-50 w-full bg-white border border-slate-300 rounded-md mt-1 shadow-lg max-h-40 overflow-y-auto"></div>
+                </div>
+                
                 <div>
                     <label for="activity-description" class="block text-sm font-medium text-slate-600">Descrição (Opcional)</label>
                     <textarea id="activity-description" rows="3" placeholder="Ex: Tour guiado com acesso ao subterrâneo." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm"></textarea>
@@ -2054,17 +2056,18 @@
                     <input type="time" id="edit-activity-time" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
                 </div>
                 <div>
-                    <label for="edit-activity-name" class="block text-sm font-medium text-slate-600">Nome da Atividade*</label>
-                    <input type="text" id="edit-activity-name" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
-                </div>
-                <div>
                     <label for="edit-activity-type" class="block text-sm font-medium text-slate-600">Tipo de Atividade</label>
                     <select id="edit-activity-type" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required>
                         <option value="Passeio">Passeio</option>
                         <option value="Cidade">Cidade</option>
                         <option value="Outro">Outro</option>
                     </select>
-                </div>
+                </div>      
+                <div class="relative">
+                    <label for="edit-activity-name" class="block text-sm font-medium text-slate-600">Nome da Atividade</label>
+                    <input type="text" id="edit-activity-name" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md">
+                    <div id="edit-activity-suggestions" class="hidden absolute z-50 w-full bg-white border border-slate-300 rounded-md mt-1 shadow-lg max-h-40 overflow-y-auto"></div>
+                </div>                
                 <div>
                     <label for="edit-activity-description" class="block text-sm font-medium text-slate-600">Descrição (Opcional)</label>
                     <textarea id="edit-activity-description" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm"></textarea>
@@ -7220,6 +7223,9 @@ let dividerHtml = '';
                 picker.querySelectorAll('.icon-picker-option').forEach(opt => opt.classList.remove('selected'));
                 const selectedIcon = picker.querySelector(`[data-icon="${activity.icon}"]`);
                 if(selectedIcon) selectedIcon.classList.add('selected');
+
+                const suggestions = document.getElementById('edit-activity-suggestions');
+                if (suggestions) suggestions.classList.add('hidden');
                 
                 openModal('edit-activity-modal');
             }
@@ -12383,6 +12389,87 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
             return null; // Caso não encontre nenhuma cidade com imagem no banco
         }
+
+        // Monitora a digitação no nome da atividade
+        document.getElementById('activity-name').addEventListener('input', function() {
+            const type = document.getElementById('activity-type').value;
+            const dropdown = document.getElementById('activity-name-suggestions');
+            const query = this.value.toLowerCase().trim();
+
+            // SÓ ativa o autocomplete se o tipo for "Cidade"
+            if (type !== 'Cidade' || query.length < 2) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            // Usa a mesma lista global que criamos para a Nova Viagem
+            const filtered = globalSuggestedCities.filter(c => 
+                c.cityName.toLowerCase().includes(query)
+            );
+
+            if (filtered.length > 0) {
+                dropdown.innerHTML = filtered.map(city => `
+                    <div class="p-2 hover:bg-slate-100 cursor-pointer text-sm" 
+                        onclick="selectActivityCity('${city.cityName.replace(/'/g, "\\'")}', '${city.imageUrl || ''}')">
+                        ${city.cityName} <span class="text-xs text-slate-400">(${city.country})</span>
+                    </div>
+                `).join('');
+                dropdown.classList.remove('hidden');
+            } else {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Função para selecionar a cidade no modal de atividade
+        window.selectActivityCity = (cityName, imageUrl) => {
+            document.getElementById('activity-name').value = cityName;
+            document.getElementById('activity-image-url').value = imageUrl; // Preenche a URL da imagem automaticamente
+            document.getElementById('activity-name-suggestions').classList.add('hidden');
+            console.log("Cidade e imagem importadas para a atividade.");
+        };
+
+        // Limpa o autocomplete se o usuário mudar o tipo após ter digitado
+        document.getElementById('activity-type').addEventListener('change', function() {
+            document.getElementById('activity-name-suggestions').classList.add('hidden');
+        });
+
+        document.getElementById('edit-activity-name').addEventListener('input', function() {
+            // Pega o tipo selecionado no modal de edição
+            const type = document.getElementById('edit-activity-type').value;
+            const dropdown = document.getElementById('edit-activity-suggestions');
+            const query = this.value.toLowerCase().trim();
+
+            if (type !== 'Cidade' || query.length < 2) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            const filtered = globalSuggestedCities.filter(c => 
+                c.cityName.toLowerCase().includes(query)
+            );
+
+            if (filtered.length > 0) {
+                dropdown.innerHTML = filtered.map(city => `
+                    <div class="p-2 hover:bg-slate-100 cursor-pointer text-sm" 
+                        onclick="selectEditActivityCity('${city.cityName.replace(/'/g, "\\'")}', '${city.imageUrl || ''}')">
+                        ${city.cityName} <span class="text-xs text-slate-400">(${city.country})</span>
+                    </div>
+                `).join('');
+                dropdown.classList.remove('hidden');
+            } else {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Função para aplicar a seleção no modal de edição
+        window.selectEditActivityCity = (cityName, imageUrl) => {
+            document.getElementById('edit-activity-name').value = cityName;
+            // Atualiza a URL da imagem no campo de edição (se existir)
+            const urlInput = document.getElementById('edit-activity-image-url');
+            if (urlInput) urlInput.value = imageUrl;
+            
+            document.getElementById('edit-activity-suggestions').classList.add('hidden');
+        };
 
     </script>
 
