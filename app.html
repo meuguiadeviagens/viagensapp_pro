@@ -28,6 +28,15 @@
     
     <style>
 
+        /* animação "Mais detalhes" ao adicionar atividades... */
+        .details-container {
+            transition: all 0.3s ease-in-out;
+            overflow: hidden;
+        }
+        .details-container.hidden {
+            display: none;
+        }
+        
         /* Ocultar o tipo de atividade.. passeio, cidade, outro */
         #view-activity-type {
             display: none !important;
@@ -133,7 +142,7 @@
             h4 {
                 color: #000000 !important;
             }
-
+            
             /* * Regra 6: Evita quebras de página ruins no meio dos itens
             */
             section,
@@ -365,6 +374,11 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+
+        body.modal-open {
+            overflow: hidden;
+        }
+
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -821,7 +835,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.44 | 17/02/2026, 16:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.45 | 18/02/2026, 16:55</p>
             </main>
         </div>
 
@@ -1538,6 +1552,12 @@
                         <input type="text" id="flight-destination" placeholder="Ex: Roma (FCO)" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
                     </div>
                 </div>
+                <button type="button" onclick="toggleMoreDetails(this, 'flight-more-details')" class="toggle-details-btn flex items-center gap-2 text-sm text-blue-600 font-medium py-2">
+                    <span>Mais detalhes</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+
+            <div id="flight-more-details" class="details-container hidden space-y-4 pt-2">                    
                 <div>
                     <label for="flight-company" class="block text-sm font-medium text-slate-600">Companhia Aérea</label>
                     <input type="text" id="flight-company" placeholder="Ex: LATAM" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm">
@@ -1559,6 +1579,8 @@
                     <label for="flight-cost" class="block text-sm font-medium text-slate-600">Custo (R$)</label>
                     <input type="number" id="flight-cost" placeholder="Ex: 3500.50" min="0" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                 </div>
+            </div>
+
                 <div class="pt-6 flex justify-end gap-3">
                     <button type="button" onclick="closeModal('add-flight-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Cancelar</button>
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold">Adicionar Voo</button>
@@ -1678,6 +1700,11 @@
                     <label for="transport-destination" class="block text-sm font-medium text-slate-600">Destino</label>
                     <input type="text" id="transport-destination" placeholder="Ex: Firenze S.M.N." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" >
                 </div>
+                <button type="button" onclick="toggleMoreDetails(this, 'transport-more-details')" class="toggle-details-btn flex items-center gap-2 text-sm text-blue-600 font-medium py-2">
+                    <span>Mais detalhes</span>
+                </button>
+
+            <div id="transport-more-details" class="details-container hidden space-y-4 pt-2">            
                 <div>
                     <label for="transport-description" class="block text-sm font-medium text-slate-600">Descrição</label>
                     <textarea id="transport-description" rows="3" placeholder="Ex: Trem #9418, vagão 5, assentos 21, 22" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
@@ -1690,11 +1717,14 @@
                 <div>
                     <label for="transport-cost" class="block text-sm font-medium text-slate-600">Custo (R$)</label>
                     <input type="number" id="transport-cost" placeholder="Ex: 150.00" min="0" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
+                </div>                
+            </div>
+
                 <div class="pt-6 flex justify-end gap-3">
                     <button type="button" onclick="closeModal('add-transport-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Cancelar</button>
                     <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-semibold">Adicionar Transporte</button>
                 </div>
+
             </form>
         </div>
     </div>
@@ -1706,11 +1736,7 @@
                  <div>
                     <label for="lodging-name" class="block text-sm font-medium text-slate-600">Nome do Hotel/Local*</label>
                     <input type="text" id="lodging-name" placeholder="Ex: Hotel Coliseu" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required="">
-                </div>
-                <div>
-                    <label for="lodging-address" class="block text-sm font-medium text-slate-600">Endereço</label>
-                    <input type="text" id="lodging-address" placeholder="Ex: Via Cavour, 123" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" >
-                </div>
+                </div>                
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="lodging-checkin-date" class="block text-sm font-medium text-slate-600">Data de Check-in*</label>
@@ -1731,6 +1757,17 @@
                         <input type="time" id="lodging-checkout-time" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
                     </div>
                 </div>
+
+                <button type="button" onclick="toggleMoreDetails(this, 'lodging-more-details')" class="toggle-details-btn flex items-center gap-2 text-sm text-blue-600 font-medium py-2">
+                    <span>Mais detalhes</span>
+                </button>
+
+            <div id="lodging-more-details" class="details-container hidden space-y-4 pt-2">
+                   
+                <div>
+                    <label for="lodging-address" class="block text-sm font-medium text-slate-600">Endereço</label>
+                    <input type="text" id="lodging-address" placeholder="Ex: Via Cavour, 123" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" >
+                </div>
                 <div>
                     <label for="lodging-cost" class="block text-sm font-medium text-slate-600">Custo Total (R$)</label>
                     <input type="number" id="lodging-cost" placeholder="Ex: 1500" min="0" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
@@ -1739,10 +1776,13 @@
                     <label for="lodging-link" class="block text-sm font-medium text-slate-600">Link</label>
                     <input type="url" id="lodging-link" placeholder="https://..." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                 </div>
-                <div class="pt-6 flex justify-end gap-3">
+            </div>
+
+            <div class="pt-6 flex justify-end gap-3">
                     <button type="button" onclick="closeModal('add-lodging-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Cancelar</button>
                     <button type="submit" class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors font-semibold">Adicionar Hospedagem</button>
                 </div>
+
             </form>
         </div>
     </div>
@@ -2006,6 +2046,12 @@
                     <input type="text" id="activity-name" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required placeholder="Ex: Museu do Louvre ou Paris">
                     <div id="activity-name-suggestions" class="hidden absolute z-50 w-full bg-white border border-slate-300 rounded-md mt-1 shadow-lg max-h-40 overflow-y-auto"></div>
                 </div>
+
+                <button type="button" onclick="toggleMoreDetails(this, 'activity-more-details')" class="toggle-details-btn flex items-center gap-2 text-sm text-blue-600 font-medium py-2">
+                    <span>Mais detalhes</span>
+                </button>
+
+            <div id="activity-more-details" class="details-container hidden space-y-4 pt-2">          
                 
                 <div>
                     <label for="activity-description" class="block text-sm font-medium text-slate-600">Descrição (Opcional)</label>
@@ -2033,6 +2079,8 @@
                     <div id="add-icon-picker" class="mt-2 flex flex-wrap gap-2">
                     </div>
                 </div>
+            </div>
+
                 <div class="pt-6 flex justify-end gap-3">
                     <button type="button" onclick="closeModal('add-activity-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Cancelar</button>
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-semibold">Salvar Atividade</button>
@@ -6790,6 +6838,8 @@ let dividerHtml = '';
                         document.getElementById('lodging-checkout-date').value = isoStartDate;
                     }
                 }
+
+                document.body.classList.add('modal-open');
             }
         };
 
@@ -6841,6 +6891,11 @@ let dividerHtml = '';
                 myExpensesCategories = []; // Limpa o cache de categorias também
             }
             // --- FIM DA ATUALIZAÇÃO ---
+
+            const activeModals = document.querySelectorAll('.modal:not(.hidden)');
+                if (activeModals.length === 0) {
+                    document.body.classList.remove('modal-open');
+                }
         }
         
         window.scrollToItinerary = () => {
@@ -12469,6 +12524,32 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             if (urlInput) urlInput.value = imageUrl;
             
             document.getElementById('edit-activity-suggestions').classList.add('hidden');
+        };
+
+        // Função genérica para alternar visibilidade de detalhes nos modais
+        window.toggleMoreDetails = (button, containerId) => {
+            const container = document.getElementById(containerId);
+            const isHidden = container.classList.contains('hidden');
+            
+            if (isHidden) {
+                container.classList.remove('hidden');
+                button.innerHTML = '<span>Menos detalhes</span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"/></svg>';
+            } else {
+                container.classList.add('hidden');
+                button.innerHTML = '<span>Mais detalhes</span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>';
+            }
+        };
+
+        // Resetar modais ao abrir (garantir que detalhes comecem ocultos)
+        const originalOpenModal = window.openModal;
+        window.openModal = (modalId) => {
+            originalOpenModal(modalId);
+            const detailContainers = document.querySelectorAll('.details-container');
+            detailContainers.forEach(c => c.classList.add('hidden'));
+            const toggleButtons = document.querySelectorAll('.toggle-details-btn');
+            toggleButtons.forEach(btn => {
+                btn.innerHTML = '<span>Mais detalhes</span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>';
+            });
         };
 
     </script>
