@@ -907,7 +907,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.3 | 19/02/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.4 | 19/02/2026, 20:55</p>
             </main>
         </div>
 
@@ -6815,17 +6815,49 @@ let dividerHtml = '';
        
         window.openSuggestionsForDay = (event, dayKey) => {
             if (event) event.preventDefault();
+
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const daySelect = document.getElementById('import-target-day-select');
             
+            // 1. POPULA OS DIAS DA VIAGEM ANTES DE ABRIR O MODAL
+            if (daySelect) {
+                daySelect.innerHTML = ''; // Limpa as opções antigas
+                
+                if (trip && trip.startDate && trip.endDate) {
+                    let currentDate = new Date(trip.startDate);
+                    const endDate = new Date(trip.endDate);
+                    let dayCounter = 1;
+
+                    // Recria todos os dias da viagem no <select>
+                    while(currentDate <= endDate) {
+                        const currentDayKey = currentDate.toISOString().split('T')[0];
+                        const dayString = formatDate(currentDayKey, {weekday: 'short', day: 'numeric', month: 'short'});
+                        
+                        const option = document.createElement('option');
+                        option.value = currentDayKey;
+                        option.textContent = `Dia ${dayCounter}: ${dayString}`;
+                        daySelect.appendChild(option);
+                        
+                        currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+                        dayCounter++;
+                    }
+                }
+            }
+
+            // 2. Abre o modal
             openModal('import-suggestions-modal');
             
-            const selectDia = document.getElementById('import-target-day-select');
-            if (selectDia) selectDia.value = dayKey;
-            
-            // Descobre qual é a cidade daquele dia específico
-            const trip = tripsData.find(t => t.id === currentTripId);
+            // 3. AGORA SIM, com as opções criadas, seleciona a data do clique perfeitamente
+            if (daySelect) {
+                daySelect.value = dayKey;
+            }
+
+            // 4. Limpa a lista de atividades temporariamente
+            document.getElementById('suggestions-activities-list').innerHTML = '<p class="text-center text-slate-500">Selecione uma cidade para ver as atividades.</p>';
+
+            // 5. Descobre qual é a cidade daquele dia específico para preencher o autocomplete
             if (trip && trip.activities) {
                 const cidadeDoDia = Object.values(trip.activities).find(a => a.date === dayKey && a.type === 'Cidade');
-                
                 if (cidadeDoDia) {
                     autoPreencherECarregarCidade(cidadeDoDia.name);
                 } else {
@@ -8164,8 +8196,16 @@ let dividerHtml = '';
 
             if (activitiesOnTargetDay.length > 0) {
                 const lastActivity = activitiesOnTargetDay[activitiesOnTargetDay.length - 1];
-                const [lastHours, lastMinutes] = lastActivity.time.split(':').map(Number);
-                lastTimeInMinutes = (lastHours * 60) + lastMinutes;
+                
+                // CORREÇÃO: Verifica se 'time' existe antes de dar o split
+                if (lastActivity && lastActivity.time && typeof lastActivity.time === 'string') {
+                    const [lastHours, lastMinutes] = lastActivity.time.split(':').map(Number);
+                    lastTimeInMinutes = (lastHours * 60) + lastMinutes;
+                } else {
+                    // Se a última atividade não tem hora (ex: marcador de cidade corrompido), 
+                    // define um horário padrão para começar o dia
+                    lastTimeInMinutes = 8 * 60; // 08:00
+                }
             }
 
             activitiesToImport.forEach(activity => {
@@ -9118,16 +9158,16 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                         return tDate.getFullYear() === newTripYear;
                     });
 
-                  //  if (diffDays > 7) {
-                  //      //alert("Plano Gratuito: A duração máxima da viagem é de 7 dias...");
-                  //      
-                  //      tripIdPendingUpgrade = currentTripId;
-                  //      pendingFormId = 'edit-trip-form'; // <-- ADICIONE ISSO
-                  //      
-                  //      prepareUpgradeModal();
-                  //      openModal('upgrade-plan-modal');
-                  //      return;
-                  //  }
+                //  if (diffDays > 7) {
+                //      //alert("Plano Gratuito: A duração máxima da viagem é de 7 dias...");
+                //      
+                //      tripIdPendingUpgrade = currentTripId;
+                //      pendingFormId = 'edit-trip-form'; // <-- ADICIONE ISSO
+                //      
+                //      prepareUpgradeModal();
+                //      openModal('upgrade-plan-modal');
+                //      return;
+                //  }
 
                     if (tripsInSameYear.length >= 1) {
                         //alert(`⚠️ Limite do Plano Gratuito\n\nVocê já possui outra viagem em ${newTripYear}. Não é possível mover esta viagem para esse ano.`);
@@ -9213,14 +9253,15 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             if (tripIndex > -1) tripsData[tripIndex] = { ...tripsData[tripIndex], ...updates };
 
             // 2. Força o redesenho da tela de detalhes...
-            window.currentTripId = tripId; //ID global
+            window.currentTripId = currentTripId; // CORREÇÃO: Usando a variável correta
             renderTripDetails(currentTripId);            
 
             // 3. Força o redesenho da lista de viagens...
             renderTripLists();
 
-            if (valorDestino) {
-                checkSuggestedItineraries(newTripId, valorDestino);
+            // CORREÇÃO: Usando as variáveis que existem neste escopo de edição
+            if (valorDestinoEditado) {
+                checkSuggestedItineraries(currentTripId, valorDestinoEditado);
             }
 
             closeModal('edit-trip-modal');
