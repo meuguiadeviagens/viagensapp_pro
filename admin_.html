@@ -209,9 +209,13 @@
                     <div class="flex justify-between items-center mb-3">
                          <h3 class="font-semibold">Atividades para <span id="selected-city-name" class="text-blue-700"></span></h3>
                             <div class="flex gap-2">
+                                <button onclick="triggerJsonImport()" class="px-3 py-1.5 bg-purple-600 text-white text-sm font-semibold rounded-md hover:bg-purple-700 flex items-center gap-1">
+                                    <span>📥</span> Importar JSON
+                                </button>
                                 <button onclick="openManageItineraryModal()" class="px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700">Gerenciar Roteiros</button>
                                 <button onclick="openEditActivitySuggestionModal()" class="px-3 py-1.5 bg-green-600 text-white text-sm font-semibold rounded-md hover:bg-green-700">Nova Atividade</button>
                             </div>
+                            <input type="file" id="json-import-input" class="hidden" accept=".json" onchange="handleJsonFile(event)">
                     </div>        
                     <div id="suggested-activities-list" class="border rounded-lg p-4 space-y-3 max-h-96 overflow-y-auto">
                         <!-- Atividades da cidade selecionada serão carregadas aqui -->
@@ -222,6 +226,33 @@
                 </div>
             </div>
         </div>
+
+        <!-- FORMATO DO JSON IMPORTAR ROTEIRO ATIVIDADES
+
+ "Crie um JSON com as 10 melhores atrações turísticas da cidade _______ seguindo estritamente este modelo:
+
+JSON
+  {
+    "name": "Nome da Atração",
+    "type": "Passeio",
+    "description": "Resumo do local",
+    "icon": "ID do ícone",
+    "time": "HH:MM",
+    "day": 1,
+    "imageUrl": "URL de uma foto real da atração que seja arquivo .JPG",
+    "link": "URL do Google Maps da atração"
+  }
+Regras:
+
+O type deve ser sempre 'Passeio'.
+
+O icon deve usar um destes IDs: passeio, restaurante, building, shopping, tree, sun, leaf, mountain, waves.
+
+Organize os day de forma lógica e próximas umas das outras (ex: 3 a 4 atrações por dia). Se a atração for muito demorada, reserve uma manhã ou uma tarde pra ela
+
+O link deve ser o link direto do Google Maps para o local."
+
+        -->
 
         <div id="tools-management-view" class="hidden bg-white p-4 sm:p-6 rounded-xl shadow-lg">
             <h2 class="text-xl sm:text-2xl font-semibold text-slate-800 mb-6">Ferramentas de Admin</h2>
@@ -1810,26 +1841,39 @@
                 const item = document.createElement('div');
                 item.className = 'flex items-center justify-between p-3 rounded-lg bg-slate-50 border';
                 
-                // --- INÍCIO DA MODIFICAÇÃO ---
-                // Cria a tag <img> SÓ SE a imageUrl existir
                 let thumbnailHtml = '';
                 if (activity.imageUrl) {
-                    thumbnailHtml = `<img src="${activity.imageUrl}" alt="Miniatura" class="w-10 h-10 rounded object-cover mr-3 flex-shrink-0">`; // Miniatura
+                    thumbnailHtml = `<img src="${activity.imageUrl}" alt="Miniatura" class="w-10 h-10 rounded object-cover mr-3 flex-shrink-0">`;
                 }
                 
-                // Ícone de link (aparece se link existir)
+                // --- ALTERAÇÃO AQUI: ÍCONE CLICÁVEL NA LISTA PRINCIPAL ---
+                const iconContent = ICONS[activity.icon] || ICONS.passeio;
+                const iconHtml = activity.link 
+                    ? `<div onclick="window.open('${activity.link}', '_blank')" 
+                            class="text-slate-500 flex-shrink-0 cursor-pointer hover:text-blue-600 transition-colors" 
+                            title="Abrir no Google Maps">
+                            ${iconContent}
+                       </div>`
+                    : `<div class="text-slate-500 flex-shrink-0">${iconContent}</div>`;
+
                 const linkIconHtml = activity.link ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="lucide lucide-link flex-shrink-0 text-blue-500 inline-block ml-1" title="Possui link externo"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>` : '';
-                // --- FIM DA MODIFICAÇÃO ---
 
                 item.innerHTML = `
-                    <div class="flex items-center gap-3 min-w-0 flex-grow"> ${thumbnailHtml} <div class="text-slate-500 flex-shrink-0">${ICONS[activity.icon] || ICONS.passeio}</div>
-                        <div class="min-w-0 flex-grow"> <p class="font-semibold truncate flex items-center gap-1.5">
+                    <div class="flex items-center gap-3 min-w-0 flex-grow"> 
+                        ${thumbnailHtml} 
+                        ${iconHtml}
+                        <div class="min-w-0 flex-grow"> 
+                            <p class="font-semibold truncate flex items-center gap-1.5">
                                 <span>${activity.name}</span>
-                                ${linkIconHtml}   </p>
+                                ${linkIconHtml}   
+                            </p>
                             <p class="text-xs text-slate-600 truncate">${activity.description}</p>
                         </div>
                     </div>
-                    <div class="flex gap-2 flex-shrink-0 ml-4"> <button onclick="openEditActivitySuggestionModal(${index})" class="text-blue-500 hover:text-blue-800 text-sm">Editar</button> <button onclick="deleteActivitySuggestion(${index})" class="text-red-500 hover:text-red-800 text-sm">Excluir</button> </div>
+                    <div class="flex gap-2 flex-shrink-0 ml-4"> 
+                        <button onclick="openEditActivitySuggestionModal(${index})" class="text-blue-500 hover:text-blue-800 text-sm">Editar</button> 
+                        <button onclick="deleteActivitySuggestion(${index})" class="text-red-500 hover:text-red-800 text-sm">Excluir</button> 
+                    </div>
                 `;
                 listContainer.appendChild(item);
             });
@@ -2355,7 +2399,7 @@
          * Função para "destravar" o áudio no navegador.
          * É chamada no primeiro clique do usuário na página.
          */
-        function primeAudioOnFirstClick() {
+        /*function primeAudioOnFirstClick() {
             if (isAudioReady) return; // Se já foi destravado, não faz nada
 
             // Toca um "silêncio" (volume 0) para o navegador dar permissão
@@ -2384,7 +2428,7 @@
         // 2. Adiciona o "listener" que espera pelo primeiro clique do usuário
         // Assim que o script carregar, ele fica esperando o primeiro clique.
         document.body.addEventListener('click', primeAudioOnFirstClick);
-
+*/
 
         /**
          * Função que toca o som de notificação (Modificada)
@@ -2727,7 +2771,7 @@
         }
 
         function renderMiniActivity(act, isInsideDay = false) {
-            // Input de hora (só aparece se estiver dentro de um dia)
+            // Prepara o input de hora
             const timeInput = isInsideDay 
                 ? `<input type="time" 
                         value="${act.time || ''}" 
@@ -2736,39 +2780,52 @@
                         class="ml-2 text-xs border rounded px-1 focus:ring-1 focus:ring-blue-500 w-20">`
                 : '';
 
-            // LÓGICA DE BOTÕES SEGURA:
-            let actionButtons = '';
+            // BOTÃO DE LINK (O segredo do sucesso)
+            // Ele fica isolado dos eventos de arraste
+            const linkBtn = act.link 
+                ? `<button onclick="event.stopPropagation(); window.open('${act.link}', '_blank')" 
+                           class="text-blue-500 hover:text-blue-700 p-1" title="Abrir Google Maps">
+                        🔗
+                   </button>`
+                : '';
 
+            // Define os botões de ação lateral
+            let actionButtons = '';
             if (isInsideDay) {
-                // Se está no dia, botão de "Remover do Dia" (Voltar para disponíveis)
+                // Dentro do dia: Link + Remover do dia
                 actionButtons = `
-                    <button onclick="event.stopPropagation(); unassignActivity(${act.index})" 
-                           class="ml-2 text-amber-500 hover:text-amber-700 font-bold px-2 py-1 rounded hover:bg-amber-50" 
-                           title="Tirar deste dia (Mover para Disponíveis)">
-                           ➖
-                   </button>`;
+                    <div class="flex items-center gap-1 ml-2">
+                        ${linkBtn}
+                        <button onclick="event.stopPropagation(); unassignActivity(${act.index})" 
+                               class="text-amber-500 hover:text-amber-700 font-bold px-2 py-1 rounded hover:bg-amber-50" 
+                               title="Tirar deste dia">
+                               ➖
+                       </button>
+                    </div>`;
             } else {
-                // Se está nos disponíveis, botões de Editar e Excluir
+                // Na lista de disponíveis: Link + Editar + Excluir
                 actionButtons = `
-                    <div class="flex gap-1 ml-2">
+                    <div class="flex items-center gap-1 ml-2">
+                        ${linkBtn}
                         <button onclick="event.stopPropagation(); openEditActivitySuggestionModal(${act.index})" 
-                                class="text-blue-400 hover:text-blue-600 p-1" title="Editar">
-                            ✏️
-                        </button>
+                                class="text-blue-400 hover:text-blue-600 p-1">✏️</button>
                         <button onclick="event.stopPropagation(); deleteActivitySuggestion(${act.index})" 
-                                class="text-red-400 hover:text-red-600 p-1" title="Excluir Permanentemente">
-                            🗑️
-                        </button>
+                                class="text-red-400 hover:text-red-600 p-1">🗑️</button>
                     </div>`;
             }
 
             return `
-                <div draggable="true" ondragstart="dragActivity(event, ${act.index})" 
+                <div draggable="true" 
+                    ondragstart="dragActivity(event, ${act.index})" 
                     class="flex items-center justify-between p-2 bg-white border rounded-lg shadow-sm cursor-move hover:border-blue-400 transition-colors group">
+                    
                     <div class="flex items-center gap-2 overflow-hidden flex-grow">
-                        <div class="text-blue-500 flex-shrink-0">${ICONS[act.icon] || ICONS.passeio}</div>
+                        <div class="text-blue-500 flex-shrink-0">
+                            ${ICONS[act.icon] || ICONS.passeio}
+                        </div>
                         <span class="text-sm font-medium truncate" title="${act.name}">${act.name}</span>
                     </div>
+                    
                     <div class="flex items-center flex-shrink-0">
                         ${timeInput}
                         ${actionButtons}
@@ -2839,6 +2896,151 @@
                 console.error("Erro ao desvincular:", error);
             }
         };
+
+        // --- FUNÇÃO PARA DISPARAR O SELETOR DE ARQUIVOS ---
+        window.triggerJsonImport = () => {
+            if (!selectedCityId) return alert("Selecione uma cidade primeiro!");
+            document.getElementById('json-import-input').click();
+        };
+
+        // --- FUNÇÃO PARA PROCESSAR O ARQUIVO JSON ---
+        window.handleJsonFile = async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Valida se o JSON é um array
+                    if (!Array.isArray(importedData)) {
+                        throw new Error("O arquivo JSON deve ser um array de atividades.");
+                    }
+
+                    if (!confirm(`Deseja importar ${importedData.length} atividades para ${suggestedItinerariesData[selectedCityId].cityName}?`)) {
+                        return;
+                    }
+
+                    // Pega as atividades atuais para concatenar (adicionar ao fim)
+                    const currentActivities = [...(suggestedItinerariesData[selectedCityId]?.activities || [])];
+                    
+                    // Adiciona as novas atividades à lista
+                    const updatedActivities = [...currentActivities, ...importedData];
+
+                    // Limpeza de segurança (remove nulos)
+                    const cleanActivities = updatedActivities.filter(a => a !== null && a !== undefined);
+
+                    // Salva no Firebase
+                    await set(ref(db, `suggestedItineraries/${selectedCityId}/activities`), cleanActivities);
+                    
+                    alert("Importação concluída com sucesso!");
+                    // Reseta o input para permitir importar o mesmo arquivo de novo se necessário
+                    event.target.value = '';
+
+                } catch (error) {
+                    console.error("Erro na importação:", error);
+                    alert("Erro ao ler o arquivo: " + error.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        // --- FUNÇÃO PARA TRATAR O CTRL+V (COLAR JSON DIRETO NA TELA) ---
+        window.addEventListener('paste', async (e) => {
+            if (document.getElementById('suggestions-management-view').classList.contains('hidden') || !selectedCityId) {
+                return;
+            }
+
+            const activeElem = document.activeElement;
+            if (activeElem.tagName === 'INPUT' || activeElem.tagName === 'TEXTAREA') {
+                return; 
+            }
+
+            const pasteData = e.clipboardData.getData('text');
+
+            try {
+                const importedData = JSON.parse(pasteData);
+                if (!Array.isArray(importedData)) return;
+
+                e.preventDefault();
+
+                if (confirm(`Detectado JSON com ${importedData.length} atividades. Deseja importar/atualizar em ${suggestedItinerariesData[selectedCityId].cityName}?`)) {
+                    
+                    // 1. Pega as atividades atuais do cache ou cria um array vazio
+                    let currentActivities = [...(suggestedItinerariesData[selectedCityId]?.activities || [])];
+
+                    // 2. Processa cada item importado
+                    importedData.forEach(newItem => {
+                        // Busca se já existe uma atração com o mesmo nome (ignorando maiúsculas/minúsculas)
+                        const existingIndex = currentActivities.findIndex(
+                            oldItem => oldItem && oldItem.name.toLowerCase().trim() === newItem.name.toLowerCase().trim()
+                        );
+
+                        if (existingIndex !== -1) {
+                            // SE JÁ EXISTE: Mantém o dia e hora atuais para não perder o roteiro, mas atualiza o resto
+                            const oldDay = currentActivities[existingIndex].day;
+                            const oldTime = currentActivities[existingIndex].time;
+                            
+                            currentActivities[existingIndex] = { 
+                                ...newItem, 
+                                day: newItem.day || oldDay || null, // Prioriza o dia do JSON novo se houver
+                                time: newItem.time || oldTime || null 
+                            };
+                            console.log(`Retificado: ${newItem.name}`);
+                        } else {
+                            // SE É NOVO: Apenas adiciona
+                            currentActivities.push(newItem);
+                            console.log(`Adicionado: ${newItem.name}`);
+                        }
+                    });
+
+                    // 3. Limpeza de segurança (remove nulos)
+                    const cleanActivities = currentActivities.filter(a => a !== null && a !== undefined);
+
+                    // 4. Salva no Firebase
+                    await set(ref(db, `suggestedItineraries/${selectedCityId}/activities`), cleanActivities);
+                    
+                    alert("Processamento concluído! Itens existentes foram atualizados e novos foram adicionados.");
+                }
+            } catch (err) {
+                // Ignora se não for um JSON válido
+            }
+        });
+
+        let autoScrollInterval;
+
+        window.addEventListener('dragover', (e) => {
+            // Define a sensibilidade (ex: 100px das bordas da tela)
+            const threshold = 100;
+            const speed = 15; // Velocidade do scroll
+
+            if (e.clientY < threshold) {
+                // Rola para cima se o mouse estiver no topo
+                startAutoScroll(-speed);
+            } else if (e.clientY > window.innerHeight - threshold) {
+                // Rola para baixo se o mouse estiver no fundo
+                startAutoScroll(speed);
+            } else {
+                stopAutoScroll();
+            }
+        });
+
+        // Para o scroll quando o item é solto
+        window.addEventListener('dragend', stopAutoScroll);
+        window.addEventListener('drop', stopAutoScroll);
+
+        function startAutoScroll(step) {
+            if (autoScrollInterval) return;
+            autoScrollInterval = setInterval(() => {
+                window.scrollBy(0, step);
+            }, 20);
+        }
+
+        function stopAutoScroll() {
+            clearInterval(autoScrollInterval);
+            autoScrollInterval = null;
+        }
 
     </script>
 <br><center><p>V. 1.2.5 - 18/02/2026 21:42</p></center><br>
