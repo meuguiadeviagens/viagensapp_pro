@@ -37,6 +37,12 @@
         .user-trip-item:hover { background-color: #f1f5f9; } /* slate-100 */
         /* NOVO: Para formatar o JSON no modal de histórico */
         pre { white-space: pre-wrap; word-wrap: break-word; }
+
+        /* admin_.html - Dentro da tag <style> */
+        body.modal-open {
+            overflow: hidden;
+        }
+
     </style>
 </head>
 <body class="bg-slate-200">
@@ -202,8 +208,11 @@
                 <div id="activities-panel" class="md:col-span-2 hidden">
                     <div class="flex justify-between items-center mb-3">
                          <h3 class="font-semibold">Atividades para <span id="selected-city-name" class="text-blue-700"></span></h3>
-                         <button onclick="openEditActivitySuggestionModal()" class="px-3 py-1.5 bg-green-600 text-white text-sm font-semibold rounded-md hover:bg-green-700">Nova Atividade</button>
-                    </div>
+                            <div class="flex gap-2">
+                                <button onclick="openManageItineraryModal()" class="px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700">Gerenciar Roteiros</button>
+                                <button onclick="openEditActivitySuggestionModal()" class="px-3 py-1.5 bg-green-600 text-white text-sm font-semibold rounded-md hover:bg-green-700">Nova Atividade</button>
+                            </div>
+                    </div>        
                     <div id="suggested-activities-list" class="border rounded-lg p-4 space-y-3 max-h-96 overflow-y-auto">
                         <!-- Atividades da cidade selecionada serão carregadas aqui -->
                     </div>
@@ -254,6 +263,24 @@
     </div>        
 
         <!-- MODAIS PARA ROTEIROS SUGERIDOS -->
+        <div id="manage-itinerary-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-4xl m-4 max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl sm:text-2xl font-semibold">Gerenciar Roteiro: <span id="itinerary-city-title" class="text-blue-600"></span></h3>
+                    <button onclick="closeModal('manage-itinerary-modal')" class="text-slate-400 hover:text-slate-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                
+                <div id="itinerary-days-container" class="flex-grow overflow-y-auto space-y-6 p-2">
+                    </div>
+
+                <div class="pt-6 flex justify-end gap-3 border-t">
+                    <button type="button" onclick="closeModal('manage-itinerary-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Fechar</button>
+                </div>
+            </div>
+        </div>
+        
         <div id="add-city-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
             <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-md m-4">
                 <h3 class="text-xl sm:text-2xl font-semibold mb-6">Adicionar Nova Cidade</h3>
@@ -562,6 +589,8 @@
         let notifiedFaviconHref = null; // O ícone com o "badge" (será gerado)
         let faviconLinkElement = document.querySelector("link[rel='icon']");
         // --- FIM: NOVAS VARIÁVEIS DO FAVICON ---
+
+        let currentItineraryCityId = null;
 
         // --- INÍCIO: GERAR FAVICON DE NOTIFICAÇÃO ---
         // Garante que o link do favicon exista
@@ -1589,8 +1618,13 @@
         // --- 7. FUNÇÕES UTILITÁRIAS DE MODAL ---
         // (Era a seção 6, agora é 7)
         window.openModal = (id) => {
-             const modal = document.getElementById(id);
-             if(modal) modal.classList.replace('hidden', 'flex'); 
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                // Adiciona o travamento de scroll
+                document.body.classList.add('modal-open');
+            }
         }
 
         // ADICIONE ESTA FUNÇÃO:
@@ -1606,51 +1640,59 @@
         }
 
         window.closeModal = (id) => {
-             const modalElement = document.getElementById(id);
-             if (modalElement) {
-                 modalElement.classList.replace('flex', 'hidden'); 
-                 const form = modalElement.querySelector('form');
-                 if (form) form.reset(); 
+            const modalElement = document.getElementById(id);
+            if (modalElement) {
+                modalElement.classList.replace('flex', 'hidden'); 
+                const form = modalElement.querySelector('form');
+                if (form) form.reset(); 
 
-                 if (id === 'add-city-modal') {
-                    const suggestionsList = document.getElementById('country-suggestions-list');
-                    if (suggestionsList) {
-                        suggestionsList.innerHTML = '';
-                        suggestionsList.classList.add('hidden');
+                if (id === 'add-city-modal') {
+                const suggestionsList = document.getElementById('country-suggestions-list');
+                if (suggestionsList) {
+                    suggestionsList.innerHTML = '';
+                    suggestionsList.classList.add('hidden');
+                }
+                }
+
+                if (id === 'edit-license-modal') {
+                    tempPurchasedTrips = {}; 
+                    const purchasedList = document.getElementById('purchased-trips-list');
+                    if(purchasedList) purchasedList.innerHTML = ''; 
+                    
+                    const expiresInput = document.getElementById('edit-license-expires');
+                    if(expiresInput) expiresInput.value = ''; 
+                    
+                    const aquisicaoInput = document.getElementById('edit-license-aquisicao');
+                    if(aquisicaoInput) aquisicaoInput.value = '';
+
+                    const userTripsContainer = document.getElementById('user-trips-list-container');
+                    if (userTripsContainer) {
+                        userTripsContainer.innerHTML = '';
+                        userTripsContainer.classList.add('hidden');
                     }
-                 }
+                    currentEditingUid = null; 
+                    currentEditingOldLicenseData = null; 
+                }
+                
+                const deleteUidInput = document.getElementById('delete-user-uid');
+                if (id === 'confirm-user-delete-modal' && deleteUidInput) {
+                    deleteUidInput.value = '';
+                }
 
-                 if (id === 'edit-license-modal') {
-                     tempPurchasedTrips = {}; 
-                     const purchasedList = document.getElementById('purchased-trips-list');
-                     if(purchasedList) purchasedList.innerHTML = ''; 
-                     
-                     const expiresInput = document.getElementById('edit-license-expires');
-                     if(expiresInput) expiresInput.value = ''; 
-                     
-                     const aquisicaoInput = document.getElementById('edit-license-aquisicao');
-                     if(aquisicaoInput) aquisicaoInput.value = '';
+                // NOVO: Limpa o modal de histórico ao fechar
+                if (id === 'admin-history-modal') {
+                document.getElementById('history-content-list').innerHTML = '';
+                document.getElementById('history-user-name').textContent = '';
+                }
 
-                     const userTripsContainer = document.getElementById('user-trips-list-container');
-                     if (userTripsContainer) {
-                         userTripsContainer.innerHTML = '';
-                         userTripsContainer.classList.add('hidden');
-                     }
-                     currentEditingUid = null; 
-                     currentEditingOldLicenseData = null; 
-                 }
-                 
-                 const deleteUidInput = document.getElementById('delete-user-uid');
-                 if (id === 'confirm-user-delete-modal' && deleteUidInput) {
-                      deleteUidInput.value = '';
-                 }
-
-                 // NOVO: Limpa o modal de histórico ao fechar
-                 if (id === 'admin-history-modal') {
-                    document.getElementById('history-content-list').innerHTML = '';
-                    document.getElementById('history-user-name').textContent = '';
-                 }
-             }
+                // Verifica se ainda existe algum outro modal aberto antes de destravar o scroll
+                // (Isso evita destravar se você tiver um modal sobre o outro)
+                const activeModals = document.querySelectorAll('.fixed:not(.hidden)');
+                if (activeModals.length === 0) {
+                    document.body.classList.remove('modal-open');
+                }
+                
+            }
         }
 
         // --- 4. LÓGICA DO PAINEL DE ROTEIROS SUGERIDOS ---
@@ -1879,12 +1921,12 @@
         document.getElementById('edit-activity-suggestion-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const index = parseInt(document.getElementById('suggestion-activity-index').value);
-            const currentActivities = [...(suggestedItinerariesData[selectedCityId]?.activities || [])];
+            
+            // Pega as atividades atuais, garantindo que seja um array
+            let currentActivities = [...(suggestedItinerariesData[selectedCityId]?.activities || [])];
 
-            // --- INÍCIO DA MODIFICAÇÃO ---
             const closedDaysCheckboxes = document.querySelectorAll('#closed-days-picker input[name="closedDay"]:checked');
             const closedDays = Array.from(closedDaysCheckboxes).map(cb => cb.value);
-            // --- FIM DA MODIFICAÇÃO ---
 
             const newActivityData = {
                 name: document.getElementById('suggestion-activity-name').value,
@@ -1893,8 +1935,15 @@
                 link: document.getElementById('suggestion-activity-link').value.trim(),
                 imageUrl: document.getElementById('suggestion-activity-image-url').value.trim(),
                 icon: document.getElementById('suggestion-activity-icon').value,
-                closedDays: closedDays // <-- Salva o array de dias fechados
+                closedDays: closedDays
+                // Nota: Não salvamos 'day' ou 'time' aqui, pois isso é gerido no modal de roteiro (drag & drop)
             };
+
+            // Se estiver editando, preserva o dia e hora que já existiam
+            if (index !== -1 && currentActivities[index]) {
+                newActivityData.day = currentActivities[index].day || null;
+                newActivityData.time = currentActivities[index].time || null;
+            }
 
             if (index === -1) {
                 currentActivities.push(newActivityData);
@@ -1902,8 +1951,21 @@
                 currentActivities[index] = newActivityData;
             }
 
-            await set(ref(db, `suggestedItineraries/${selectedCityId}/activities`), currentActivities);
-            closeModal('edit-activity-suggestion-modal');
+            // --- A MÁGICA: LIMPEZA DE DADOS (Remove nulos/undefined) ---
+            const cleanActivities = currentActivities.filter(item => item !== null && item !== undefined);
+
+            try {
+                // Salva a lista limpa no Firebase
+                await set(ref(db, `suggestedItineraries/${selectedCityId}/activities`), cleanActivities);
+                closeModal('edit-activity-suggestion-modal');
+                // Recarrega visualmente se o painel de roteiro estiver aberto
+                if (!document.getElementById('manage-itinerary-modal').classList.contains('hidden')) {
+                     openManageItineraryModal(); 
+                }
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                alert("Erro ao salvar atividade.");
+            }
         });
 
         window.deleteCity = (cityId) => {
@@ -1914,15 +1976,33 @@
             });
         }
         
-        window.deleteActivitySuggestion = (index) => {
-            const activityName = suggestedItinerariesData[selectedCityId].activities[index].name;
-             showConfirmDelete(`Tem certeza que deseja excluir a atividade "${activityName}"?`, async () => {
-                const currentActivities = [...(suggestedItinerariesData[selectedCityId].activities || [])];
-                currentActivities.splice(index, 1);
-                await set(ref(db, `suggestedItineraries/${selectedCityId}/activities`), currentActivities);
-                closeModal('confirm-delete-modal');
-            });
-        }
+        window.deleteActivity = async (index) => {
+            if (!confirm("Tem certeza que deseja remover esta atividade deste roteiro?")) return;
+
+            try {
+                // 1. Busca os dados atuais
+                const snapshot = await get(ref(db, `suggestedItineraries/${currentItineraryCityId}`));
+                let currentData = snapshot.val() || {};
+                let activities = currentData.activities ? Object.values(currentData.activities) : [];
+
+                // 2. Remove o item
+                activities.splice(index, 1);
+
+                // 3. A CORREÇÃO: Filtra para remover qualquer 'null' ou 'undefined' que tenha sobrado
+                // Isso resolve o bug de itens fantasmas aparecendo no App
+                const cleanActivities = activities.filter(a => a !== null && a !== undefined);
+
+                // 4. Salva a lista limpa
+                await set(ref(db, `suggestedItineraries/${currentItineraryCityId}/activities`), cleanActivities);
+
+                // 5. Atualiza a tela
+                renderItineraryDays(cleanActivities);
+
+            } catch (error) {
+                console.error("Erro ao excluir:", error);
+                alert("Erro ao excluir atividade.");
+            }
+        };
         
         function setupSuggestionIconPicker() {
             const picker = document.getElementById('suggestion-icon-picker');
@@ -2521,8 +2601,247 @@
             }
         });
 
+        window.openManageItineraryModal = async () => {
+            // selectedCityId é a variável que você já usa no admin_.html para saber qual cidade está aberta
+            if (!selectedCityId) return;
+            
+            currentItineraryCityId = selectedCityId;
+            const cityData = (await get(ref(db, `suggestedItineraries/${selectedCityId}`))).val();
+            
+            document.getElementById('itinerary-city-title').textContent = cityData.cityName;
+            renderItineraryDays(cityData.activities || []);
+            openModal('manage-itinerary-modal');
+        };
+
+        // --- 1. RENDERIZAÇÃO INTELIGENTE (CORRIGE O DIA AUTOMÁTICO) ---
+        function renderItineraryDays(rawActivities) {
+            const container = document.getElementById('itinerary-days-container');
+            container.innerHTML = '';
+
+            // 1. Sanitização: Garante que é array e remove lixo
+            const activities = Array.isArray(rawActivities) 
+                ? rawActivities.filter(a => a !== null && a !== undefined) 
+                : [];
+
+            const days = {};
+            const unassigned = [];
+
+            // 2. Separação (Com índices corrigidos após a filtragem)
+            activities.forEach((act, index) => {
+                // Importante: passamos o 'index' real do array limpo
+                if (act.day) {
+                    if (!days[act.day]) days[act.day] = [];
+                    days[act.day].push({ ...act, index });
+                } else {
+                    unassigned.push({ ...act, index });
+                }
+            });
+
+            // 3. Ordenação por horário
+            Object.keys(days).forEach(day => {
+                days[day].sort((a, b) => {
+                    if (!a.time) return 1;
+                    if (!b.time) return -1;
+                    return a.time.localeCompare(b.time);
+                });
+            });
+
+            // 4. Cálculo do Máximo Dia (Lógica do Dia Extra)
+            // Pega o maior número de dia existente. Se não tiver nenhum, é 0.
+            const maxDay = Object.keys(days).length > 0 ? Math.max(...Object.keys(days).map(Number)) : 0;
+            
+            // Sempre renderiza até (maxDay + 1) para permitir criar o próximo dia
+            const daysToRender = maxDay + 1;
+
+            for (let i = 1; i <= daysToRender; i++) {
+                const dayActivities = days[i] || [];
+
+                const dayDiv = document.createElement('div');
+                dayDiv.className = "border rounded-xl p-4 bg-slate-50 transition-colors hover:border-blue-200";
+                
+                // Cabeçalho do dia
+                let countBadge = dayActivities.length > 0 
+                    ? `<span class="ml-2 bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full">${dayActivities.length}</span>` 
+                    : '';
+                
+                dayDiv.innerHTML = `
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="font-bold text-slate-700 flex items-center gap-2">
+                            <span class="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">${i}</span>
+                            Dia ${i}
+                        </h4>
+                        ${countBadge}
+                    </div>
+                    <div class="space-y-2 min-h-[80px] border-2 border-dashed border-slate-200 rounded-lg p-2 bg-white/50" 
+                        ondrop="dropToDay(event, ${i})" ondragover="allowDrop(event)">
+                        ${dayActivities.map(act => renderMiniActivity(act, true)).join('') || 
+                        `<div class="h-full flex items-center justify-center text-xs text-slate-400 italic pointer-events-none">
+                            Arraste atrações aqui para criar o Dia ${i}
+                         </div>`}
+                    </div>
+                `;
+                container.appendChild(dayDiv);
+            }
+
+            // 5. Banco de atrações "Sem Dia Definido"
+            const bankDiv = document.createElement('div');
+            bankDiv.className = "mt-8 border-t-2 pt-6";
+            bankDiv.innerHTML = `
+                <h4 class="font-bold text-slate-800 mb-4 text-lg flex items-center gap-2">
+                    <span>📦</span> Atrações Disponíveis 
+                    <span class="text-sm font-normal text-slate-500">(${unassigned.length})</span>
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 min-h-[100px] bg-slate-100 p-4 rounded-lg border-inner" 
+                     ondrop="dropToDay(event, null)" ondragover="allowDrop(event)">
+                    ${unassigned.map(act => renderMiniActivity(act, false)).join('') || 
+                    '<p class="col-span-full text-sm text-slate-400 text-center py-4">Todas as atrações já estão no roteiro.</p>'}
+                </div>
+            `;
+            container.appendChild(bankDiv);
+        }  
+        
+        window.deleteActivitySuggestion = (index) => {
+            if (!suggestedItinerariesData[selectedCityId]?.activities?.[index]) return;
+
+            const activityName = suggestedItinerariesData[selectedCityId].activities[index].name;
+             showConfirmDelete(`Tem certeza que deseja excluir a atividade "${activityName}"?`, async () => {
+                try {
+                    // Pega a lista atual
+                    const currentActivities = [...(suggestedItinerariesData[selectedCityId].activities || [])];
+                    
+                    // Remove o item
+                    currentActivities.splice(index, 1);
+                    
+                    // FILTRO DE LIMPEZA (Remove 'null' ou 'undefined' para não dar erro no App)
+                    const cleanActivities = currentActivities.filter(a => a !== null && a !== undefined);
+
+                    // Salva a lista limpa
+                    await set(ref(db, `suggestedItineraries/${selectedCityId}/activities`), cleanActivities);
+                    
+                    closeModal('confirm-delete-modal');
+                } catch (error) {
+                    console.error("Erro ao excluir:", error);
+                    alert("Erro ao excluir. Verifique o console.");
+                }
+            });
+        }
+
+        function renderMiniActivity(act, isInsideDay = false) {
+            // Input de hora (só aparece se estiver dentro de um dia)
+            const timeInput = isInsideDay 
+                ? `<input type="time" 
+                        value="${act.time || ''}" 
+                        onchange="updateActivityTime(${act.index}, this.value)"
+                        onclick="event.stopPropagation()"
+                        class="ml-2 text-xs border rounded px-1 focus:ring-1 focus:ring-blue-500 w-20">`
+                : '';
+
+            // LÓGICA DE BOTÕES SEGURA:
+            let actionButtons = '';
+
+            if (isInsideDay) {
+                // Se está no dia, botão de "Remover do Dia" (Voltar para disponíveis)
+                actionButtons = `
+                    <button onclick="event.stopPropagation(); unassignActivity(${act.index})" 
+                           class="ml-2 text-amber-500 hover:text-amber-700 font-bold px-2 py-1 rounded hover:bg-amber-50" 
+                           title="Tirar deste dia (Mover para Disponíveis)">
+                           ➖
+                   </button>`;
+            } else {
+                // Se está nos disponíveis, botões de Editar e Excluir
+                actionButtons = `
+                    <div class="flex gap-1 ml-2">
+                        <button onclick="event.stopPropagation(); openEditActivitySuggestionModal(${act.index})" 
+                                class="text-blue-400 hover:text-blue-600 p-1" title="Editar">
+                            ✏️
+                        </button>
+                        <button onclick="event.stopPropagation(); deleteActivitySuggestion(${act.index})" 
+                                class="text-red-400 hover:text-red-600 p-1" title="Excluir Permanentemente">
+                            🗑️
+                        </button>
+                    </div>`;
+            }
+
+            return `
+                <div draggable="true" ondragstart="dragActivity(event, ${act.index})" 
+                    class="flex items-center justify-between p-2 bg-white border rounded-lg shadow-sm cursor-move hover:border-blue-400 transition-colors group">
+                    <div class="flex items-center gap-2 overflow-hidden flex-grow">
+                        <div class="text-blue-500 flex-shrink-0">${ICONS[act.icon] || ICONS.passeio}</div>
+                        <span class="text-sm font-medium truncate" title="${act.name}">${act.name}</span>
+                    </div>
+                    <div class="flex items-center flex-shrink-0">
+                        ${timeInput}
+                        ${actionButtons}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Funções de Drag and Drop
+        window.allowDrop = (ev) => ev.preventDefault();
+
+        window.dragActivity = (ev, index) => {
+            ev.dataTransfer.setData("activityIndex", index);
+        };
+
+        window.dropToDay = async (ev, day) => {
+            ev.preventDefault();
+            const activityIndex = ev.dataTransfer.getData("activityIndex");
+            
+            try {
+                const updates = { day: day };
+                if (day === null) updates.time = null; // Limpa o horário se sair do roteiro
+                
+                const cityRef = ref(db, `suggestedItineraries/${currentItineraryCityId}/activities/${activityIndex}`);
+                await update(cityRef, updates);
+                
+                const snapshot = await get(ref(db, `suggestedItineraries/${currentItineraryCityId}`));
+                renderItineraryDays(snapshot.val().activities || []);
+            } catch (error) {
+                console.error("Erro ao mover atividade:", error);
+            }
+        };
+
+        window.updateActivityTime = async (index, newTime) => {
+            try {
+                const activityRef = ref(db, `suggestedItineraries/${currentItineraryCityId}/activities/${index}`);
+                await update(activityRef, { time: newTime });
+                
+                // Opcional: Re-renderizar para aplicar a nova ordenação imediatamente
+                const snapshot = await get(ref(db, `suggestedItineraries/${currentItineraryCityId}`));
+                renderItineraryDays(snapshot.val().activities || []);
+            } catch (error) {
+                console.error("Erro ao atualizar horário:", error);
+            }
+        };
+
+        // --- NOVA FUNÇÃO: APENAS TIRA DO DIA (NÃO EXCLUI) ---
+        window.unassignActivity = async (index) => {
+            try {
+                // 1. Pega a lista atual
+                const snapshot = await get(ref(db, `suggestedItineraries/${currentItineraryCityId}`));
+                let currentData = snapshot.val() || {};
+                let activities = currentData.activities ? Object.values(currentData.activities) : [];
+
+                // 2. Apenas limpa o dia e a hora (NÃO REMOVE DO ARRAY)
+                if (activities[index]) {
+                    activities[index].day = null;
+                    activities[index].time = null;
+                }
+
+                // 3. Salva a alteração
+                await set(ref(db, `suggestedItineraries/${currentItineraryCityId}/activities`), activities);
+
+                // 4. Atualiza a tela
+                renderItineraryDays(activities);
+
+            } catch (error) {
+                console.error("Erro ao desvincular:", error);
+            }
+        };
+
     </script>
-<br><center><p>V. 1.2.4 - 17/02/2026 21:42</p></center><br>
+<br><center><p>V. 1.2.5 - 18/02/2026 21:42</p></center><br>
 
 <script>
       if ('serviceWorker' in navigator) {
