@@ -617,6 +617,19 @@
         #checklist-view .checklist-section-item.collapsed .chevron-icon {
             transform: rotate(180deg); /* Gira o ícone */
         }
+
+        /* Força a quebra de linha na descrição das atividades sugeridas */
+        #suggestions-activities-list p {
+            white-space: normal !important;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+
+        #suggested-itineraries-container {
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -899,7 +912,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.46 | 18/02/2026, 21:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.1 | 19/02/2026, 07:55</p>
             </main>
         </div>
 
@@ -1073,7 +1086,15 @@
         <!-- NOVO: MODAL PARA IMPORTAR SUGESTÕES -->
         <div id="import-suggestions-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
             <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-2xl m-4 flex flex-col max-h-[90vh]">
-                <h3 class="text-xl sm:text-2xl font-semibold mb-6">Importar Atividades Sugeridas</h3>
+                <div class="mb-6 pb-6 border-b border-slate-100">
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">Importar Roteiros Sugeridos</h3>
+                    <p class="text-sm text-slate-500 mb-3">Encontre roteiros completos criados por nossa equipe.</p>
+                    <button onclick="abrirPesquisaRoteirosDoModal()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors">
+                        Pesquisar Roteiros Completos
+                    </button>
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-4">Importar Atividades Sugeridas</h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                     <div class="relative autocomplete-container">
@@ -1290,16 +1311,8 @@
                     <div class="flex items-center gap-2">
                         <button onclick="openImportSuggestionsModal()" id="import-suggestions-btn" class="text-sm bg-indigo-600 text-white font-semibold px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors">
                             Sugestões
-                        </button>
-                        <div id="reorg-actions-container" class="hidden items-center gap-2">
-                            <div class="flex items-center gap-1 bg-slate-300 p-1 rounded-lg">
-                                <button id="reorg-mode-days-btn" onclick="switchReorganizationType('days')" class="reorg-mode-btn text-xs font-bold px-3 py-1 rounded-md">Dias</button>
-                                <button id="reorg-mode-activities-btn" onclick="switchReorganizationType('activities')" class="reorg-mode-btn text-xs font-bold px-3 py-1 rounded-md">Ativid.</button>
-                            </div>
-                            <button onclick="toggleReorganizationMode(true)" class="text-sm bg-slate-200 text-slate-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-300 transition-colors">Cancelar</button>
-                            <button onclick="toggleReorganizationMode(false)" class="text-sm bg-blue-600 text-white font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors">OK</button>
-                        </div>
-                         <button id="reorg-start-btn" onclick="toggleReorganizationMode()" class="text-sm bg-slate-600 text-white font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-700 transition-colors">Reordenar</button>
+                        </button>                       
+                        <button id="reorg-start-btn" onclick="toggleReorganizationMode()" class="text-sm bg-slate-600 text-white font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-700 transition-colors">Reordenar</button>
                         
                     </div>
                 </div>
@@ -2152,9 +2165,13 @@
                     <label for="activity-description" class="block text-sm font-medium text-slate-600">Descrição (Opcional)</label>
                     <textarea id="activity-description" rows="3" placeholder="Ex: Tour guiado com acesso ao subterrâneo." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm"></textarea>
                 </div>
-                <div>
-                    <label for="activity-link" class="block text-sm font-medium text-slate-600">Link (Opcional)</label>
-                    <input type="url" id="activity-link" placeholder="https://exemplo.com/passeio" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">🗺️ Google Maps (Link)</label>
+                    <input type="url" id="activity-link" class="w-full p-2 border rounded" placeholder="http://maps.google.com/...">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">🔗 Link Adicional (Site, Menu, Reserva)</label>
+                    <input type="url" id="activity-extra-link" class="w-full p-2 border rounded" placeholder="https://siteoficial.com...">
                 </div>
                 <div>
                     <label for="activity-image-url" class="block text-sm font-medium text-slate-600">🌄 URL da Imagem (Opcional)</label>
@@ -2215,9 +2232,14 @@
                     <label for="edit-activity-description" class="block text-sm font-medium text-slate-600">Descrição (Opcional)</label>
                     <textarea id="edit-activity-description" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm"></textarea>
                 </div>
-                <div>
-                    <label for="edit-activity-link" class="block text-sm font-medium text-slate-600">Link (Opcional)</label>
-                    <input type="url" id="edit-activity-link" placeholder="https://exemplo.com/passeio" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">🗺️ Google Maps (Link)</label>
+                    <input type="url" id="edit-activity-link" class="w-full p-2 border rounded" placeholder="http://googleusercontent.com/maps.google.com/...">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">🔗 Link Adicional (Site, Menu, Reserva)</label>
+                    <input type="url" id="edit-activity-extra-link" class="w-full p-2 border rounded" placeholder="https://siteoficial.com...">
                 </div>
                 <div>
                     <label for="edit-activity-image-url" class="block text-sm font-medium text-slate-600">🌄 URL da Imagem (Opcional)</label>
@@ -2263,14 +2285,17 @@
                     <p id="view-activity-meta" class="text-slate-500"></p>
                     <p id="view-activity-type" class="font-medium text-slate-500 bg-slate-100 rounded-full px-3 py-1"></p>
                 </div>
-                <div id="view-activity-buttons-container" class="flex justify-center gap-3">
-                    <button id="view-activity-search-btn" style="display: none;" class="inline-flex items-center justify-center gap-2 bg-slate-600 text-white font-semibold px-5 py-3 rounded-lg shadow-md hover:bg-slate-700 transition-colors duration-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-                        <span>Buscar</span>
-                    </button>
-                    <a id="view-activity-link-btn" href="#" target="_blank" rel="noopener noreferrer" style="display: none;" class="inline-flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" x2="21" y1="14" y2="3"></line></svg>
-                        <span>Link</span>
+                <div id="view-activity-links-container" class="flex flex-wrap gap-2 mb-4">
+                    <a id="view-activity-maps-btn" target="_blank" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                        <span class="mr-2">🗺️</span> Maps
+                    </a>
+                    
+                    <a id="view-activity-extra-link-btn" target="_blank" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors">
+                        <span class="mr-2">🔗</span> Link
+                    </a>
+                    
+                    <a id="view-activity-search-btn" target="_blank" class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-slate-100 text-slate-700 border border-slate-300 rounded hover:bg-slate-200 transition-colors">
+                        <span class="mr-2">🔍</span> Buscar
                     </a>
                 </div>
             </div>
@@ -2907,55 +2932,53 @@
 
         // --- FUNÇÃO GLOBAL DE ROTEIROS (COLE NO TOPO DO SCRIPT) ---
         window.checkSuggestedItineraries = async function(tripId, citiesString) {
-            console.log("=== 1. INICIANDO BUSCA DE ROTEIROS ===");
-            console.log("Destino digitado:", citiesString);
-
             if (!citiesString) return;
 
-            // Função interna para limpar acentos (Belém -> belem)
             const limparTexto = (texto) => {
-                return texto.toLowerCase()
-                    .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-                    .replace(/[^\w\s]/gi, '')        // Remove pontuação
-                    .trim();
+                return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').trim();
             };
 
-            const cidadesUsuario = citiesString.split(',').map(c => limparTexto(c));
+            // 1. Cria o array de busca baseado na string ordenada que enviamos
+            const cidadesUsuario = citiesString.split(',').map(c => c.trim()).filter(c => c !== "");
 
             try {
-                // Busca todas as sugestões no Firebase
                 const snapshot = await get(ref(db, 'suggestedItineraries'));
                 const todasSugestoes = snapshot.val() || {};
                 const cidadesEncontradas = [];
 
-                for (const id in todasSugestoes) {
-                    const sugestao = todasSugestoes[id];
-                    const nomeCidadeBanco = limparTexto(sugestao.cityName);
+                // 2. MUDANÇA CRÍTICA: O loop principal agora é sobre a lista do USUÁRIO (Ordenada)
+                for (const nomeCidadeUsuario of cidadesUsuario) {
+                    const userCityLimpa = limparTexto(nomeCidadeUsuario);
 
-                    // Verifica se a cidade do banco está na lista do usuário
-                    // Ex: "belem" está em ["belem", "manaus"]?
-                    if (cidadesUsuario.some(userCity => userCity === nomeCidadeBanco || nomeCidadeBanco.includes(userCity))) {
-                        
-                        // Verifica se tem atividades no Dia 1
-                        const atividades = sugestao.activities ? Object.values(sugestao.activities) : [];
-                        const temDia1 = atividades.some(a => parseInt(a.day) === 1);
+                    // Procuramos no banco qual registro corresponde a esta cidade da vez
+                    for (const idBanco in todasSugestoes) {
+                        const sugestao = todasSugestoes[idBanco];
+                        const nomeCidadeBanco = limparTexto(sugestao.cityName);
 
-                        if (temDia1) {
-                            console.log(`=== 2. ENCONTRADO ROTEIRO PARA: ${sugestao.cityName} ===`);
-                            cidadesEncontradas.push({ id: id, cityName: sugestao.cityName });
+                        if (userCityLimpa === nomeCidadeBanco || nomeCidadeBanco.includes(userCityLimpa)) {
+                            const atividades = sugestao.activities ? Object.values(sugestao.activities) : [];
+                            const temDia1 = atividades.some(a => parseInt(a.day) === 1);
+
+                            if (temDia1) {
+                                // Evita duplicados no modal
+                                if (!cidadesEncontradas.some(c => c.id === idBanco)) {
+                                    cidadesEncontradas.push({ id: idBanco, cityName: sugestao.cityName });
+                                }
+                            }
                         }
                     }
                 }
 
                 if (cidadesEncontradas.length > 0) {
-                    console.log("=== 3. ABRINDO MODAL ===");
-                    renderCitySelection(cidadesEncontradas); // Sua função existente que desenha o modal
+                    // 3. LIMPEZA E RENDERIZAÇÃO
+                    const container = document.getElementById('itinerary-city-selection-list');
+                    if (container) {
+                        container.innerHTML = ''; // Garante que o modal comece limpo
+                    }
+                    
+                    renderCitySelection(cidadesEncontradas); 
                     openModal('available-itineraries-modal');
-                } else {
-                    console.log("=== Nenhuma cidade compatível encontrada com roteiro no Dia 1 ===");
                 }
-
             } catch (error) {
                 console.error("ERRO CRÍTICO NA BUSCA DE ROTEIROS:", error);
             }
@@ -6773,18 +6796,27 @@ let dividerHtml = '';
             currentContextMenuDocumentId = null;
         }
        
-        // --- NOVA FUNÇÃO PARA ABRIR SUGESTÕES COM O DIA PRÉ-SELECIONADO ---
         window.openSuggestionsForDay = (event, dayKey) => {
-            event.preventDefault(); // Impede o menu de contexto padrão
+            if (event) event.preventDefault();
             
-            // 1. Abre o modal. A função openImportSuggestionsModal() já
-            //    é responsável por popular o select com todos os dias da viagem.
-            openImportSuggestionsModal();
+            openModal('import-suggestions-modal');
             
-            // 2. Agora que o modal está aberto e o select populado,
-            //    definimos o valor para o dia que foi clicado.
-            const daySelect = document.getElementById('import-target-day-select');
-            daySelect.value = dayKey; // Define o dia selecionado
+            const selectDia = document.getElementById('import-target-day-select');
+            if (selectDia) selectDia.value = dayKey;
+            
+            // Descobre qual é a cidade daquele dia específico
+            const trip = tripsData.find(t => t.id === currentTripId);
+            if (trip && trip.activities) {
+                const cidadeDoDia = Object.values(trip.activities).find(a => a.date === dayKey && a.type === 'Cidade');
+                
+                if (cidadeDoDia) {
+                    autoPreencherECarregarCidade(cidadeDoDia.name);
+                } else {
+                    // Se o dia não tem cidade, tenta pegar a primeira da viagem como fallback
+                    const primeiraCidade = Object.values(trip.activities).find(a => a.type === 'Cidade');
+                    if (primeiraCidade) autoPreencherECarregarCidade(primeiraCidade.name);
+                }
+            }
         };
 
         // --- CONTROLE DE NAVEGAÇÃO, MODAIS E FORMULÁRIOS ---
@@ -7160,22 +7192,23 @@ let dividerHtml = '';
             if (isReorganizingActive) return;
 
             const ds = element.dataset;
+            
+            // 1. Preenchimento de Informações Básicas
             document.getElementById('view-activity-icon').innerHTML = ds.icon.replace('w-5 h-5', 'w-8 h-8');
             document.getElementById('view-activity-name').textContent = ds.name;
 
+            // 2. Lógica de Data e Contador
             const dateISO = ds.date;
             const dateEl = document.getElementById('view-activity-date');
             const dateSep = document.getElementById('view-activity-date-sep');
 
             if (dateISO) {
-                // Formata a data (Ex: "TER, 14 de novembro")
                 const dayMap = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
                 const dateObj = new Date(dateISO + 'T00:00:00Z');
                 const weekdayAbbr = dayMap[dateObj.getUTCDay()];
                 const dateString = dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC', day: 'numeric', month: 'long' });
                 const formattedDate = `${weekdayAbbr}, ${dateString}`;
                 
-                // Combina com o contador de dias (Ex: "TER, 14 de novembro | 1/12")
                 if (ds.dayCounter && ds.totalTripDays) {
                     dateEl.textContent = `${formattedDate} | ${ds.dayCounter}/${ds.totalTripDays}`;
                 } else {
@@ -7183,9 +7216,8 @@ let dividerHtml = '';
                 }
                 
                 dateEl.classList.remove('hidden');
-                dateSep.classList.remove('hidden'); // Mostra o separador |
+                dateSep.classList.remove('hidden');
             } else {
-                // Esconde os elementos se não houver data
                 dateEl.textContent = '';
                 dateEl.classList.add('hidden');
                 dateSep.classList.add('hidden');
@@ -7193,20 +7225,19 @@ let dividerHtml = '';
 
             document.getElementById('view-activity-time').textContent = ds.time;
 
+            // 3. Meta Informações (Autor e Data de Criação)
             const metaElement = document.getElementById('view-activity-meta');
             const authorName = ds.authorName || 'Desconhecido';
             const createdAt = ds.createdAt;
-        
             let metaText = `Adicionado por: ${authorName}`;            
             
-            // CORREÇÃO: Verificamos se 'createdAt' existe e se é um número
             if (createdAt && !isNaN(createdAt)) { 
-                // CORREÇÃO: Convertemos a string "1729644917000" para o número 1729644917000
                 const date = new Date(parseInt(createdAt, 10)); 
                 metaText += ` em ${date.toLocaleDateString('pt-BR')}`;
             }
             metaElement.textContent = metaText;
             
+            // 4. Tipo e Descrição
             const typeElement = document.getElementById('view-activity-type');
             if (ds.type && ds.iseditable === 'true') {
                 typeElement.textContent = ds.type;
@@ -7217,80 +7248,80 @@ let dividerHtml = '';
             
             const descriptionElement = document.getElementById('view-activity-description');
             descriptionElement.textContent = ds.description;
-            descriptionElement.style.display = ds.description ? 'block' : 'none';
+            descriptionElement.style.display = (ds.description && ds.description !== 'undefined') ? 'block' : 'none';
 
-            // --- ⬇️ INÍCIO DA LÓGICA DE IMAGEM DO USUÁRIO ⬇️ ---
+            // 5. Imagem do Usuário
             const imgElement = document.getElementById('view-activity-image'); 
-            const userImageUrl = ds.imageurl; // Pega a URL do atributo data-imageurl
-
-            if (userImageUrl) {
-                // Se o usuário forneceu uma URL, exibe-a
+            const userImageUrl = ds.imageurl;
+            if (userImageUrl && userImageUrl !== 'undefined') {
                 imgElement.src = userImageUrl;
                 imgElement.classList.remove('hidden');
             } else {
-                // Se não, esconde o campo da imagem
                 imgElement.src = '';
                 imgElement.classList.add('hidden'); 
             }
 
+            // 6. Lista de Detalhes (Endereço e Trajeto)
             const detailsList = document.getElementById('view-activity-details-list');
             let detailsHtml = '';
 
             if (ds.iseditable !== 'true') {
-                 detailsHtml += `<p class="font-semibold text-base text-slate-800">${ds.name}</p>`;
+                detailsHtml += `<p class="font-semibold text-base text-slate-800">${ds.name}</p>`;
             }            
-
             if (ds.from || ds.to) {
                 detailsHtml += `<p class="mt-2"><strong class="font-semibold text-slate-600">Trajeto:</strong> ${ds.from || 'N/A'} → ${ds.to || 'N/A'}</p>`;
             }
             if(ds.address) {
                 detailsHtml += `<p class="mt-2"><strong class="font-semibold text-slate-600">Endereço:</strong> ${ds.address}</p>`;
             }
-            
             if (ds.description && ds.iseditable !== 'true') {
-                 detailsHtml += `<p class="mt-2"><strong class="font-semibold text-slate-600">Detalhes:</strong> ${ds.description}</p>`;
+                detailsHtml += `<p class="mt-2"><strong class="font-semibold text-slate-600">Detalhes:</strong> ${ds.description}</p>`;
             }
-
             detailsList.innerHTML = detailsHtml;
             detailsList.style.display = detailsHtml ? 'block' : 'none';
 
-            // --- ⬇️ NOVA LÓGICA DE BOTÕES ⬇️ ---
-            const linkBtn = document.getElementById('view-activity-link-btn');
+            // --- ⬇️ NOVA LÓGICA DE BOTÕES (MAPS, LINK, BUSCA) ⬇️ ---
+            const mapsBtn = document.getElementById('view-activity-maps-btn'); // O antigo linkBtn agora é focado em Maps
+            const extraBtn = document.getElementById('view-activity-extra-link-btn');
             const searchBtn = document.getElementById('view-activity-search-btn');
 
-            // 1. Reseta as classes e a visibilidade
-            linkBtn.style.display = 'none';
-            searchBtn.style.display = 'none';
-            linkBtn.classList.remove('flex-1');
+            // Inicialmente esconde os opcionais e remove classes de largura total
+            mapsBtn.style.display = 'none';
+            extraBtn.style.display = 'none';
+            mapsBtn.classList.remove('flex-1');
+            extraBtn.classList.remove('flex-1');
             searchBtn.classList.remove('flex-1');
 
-            let isLinkVisible = false;
-            let isSearchVisible = false;
+            let visibleCount = 0;
 
-            // 2. Decide quem deve ser visível
+            // Lógica para o Botão Google Maps (campo 'link')
             if (ds.link && ds.link.trim() !== '' && ds.link.trim() !== 'undefined') {
-                linkBtn.href = ds.link;
-                linkBtn.style.display = 'inline-flex';
-                isLinkVisible = true;
+                mapsBtn.href = ds.link;
+                mapsBtn.style.display = 'inline-flex';
+                visibleCount++;
             }
 
-            if (ds.name && ds.iseditable === 'true') {
-                searchBtn.style.display = 'inline-flex';
-                searchBtn.onclick = () => {
-                    window.open(`https://www.google.com/search?q=${encodeURIComponent(ds.name)}`, '_blank');
-                };
-                isSearchVisible = true;
+            // Lógica para o Botão Link Adicional (campo 'extralink')
+            if (ds.extralink && ds.extralink.trim() !== '' && ds.extralink.trim() !== 'undefined') {
+                extraBtn.href = ds.extralink;
+                extraBtn.style.display = 'inline-flex';
+                visibleCount++;
             }
 
-            // 3. Aplica a lógica de layout
-            if (isLinkVisible && isSearchVisible) {
-                // Se os DOIS estão visíveis, adiciona flex-1 para preencherem o espaço
-                linkBtn.classList.add('flex-1');
+            // Lógica para o Botão de Busca (Sempre Visível)
+            searchBtn.style.display = 'inline-flex';
+            searchBtn.classList.add('cursor-pointer');
+            searchBtn.onclick = () => {
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(ds.name)}`, '_blank');
+            };
+            visibleCount++;
+
+            // Ajuste de Layout: se houver mais de um botão, todos dividem o espaço igualmente (flex-1)
+            if (visibleCount > 1) {
+                if (mapsBtn.style.display !== 'none') mapsBtn.classList.add('flex-1');
+                if (extraBtn.style.display !== 'none') extraBtn.classList.add('flex-1');
                 searchBtn.classList.add('flex-1');
             }
-            // Se apenas UM estiver visível (ou nenhum), o `justify-center` do container
-            // fará o centramento automaticamente, já que nenhum deles tem `flex-1` ou `w-full`.
-            // --- ⬆️ FIM DA NOVA LÓGICA DE BOTÕES ⬆️ ---
 
             // Reseta a rolagem do conteúdo
             const scrollContent = document.getElementById('view-activity-scroll-content');
@@ -7422,6 +7453,7 @@ let dividerHtml = '';
                 document.getElementById('edit-activity-type').value = activity.type;
                 document.getElementById('edit-activity-description').value = activity.description || '';
                 document.getElementById('edit-activity-link').value = activity.link || '';
+                document.getElementById('edit-activity-extra-link').value = activity.extraLink || '';
                 document.getElementById('edit-activity-image-url').value = activity.imageUrl || ''; // <-- LINHA ADICIONADA
                 document.getElementById('edit-activity-cost').value = activity.cost || '';
                 document.getElementById('edit-activity-icon').value = activity.icon;
@@ -7941,42 +7973,46 @@ let dividerHtml = '';
         }
 
         window.openImportSuggestionsModal = () => {
-            document.getElementById('suggestions-city-input').value = '';
-            document.getElementById('city-suggestions-popup').classList.add('hidden');
+            // 1. Limpa a lista de atividades temporariamente
             document.getElementById('suggestions-activities-list').innerHTML = '<p class="text-center text-slate-500">Selecione uma cidade para ver as atividades.</p>';
-            
-            // --- INÍCIO DA NOVA LÓGICA PARA POPULAR DIAS ---
+
+            // 2. Popula os dias da viagem no select (sua lógica original)
+            // A variável 'trip' é declarada AQUI pela primeira e única vez
             const trip = tripsData.find(t => t.id === currentTripId);
             const daySelect = document.getElementById('import-target-day-select');
-            daySelect.innerHTML = ''; // Limpa opções antigas
+            daySelect.innerHTML = ''; 
 
             if (trip && trip.startDate && trip.endDate) {
-                
-                // CORREÇÃO: Converte AMBOS os timestamps para objetos Date
                 let currentDate = new Date(trip.startDate);
-                const endDate = new Date(trip.endDate); // <-- Esta era a linha que faltava
+                const endDate = new Date(trip.endDate); 
                 let dayCounter = 1;
-
-                // Agora o loop 'while(currentDate <= endDate)' funciona
                 while(currentDate <= endDate) {
                     const dayKey = currentDate.toISOString().split('T')[0];
                     const dayString = formatDate(dayKey, {weekday: 'short', day: 'numeric', month: 'short'});
-                    
                     const option = document.createElement('option');
-                    option.value = dayKey; // O valor será o ISO date string, ex: "2025-10-24"
+                    option.value = dayKey; 
                     option.textContent = `Dia ${dayCounter}: ${dayString}`;
                     daySelect.appendChild(option);
-
                     currentDate.setUTCDate(currentDate.getUTCDate() + 1);
                     dayCounter++;
                 }
             } else {
                 daySelect.innerHTML = '<option value="" disabled>Erro: Viagem sem datas.</option>';
             }
-            // --- FIM DA NOVA LÓGICA ---
-            
+
+            // 3. Abre o modal primeiro
             openModal('import-suggestions-modal');
-        }
+
+            // 4. Busca a primeira cidade e dispara o carregamento automático
+            // Como a variável 'trip' já existe, nós apenas a utilizamos diretamente:
+            if (trip && trip.activities) {
+                const primeiraCidade = Object.values(trip.activities).find(a => a.type === 'Cidade');
+                if (primeiraCidade) {
+                    // Dispara a nossa função nova!
+                    autoPreencherECarregarCidade(primeiraCidade.name);
+                }
+            }
+        };
         
         // --- INÍCIO: NOVA LÓGICA DE AUTOCOMPLETE PARA CIDADES ---
         const cityInput = document.getElementById('suggestions-city-input');
@@ -7985,35 +8021,38 @@ let dividerHtml = '';
         cityInput.addEventListener('input', () => {
             const query = cityInput.value.toLowerCase();
             citySuggestionsPopup.innerHTML = '';
-
             if (query.length < 1) {
                 citySuggestionsPopup.classList.add('hidden');
                 return;
             }
 
             const filteredCities = Object.entries(suggestedItinerariesData).filter(([, cityData]) => 
-                cityData.cityName.toLowerCase().includes(query) || 
-                cityData.country.toLowerCase().includes(query)
+                cityData.cityName.toLowerCase().includes(query) || cityData.country.toLowerCase().includes(query)
             ).sort(([, a], [, b]) => a.cityName.localeCompare(b.cityName));
 
             if (filteredCities.length > 0) {
                 filteredCities.forEach(([cityId, cityData]) => {
                     const item = document.createElement('div');
                     item.className = 'city-suggestion-item';
-                    item.textContent = `${cityData.cityName}, ${cityData.country}`;
-                    item.addEventListener('click', () => selectCitySuggestion(cityId, cityData.cityName));
+                    
+                    const fullName = `${cityData.cityName}, ${cityData.country}`;
+                    item.textContent = fullName;
+                    
+                    // ATENÇÃO AQUI: Mudamos o nome da função chamada!
+                    item.addEventListener('click', () => selectImportCitySuggestion(cityId, fullName));
+                    
                     citySuggestionsPopup.appendChild(item);
                 });
                 citySuggestionsPopup.classList.remove('hidden');
-            } else {
-                citySuggestionsPopup.classList.add('hidden');
             }
         });
 
-        function selectCitySuggestion(cityId, cityName) {
-            cityInput.value = cityName;
-            citySuggestionsPopup.classList.add('hidden');
-            loadActivitiesForCity(cityId);
+        // ATENÇÃO AQUI: Função renomeada para evitar conflito com o app nativo
+        function selectImportCitySuggestion(cityId, fullName) {
+            const cityInput = document.getElementById('suggestions-city-input');
+            cityInput.value = fullName; // Insere "Cidade, País"
+            document.getElementById('city-suggestions-popup').classList.add('hidden');
+            loadActivitiesForCity(cityId); 
         }
 
         function loadActivitiesForCity(cityId) {
@@ -8433,10 +8472,10 @@ let dividerHtml = '';
         window.toggleReorganizationMode = async (isCancelling) => {
             const list = document.getElementById('daily-itinerary-list');
             const startBtn = document.getElementById('reorg-start-btn');
-            const actionsContainer = document.getElementById('reorg-actions-container');
+            const actionsContainer = document.getElementById('reorg-actions-container'); // O seletor flutuante de Dias/Ativid.
             const scrollTopBtn = document.getElementById('back-to-top-btn');
             const importBtn = document.getElementById('import-suggestions-btn');
-            const floatingBtns = document.getElementById('floating-reorg-actions');
+            const floatingBtns = document.getElementById('floating-reorg-actions'); // Balão OK/Cancelar
 
             // Lógica de alternância (Toggle)
             if (typeof isCancelling === 'boolean') {
@@ -8449,41 +8488,69 @@ let dividerHtml = '';
 
             if (isReorganizing) {
                 // --- ENTRANDO NO MODO ---
+                
+                // Esconde botões que podem atrapalhar a visão
                 startBtn.classList.add('hidden');
-                actionsContainer.classList.remove('hidden');
-                if(floatingBtns) floatingBtns.classList.remove('hidden'); 
-                if (scrollTopBtn) scrollTopBtn.style.display = 'none';
                 importBtn.classList.add('hidden');
+                if (scrollTopBtn) scrollTopBtn.style.display = 'none';
+
+                // Mostra o Seletor de Modo (Dias/Ativid.) - Agora Flutuante
+                if (actionsContainer) {
+                    actionsContainer.classList.remove('hidden');
+                    actionsContainer.classList.add('flex'); // Garante o alinhamento interno
+                }
+
+                // Mostra o Balão de Confirmação (OK/Cancelar)
+                if (floatingBtns) {
+                    floatingBtns.classList.remove('hidden');
+                    floatingBtns.classList.add('flex');
+                }
                 
                 // Inicia o Sortable (Drag & Drop)
-                if (window.initializeActivitySorting) initializeActivitySorting();
-                else document.getElementById('reorg-mode-activities-btn').click(); 
+                // Se não houver uma instância inicial, força o clique no modo atividades por padrão
+                if (window.initializeActivitySorting) {
+                    initializeActivitySorting();
+                } else {
+                    const btnAtiv = document.getElementById('reorg-mode-activities-btn');
+                    if (btnAtiv) btnAtiv.click();
+                }
 
             } else {
                 // --- SAINDO DO MODO ---
                 
-                // 1. Destrói o Sortable primeiro para travar a tela
+                // 1. Destrói as instâncias do Sortable para travar o movimento dos cards
                 if (window.sortableInstances) {
                     sortableInstances.forEach(i => i.destroy());
                     sortableInstances = [];
                 }
 
-                if (isCancelling) {
-                    // CANCELAR: Apenas recarrega a viagem original
-                    console.log("Cancelando...");
+                if (isCancelling === true) {
+                    // CANCELAR: Apenas recarrega a viagem original sem salvar
+                    console.log("Cancelando reordenação...");
                     const trip = tripsData.find(t => t.id === currentTripId);
                     if (trip) renderDailyItinerary(trip); 
                 } else {
-                    // OK: Chama o salvar e ESPERA (await) ele terminar
+                    // OK: Chama a função de salvar e aguarda o término (importante para o Firestore)
                     await saveReorganization();
                 }
 
-                // 2. Restaura UI (Esconde botões)
+                // 2. Restaura a UI Original
                 importBtn.classList.remove('hidden');
                 startBtn.classList.remove('hidden');
-                actionsContainer.classList.add('hidden');
-                if(floatingBtns) floatingBtns.classList.add('hidden');
                 if (scrollTopBtn) scrollTopBtn.style.display = '';
+
+                // Esconde os containers flutuantes
+                if (actionsContainer) {
+                    actionsContainer.classList.add('hidden');
+                    actionsContainer.classList.remove('flex');
+                }
+                
+                if (floatingBtns) {
+                    floatingBtns.classList.add('hidden');
+                    floatingBtns.classList.remove('flex');
+                }
+
+                // Remove as classes de modo da lista principal
                 list.classList.remove('mode-days', 'mode-activities');
             }
         };
@@ -8763,7 +8830,6 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
 
             // --- 2. DEFINE O DESTINO BASEADO NA LISTA ---
-            // Cria uma string com todas as cidades (ex: "Belém, Manaus")
             const nomeDestinoFinal = citiesToInclude.map(c => c.name).join(', ');
             console.log("✅ Cidades para busca de roteiro:", nomeDestinoFinal);
 
@@ -8785,7 +8851,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 newTripId = newTripRef.key;
             }
 
-            // Validação de Plano (Mantida)
+            // Validação de Plano
             const isPurchased = currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[newTripId];
             if (currentUserLicense.type === 'gratuito' && !isPurchased) {
                 const newTripYear = new Date(startDateStr + 'T00:00:00').getFullYear();
@@ -8821,7 +8887,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 // Salva Viagem
                 const newTripData = {
                     name: tripName,
-                    destination: nomeDestinoFinal, // Salva "Belém, Manaus" no banco
+                    destination: nomeDestinoFinal,
                     startDate: new Date(startDateStr + 'T00:00:00Z').getTime(),
                     endDate: new Date(endDateStr + 'T00:00:00Z').getTime(),
                     imageUrl: finalTripImageUrl,
@@ -8832,8 +8898,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 };
                 
                 await set(newTripRef, newTripData);
-                // --- ADICIONE ESTA LINHA AQUI EMBAIXO: ---
-                window.pendingImportTripId = newTripId; // <--- SALVA O ID PARA USAR DEPOIS
+                window.pendingImportTripId = newTripId; 
                 console.log("ID da viagem salvo para importação:", window.pendingImportTripId);
 
                 const initialActivities = {};
@@ -8849,41 +8914,52 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 await update(ref(db, `trips/${newTripId}`), { activities: initialActivities });
                 await set(ref(db, `users/${user.uid}/memberOf/${newTripId}`), true);
 
-                // --- 3. BUSCA DE ROTEIRO (USANDO APENAS A LISTA) ---
+                // --- 3. BUSCA DE ROTEIRO (CORRIGIDA PARA ORDENAÇÃO CRONOLÓGICA) ---
                 if (citiesToInclude.length > 0) {
                     console.log("🔎 BUSCANDO ROTEIROS PARA AS CIDADES DA LISTA...");
                     
                     const limpar = (t) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-                    // Cria array com nomes limpos das cidades da lista
-                    const cidadesDaLista = citiesToInclude.map(c => limpar(c.name));
+                    
+                    // Criamos a lista de referência para ordenação (ex: ["nova york", "cidade do cabo"])
+                    const ordemReferencia = citiesToInclude.map(c => limpar(c.name));
 
                     const snap = await get(ref(db, 'suggestedItineraries'));
                     
                     if (snap.exists()) {
                         const todasSugestoes = snap.val();
-                        const encontradas = [];
+                        let encontradosBrutos = [];
 
+                        // Coleta todos os matches do banco
                         for (const id in todasSugestoes) {
                             const sugg = todasSugestoes[id];
                             const cidadeBanco = limpar(sugg.cityName);
                             
-                            // Verifica se a cidade do banco está na nossa lista
-                            if (cidadesDaLista.includes(cidadeBanco) || cidadesDaLista.some(c => cidadeBanco.includes(c))) {
-                                console.log(`✅ MATCH! Encontrou: ${sugg.cityName}`);
-                                
+                            if (ordemReferencia.some(c => cidadeBanco === c || cidadeBanco.includes(c))) {
                                 const acts = sugg.activities ? Object.values(sugg.activities) : [];
                                 const temDia1 = acts.some(a => parseInt(a.day) === 1);
 
                                 if (temDia1) {
-                                    encontradas.push({ id: id, cityName: sugg.cityName });
+                                    encontradosBrutos.push({ 
+                                        id: id, 
+                                        cityName: sugg.cityName,
+                                        nomeLimpo: cidadeBanco 
+                                    });
                                 }
                             }
                         }
 
-                        if (encontradas.length > 0) {
+                        // O SEGREDO: Reordena os resultados encontrados para bater com a ordem de 'citiesToInclude'
+                        encontradosBrutos.sort((a, b) => {
+                            const indexA = ordemReferencia.findIndex(c => a.nomeLimpo === c || a.nomeLimpo.includes(c));
+                            const indexB = ordemReferencia.findIndex(c => b.nomeLimpo === c || b.nomeLimpo.includes(c));
+                            return indexA - indexB;
+                        });
+
+                        if (encontradosBrutos.length > 0) {
                             const list = document.getElementById('itinerary-city-selection-list');
                             if(list) {
-                                list.innerHTML = encontradas.map(c => `
+                                // Renderiza na ordem exata da lista do usuário
+                                list.innerHTML = encontradosBrutos.map(c => `
                                     <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-blue-50">
                                         <input type="checkbox" name="city-to-import" value="${c.id}" data-name="${c.cityName}" class="w-5 h-5" checked>
                                         <span class="font-medium">${c.cityName}</span>
@@ -9119,7 +9195,8 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             if (tripIndex > -1) tripsData[tripIndex] = { ...tripsData[tripIndex], ...updates };
 
             // 2. Força o redesenho da tela de detalhes...
-            renderTripDetails(currentTripId);
+            window.currentTripId = tripId; //ID global
+            renderTripDetails(currentTripId);            
 
             // 3. Força o redesenho da lista de viagens...
             renderTripLists();
@@ -9197,6 +9274,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 description: document.getElementById('activity-description').value,
                 icon: document.getElementById('activity-icon').value,
                 link: document.getElementById('activity-link').value.trim(),
+                extraLink: document.getElementById('activity-extra-link').value.trim(),
                 imageUrl: document.getElementById('activity-image-url').value.trim(), // <-- LINHA ADICIONADA
                 cost: document.getElementById('activity-cost').value,
                 authorName: currentUserProfile.fullName || 'Usuário Desconhecido',
@@ -9229,6 +9307,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     description: document.getElementById('edit-activity-description').value,
                     icon: document.getElementById('edit-activity-icon').value,
                     link: document.getElementById('edit-activity-link').value.trim(),
+                    extraLink: document.getElementById('edit-activity-extra-link').value,
                     imageUrl: document.getElementById('edit-activity-image-url').value.trim(), // <-- LINHA ADICIONADA
                     cost: document.getElementById('edit-activity-cost').value,
                 };
@@ -12752,8 +12831,15 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         window.prepareDaysSelection = async function(selectedCities) {
             console.log("Preparando seleção (Ignorando atividades não alocadas)...");
             
-            const tripId = window.pendingImportTripId;
-            if (!tripId) return alert("Erro de ID da viagem.");
+            const tripId = window.pendingImportTripId || window.currentTripId || currentTripId;
+            if (!tripId) {
+                console.error("Falha ao recuperar o ID. Variáveis atuais:", {
+                    pending: window.pendingImportTripId,
+                    current: window.currentTripId
+                });
+                alert("Erro de ID da viagem. Feche a viagem e abra novamente.");
+                return;
+            }
 
             window.itineraryPreviewCache = {}; // Limpa cache
 
@@ -13091,6 +13177,130 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             openModal('day-preview-modal');
         };
 
+        // Abertura da pesquisa de roteiros (Usando currentTripId nativo do módulo)
+        window.abrirPesquisaRoteirosDoModal = async function() {
+            const idDaViagem = window.currentTripId || currentTripId;
+            if (!idDaViagem) {
+                alert("Erro de ID da viagem.");
+                return;
+            }
+
+            if (typeof closeModal === 'function') closeModal('import-suggestions-modal');
+
+            const trip = typeof tripsData !== 'undefined' ? tripsData.find(t => t.id === idDaViagem) : null;
+            let stringTodasAsCidades = "";
+
+            if (trip && trip.activities) {
+                // 1. Pega as atividades e ORDENA RIGOROSAMENTE pela string da data (AAAA-MM-DD)
+                const atividadesOrdenadas = Object.values(trip.activities)
+                    .filter(a => a.type === 'Cidade' && a.name && a.date)
+                    .sort((a, b) => a.date.localeCompare(b.date));
+
+                // 2. Extrai os nomes preservando a ordem cronológica
+                const nomesDasCidades = atividadesOrdenadas.map(a => a.name.trim()); 
+                    
+                // 3. Remove duplicatas mantendo a primeira aparição (Dia 1, Dia 2...)
+                const cidadesUnicas = [...new Set(nomesDasCidades)];
+                stringTodasAsCidades = cidadesUnicas.join(', ');
+            }
+
+            console.log("=== ENVIANDO PARA O PAINEL DE ROTEIROS ===");
+            console.log("Cidades identificadas (Ordem cronológica):", stringTodasAsCidades);
+
+            window.pendingImportTripId = idDaViagem; 
+
+            if (typeof window.checkSuggestedItineraries === 'function') {
+                await window.checkSuggestedItineraries(idDaViagem, stringTodasAsCidades);
+            } 
+        };
+
+        function autocompletarCidadeNoModal(dataContexto = null) {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            if (!trip || !trip.activities) return null;
+
+            const atividades = Object.values(trip.activities);
+            const cidadesCadastradas = atividades.filter(a => a.type === 'Cidade');
+            
+            let cidadeAlvo = null;
+            if (dataContexto) cidadeAlvo = cidadesCadastradas.find(a => a.date === dataContexto);
+            if (!cidadeAlvo) cidadeAlvo = cidadesCadastradas.find(a => a.date === new Date().toISOString().split('T')[0]);
+            if (!cidadeAlvo && cidadesCadastradas.length > 0) cidadeAlvo = cidadesCadastradas[0];
+
+            const cityInput = document.getElementById('suggestions-city-input');
+
+            if (cidadeAlvo && typeof suggestedItinerariesData !== 'undefined') {
+                const nomeBuscado = cidadeAlvo.name.toLowerCase();
+                
+                // Procura a primeira cidade correspondente no banco de dados de sugestões
+                const match = Object.entries(suggestedItinerariesData).find(([, data]) => 
+                    data.cityName.toLowerCase().includes(nomeBuscado)
+                );
+
+                if (match) {
+                    const [cityId, cityData] = match;
+                    const fullName = `${cityData.cityName}, ${cityData.country}`;
+                    
+                    // 1. Preenche o input visualmente com o nome bonitinho
+                    if (cityInput) cityInput.value = fullName;
+                    
+                    // 2. O PULO DO GATO: Já carrega as atividades direto, sem precisar clicar!
+                    if (typeof loadActivitiesForCity === 'function') {
+                        loadActivitiesForCity(cityId);
+                    }
+                    return fullName;
+                } else {
+                    // Se não tem sugestão pra essa cidade, deixa só o nome dela no input
+                    if (cityInput) cityInput.value = cidadeAlvo.name;
+                    return cidadeAlvo.name;
+                }
+            }
+            return null;
+        }
+
+        function autoPreencherECarregarCidade(nomeDaCidade) {
+            const cityInput = document.getElementById('suggestions-city-input');
+            const popup = document.getElementById('city-suggestions-popup');
+            
+            if (!nomeDaCidade || !cityInput) return;
+
+            const nomeBuscado = nomeDaCidade.toLowerCase().trim();
+            
+            // 1. Verifica se temos o banco de dados de sugestões carregado
+            if (typeof suggestedItinerariesData !== 'undefined' && suggestedItinerariesData !== null) {
+                
+                // 2. Tenta achar a cidade no banco
+                const match = Object.entries(suggestedItinerariesData).find(([, data]) => 
+                    data.cityName.toLowerCase() === nomeBuscado || 
+                    data.cityName.toLowerCase().includes(nomeBuscado)
+                );
+
+                if (match) {
+                    // ACHOU! Pega o ID e monta o nome completo
+                    const [cityId, cityData] = match;
+                    const fullName = `${cityData.cityName}, ${cityData.country}`;
+                    
+                    // Preenche o input
+                    cityInput.value = fullName;
+                    
+                    // Esconde o dropdown para não poluir a tela
+                    if (popup) popup.classList.add('hidden');
+                    
+                    // 3. O PULO DO GATO: Carrega as atividades diretamente! (Simula o clique)
+                    if (typeof loadActivitiesForCity === 'function') {
+                        loadActivitiesForCity(cityId);
+                    } else if (typeof window.loadActivitiesForCity === 'function') {
+                        window.loadActivitiesForCity(cityId);
+                    }
+                    
+                    return; // Termina a função aqui com sucesso
+                }
+            }
+
+            // Se por acaso a cidade não estiver no banco, apenas digita o nome e abre as opções
+            cityInput.value = nomeDaCidade;
+            cityInput.dispatchEvent(new Event('input'));
+        }
+
     </script>
 
 <button id="back-to-top-btn" onclick="scrollToTop()" class="hidden fixed bottom-8 left-8 z-40 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
@@ -13109,6 +13319,20 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         <div id="image-preview-popup" class="hidden fixed z-[1000] border border-slate-300 shadow-lg rounded-md overflow-hidden bg-white p-1 max-w-[300px] max-h-[300px]" style="pointer-events: none;">
             <img id="image-preview-content" src="" alt="Pré-visualização" class="block w-full h-full object-contain">
         </div>    
+
+        <div id="reorg-actions-container" class="hidden fixed bottom-20 right-6 z-[2001] flex flex-col items-end">
+            <div class="bg-white/95 backdrop-blur-md p-1 rounded-xl shadow-xl border border-slate-200 flex items-center gap-1">
+                <button id="reorg-mode-days-btn" onclick="switchReorganizationType('days')" 
+                    class="reorg-mode-btn text-[10px] font-bold px-3 py-2 rounded-lg transition-all uppercase tracking-wider">
+                    🗓️ Dias
+                </button>
+                <button id="reorg-mode-activities-btn" onclick="switchReorganizationType('activities')" 
+                    class="reorg-mode-btn text-[10px] font-bold px-3 py-2 rounded-lg transition-all uppercase tracking-wider">
+                    📍 Atividades
+                </button>
+            </div>
+            <div class="mr-12 w-2.5 h-2.5 bg-white border-r border-b border-slate-200 rotate-45 -mt-1.5 shadow-sm"></div>
+        </div>
 
 </body>
 </html>
