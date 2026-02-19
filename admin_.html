@@ -189,7 +189,12 @@
                     <div class="md:col-span-1 border rounded-lg p-4 bg-slate-50">
                     <div class="flex justify-between items-center mb-3">
                          <h3 id="cities-list-title" class="font-semibold">Cidades</h3>
-                         <button onclick="openAddCityModal()" class="px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700">Nova Cidade</button>
+                         <button onclick="copyPromptToClipboard()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                            <span>📋</span> Prompt AI
+                        </button>
+                        <button onclick="openAddCityModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            Nova Cidade
+                        </button>
                     </div>
 
                     <div class="relative mb-3">
@@ -246,7 +251,7 @@ Regras:
 
 O type deve ser sempre 'Passeio'.
 
-O icon deve usar um destes IDs: passeio, restaurante, building, shopping, tree, sun, leaf, mountain, waves.
+O icon deve usar um destes IDs: passeio, restaurante, building, shopping, tree, mountain, waves.
 
 Organize os day de forma lógica e próximas umas das outras (ex: 3 a 4 atrações por dia). Se a atração for muito demorada, reserve uma manhã ou uma tarde pra ela
 
@@ -3042,8 +3047,42 @@ O link deve ser o link direto do Google Maps para o local."
             autoScrollInterval = null;
         }
 
+        window.copyPromptToClipboard = function() {
+            // Tenta pegar o nome da cidade selecionada para facilitar o prompt
+            const cityName = selectedCityId ? suggestedItinerariesData[selectedCityId]?.cityName : "_______";
+            
+            const promptText = `Crie um JSON com as 10 melhores atrações turísticas da cidade ${cityName} seguindo estritamente este modelo:
+
+        JSON
+        {
+            "name": "Nome da Atração",
+            "type": "Passeio",
+            "description": "Resumo do local",
+            "icon": "ID do ícone",
+            "time": "HH:MM",
+            "day": 1,
+            "imageUrl": "URL de uma foto real da atração que seja arquivo .JPG",
+            "link": "URL do Google Maps da atração"
+        }
+        Regras:
+
+        O type deve ser sempre 'Passeio'.
+
+        O icon deve usar um destes IDs: passeio, restaurante, building, shopping, tree, mountain, waves.
+
+        Organize os day de forma lógica e próximas umas das outras (ex: 3 a 4 atrações por dia). Se a atração for muito demorada, reserve uma manhã ou uma tarde pra ela
+
+        O link deve ser o link direto do Google Maps para o local.`;
+
+            navigator.clipboard.writeText(promptText).then(() => {
+                alert("Prompt copiado para a área de transferência! Agora é só colar no chat da AI.");
+            }).catch(err => {
+                console.error('Erro ao copiar: ', err);
+            });
+        }
+
     </script>
-<br><center><p>V. 1.2.6 - 18/02/2026 21:42</p></center><br>
+<br><center><p>V. 1.2.7 - 19/02/2026 08:42</p></center><br>
 
 <script>
       if ('serviceWorker' in navigator) {
