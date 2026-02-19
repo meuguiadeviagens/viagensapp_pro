@@ -657,7 +657,71 @@
 
     </form>
 
-            <!-- Início: Novos Modais para Troca de Senha -->
+        <div id="day-preview-modal" class="fixed inset-0 z-[60] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-gray-900 bg-opacity-80 transition-opacity backdrop-blur-sm" onclick="closeModal('day-preview-modal')"></div>
+
+            <div class="fixed inset-0 z-10 overflow-y-auto">
+                <div class="flex min-h-full items-center justify-center p-4 text-center">
+                    
+                    <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:w-full sm:max-w-2xl border border-gray-200">
+                        
+                        <div class="relative bg-blue-600 h-32 flex items-end">
+                            <button onclick="closeModal('day-preview-modal')" class="absolute top-4 right-4 bg-black/30 hover:bg-black/50 text-white rounded-full p-2 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                            <div class="p-6 w-full bg-gradient-to-t from-black/80 to-transparent">
+                                <h3 class="text-2xl font-bold text-white" id="preview-modal-title">Detalhes do Dia</h3>
+                                <p class="text-blue-200 text-sm" id="preview-modal-subtitle">Explore as atividades planejadas</p>
+                            </div>
+                        </div>
+
+                        <div class="p-6 space-y-6 max-h-[60vh] overflow-y-auto bg-gray-50" id="preview-modal-content">
+                            </div>
+
+                        <div class="bg-white px-6 py-4 border-t border-gray-100 flex justify-end">
+                            <button type="button" class="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors" onclick="closeModal('day-preview-modal')">
+                                Fechar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="select-days-modal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-gray-900 bg-opacity-75 transition-opacity backdrop-blur-sm" onclick="closeModal('select-days-modal')"></div>
+
+            <div class="fixed inset-0 z-10 overflow-y-auto">
+                <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                    
+                    <div class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-4xl border border-gray-200">
+                        
+                        <div class="bg-blue-600 px-4 py-4 sm:px-6">
+                            <h3 class="text-lg leading-6 font-bold text-white flex items-center gap-2" id="modal-title">
+                                📅 Personalizar Importação do Roteiro
+                            </h3>
+                            <p class="text-blue-100 text-sm mt-1">
+                                Defina as datas exatas para cada dia do roteiro.
+                            </p>
+                        </div>
+
+                        <div class="bg-gray-50 px-4 pt-5 pb-4 sm:p-6 max-h-[70vh] overflow-y-auto" id="itinerary-days-selection-list">
+                            </div>
+
+                        <div class="bg-white px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-200">
+                            <button id="confirm-import-btn" type="button" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-6 py-3 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm transition-all">
+                                Confirmar Importação
+                            </button>
+                            <button type="button" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-6 py-3 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-all" onclick="closeModal('select-days-modal')">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div id="reauth-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
             <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-sm m-4">
@@ -835,7 +899,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.2.45 | 18/02/2026, 16:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.2.46 | 18/02/2026, 21:55</p>
             </main>
         </div>
 
@@ -907,6 +971,37 @@
                 <div onclick="setHeaderBtnColor('#a855f7')" class="w-6 h-6 rounded-full bg-purple-500 cursor-pointer border border-transparent hover:scale-110 transition-transform"></div>
                 <div onclick="setHeaderBtnColor('#ec4899')" class="w-6 h-6 rounded-full bg-pink-500 cursor-pointer border border-transparent hover:scale-110 transition-transform"></div>
                 <div onclick="setHeaderBtnColor('#64748b')" class="w-6 h-6 rounded-full bg-slate-500 cursor-pointer border border-transparent hover:scale-110 transition-transform"></div>
+            </div>
+        </div>
+
+        <div id="available-itineraries-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+                <h3 class="text-xl font-bold mb-4 text-slate-800">Roteiros Encontrados!</h3>
+                <p class="text-slate-600 mb-4 text-sm">Identificamos roteiros sugeridos para as cidades abaixo. Deseja visualizar e adicionar à sua viagem?</p>
+                
+                <div id="itinerary-city-selection-list" class="space-y-3 mb-6">
+                    </div>
+
+                <div class="flex justify-end gap-3">
+                    <button onclick="closeModal('available-itineraries-modal')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg">Agora não</button>
+                    <button onclick="startItineraryFlow()" class="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700">Ver Roteiros</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="select-days-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl flex flex-col max-h-[90vh]">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-blue-600" id="current-itinerary-city-name">Cidade</h3>
+                    <span id="itinerary-step-indicator" class="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-500">1 de 3</span>
+                </div>
+                
+                <div id="days-selection-container" class="overflow-y-auto flex-grow space-y-4 pr-2">
+                    </div>
+
+                <div class="pt-6 border-t mt-4 flex justify-end gap-3">
+                    <button id="next-itinerary-btn" onclick="processItinerarySelection()" class="px-6 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700">Confirmar e Continuar</button>
+                </div>
             </div>
         </div>
 
@@ -2809,6 +2904,62 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+
+        // --- FUNÇÃO GLOBAL DE ROTEIROS (COLE NO TOPO DO SCRIPT) ---
+        window.checkSuggestedItineraries = async function(tripId, citiesString) {
+            console.log("=== 1. INICIANDO BUSCA DE ROTEIROS ===");
+            console.log("Destino digitado:", citiesString);
+
+            if (!citiesString) return;
+
+            // Função interna para limpar acentos (Belém -> belem)
+            const limparTexto = (texto) => {
+                return texto.toLowerCase()
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                    .replace(/[^\w\s]/gi, '')        // Remove pontuação
+                    .trim();
+            };
+
+            const cidadesUsuario = citiesString.split(',').map(c => limparTexto(c));
+
+            try {
+                // Busca todas as sugestões no Firebase
+                const snapshot = await get(ref(db, 'suggestedItineraries'));
+                const todasSugestoes = snapshot.val() || {};
+                const cidadesEncontradas = [];
+
+                for (const id in todasSugestoes) {
+                    const sugestao = todasSugestoes[id];
+                    const nomeCidadeBanco = limparTexto(sugestao.cityName);
+
+                    // Verifica se a cidade do banco está na lista do usuário
+                    // Ex: "belem" está em ["belem", "manaus"]?
+                    if (cidadesUsuario.some(userCity => userCity === nomeCidadeBanco || nomeCidadeBanco.includes(userCity))) {
+                        
+                        // Verifica se tem atividades no Dia 1
+                        const atividades = sugestao.activities ? Object.values(sugestao.activities) : [];
+                        const temDia1 = atividades.some(a => parseInt(a.day) === 1);
+
+                        if (temDia1) {
+                            console.log(`=== 2. ENCONTRADO ROTEIRO PARA: ${sugestao.cityName} ===`);
+                            cidadesEncontradas.push({ id: id, cityName: sugestao.cityName });
+                        }
+                    }
+                }
+
+                if (cidadesEncontradas.length > 0) {
+                    console.log("=== 3. ABRINDO MODAL ===");
+                    renderCitySelection(cidadesEncontradas); // Sua função existente que desenha o modal
+                    openModal('available-itineraries-modal');
+                } else {
+                    console.log("=== Nenhuma cidade compatível encontrada com roteiro no Dia 1 ===");
+                }
+
+            } catch (error) {
+                console.error("ERRO CRÍTICO NA BUSCA DE ROTEIROS:", error);
+            }
+        };
         
 
         const loginView = document.getElementById('login-form');
@@ -2848,7 +2999,7 @@
         let currentEditingEmergencyId = null;
         let currentEditingEmergencyType = 'traveler'; // 'traveler' ou 'dependent'
         let currentContextMenuButtonIndex = null;
-        let globalSuggestedCities = [];
+        let globalSuggestedCities = [];        
 
         // Carregar cidades para o autocomplete
         const suggestionsRef = ref(db, 'suggestedItineraries');
@@ -2911,7 +3062,7 @@
         // ===============================================
         // FIM: LÓGICA DE ATUALIZAÇÃO AUTOMÁTICA
         // ===============================================
-
+        
 
         /**
          * Salva uma nova entrada no log de atividades da viagem.
@@ -6750,37 +6901,42 @@ let dividerHtml = '';
             if (!modal) return;
             
             modal.classList.replace('hidden', 'flex');
+            
+            // --- NOVO: Trava o scroll do fundo ---
+            document.body.classList.add('overflow-hidden'); 
+            // -------------------------------------
 
             // --- ADICIONE ESTE BLOCO ---
             if (modalId === 'upgrade-plan-modal') {
-                // Se o modal de planos for aberto (pelo menu ou pelo form), 
-                // garante que a UI e os botões sejam preparados.
-                prepareUpgradeModal();
+                if (typeof prepareUpgradeModal === 'function') {
+                    prepareUpgradeModal();
+                }
             }
             // ---------------------------
 
             // --- INÍCIO DA NOVA LÓGICA (ADICIONE AQUI) ---
             if (modalId === 'add-trip-modal') {
-                tripIdPendingUpgrade = null; // Garante um ID limpo para uma nova tentativa
-                // Cria a data de hoje no formato YYYY-MM-DD
+                tripIdPendingUpgrade = null; 
                 const today = new Date();
                 const year = today.getFullYear();
                 const month = (today.getMonth() + 1).toString().padStart(2, '0');
                 const day = today.getDate().toString().padStart(2, '0');
                 const todayString = `${year}-${month}-${day}`;
 
-                // Preenche os campos de data
-                document.getElementById('trip-start-date').value = todayString;
-                document.getElementById('trip-end-date').value = todayString;
+                const startInput = document.getElementById('trip-start-date');
+                const endInput = document.getElementById('trip-end-date');
+                if(startInput) startInput.value = todayString;
+                if(endInput) endInput.value = todayString;
 
                 const container = document.getElementById('trip-cities-container');
-                container.innerHTML = ''; // Limpa cidades de tentativas anteriores
-                window.addCityRow(); // Já abre a primeira linha obrigatória
+                if(container) {
+                    container.innerHTML = ''; 
+                    window.addCityRow(); 
+                }
             }
             // --- FIM DA NOVA LÓGICA ---
 
             // --- INÍCIO DA LÓGICA CORRIGIDA ---
-            // Se o modal que estamos abrindo é o de notificações, marque-as como lidas.
             if (modalId === 'notifications-modal') {
                 const notificationsRef = ref(db, `users/${currentUserId}/notifications`);
                 get(notificationsRef).then(snapshot => {
@@ -6800,18 +6956,17 @@ let dividerHtml = '';
             // --- FIM DA LÓGICA CORRIGIDA ---
 
             if (modalId === 'add-note-modal') {
-                document.getElementById('note-author-display').textContent = currentUserProfile.fullName || 'Usuário';
+                const authorDisplay = document.getElementById('note-author-display');
+                if(authorDisplay) authorDisplay.textContent = currentUserProfile.fullName || 'Usuário';
 
                 // --- INÍCIO: Resetar ícone padrão para note_alert ---
                 const defaultIcon = 'note_alert';
-                document.getElementById('note-icon').value = defaultIcon;
+                const noteIconInput = document.getElementById('note-icon');
+                if(noteIconInput) noteIconInput.value = defaultIcon;
                 
                 const picker = document.getElementById('add-note-icon-picker');
                 if (picker) {
-                    // Remove a seleção de qualquer ícone anterior
                     picker.querySelectorAll('.icon-picker-option').forEach(opt => opt.classList.remove('selected'));
-                    
-                    // Adiciona a seleção visual (borda azul) ao ícone note_alert
                     const defaultOption = picker.querySelector(`[data-icon="${defaultIcon}"]`);
                     if (defaultOption) defaultOption.classList.add('selected');
                 }
@@ -6821,50 +6976,50 @@ let dividerHtml = '';
             if (currentTripId) {
                 const trip = tripsData.find(t => t.id === currentTripId);
                 if (trip && trip.startDate) {
-                    
-                    // 1. CONVERTE o timestamp da viagem para 'YYYY-MM-DD'
                     const isoStartDate = timestampToISODate(trip.startDate); 
                     
                     if (modalId === 'add-flight-modal') {
-                        // 2. CORRIGE os IDs e define AMBAS as datas (partida e chegada)
-                        document.getElementById('flight-departure-date').value = isoStartDate;
-                        document.getElementById('flight-arrival-date').value = isoStartDate; 
+                        const dep = document.getElementById('flight-departure-date');
+                        const arr = document.getElementById('flight-arrival-date');
+                        if(dep) dep.value = isoStartDate;
+                        if(arr) arr.value = isoStartDate; 
                     } else if (modalId === 'add-transport-modal') {
-                        document.getElementById('transport-departure-date').value = isoStartDate;
-                        document.getElementById('transport-arrival-date').value = isoStartDate;
+                        const dep = document.getElementById('transport-departure-date');
+                        const arr = document.getElementById('transport-arrival-date');
+                        if(dep) dep.value = isoStartDate;
+                        if(arr) arr.value = isoStartDate;
                     } else if (modalId === 'add-lodging-modal') {
-                        document.getElementById('lodging-checkin-date').value = isoStartDate;
-                        // 3. DEFINE a data de checkout também, como solicitado
-                        document.getElementById('lodging-checkout-date').value = isoStartDate;
+                        const checkin = document.getElementById('lodging-checkin-date');
+                        const checkout = document.getElementById('lodging-checkout-date');
+                        if(checkin) checkin.value = isoStartDate;
+                        if(checkout) checkout.value = isoStartDate;
                     }
                 }
-
                 document.body.classList.add('modal-open');
             }
         };
 
         window.closeModal = (modalId) => {
             const modal = document.getElementById(modalId);
-            // Adiciona uma proteção caso o modal não exista
             if (!modal) return; 
             
-            modal.classList.replace('flex', 'hidden');
+            // --- CORREÇÃO 1: Garante que o modal suma, independente se estava como 'flex' ou 'block'
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            
+            // Limpeza de formulários (Mantido)
             const form = modal.querySelector('form');
             if (form) form.reset();          
             
-            // Verificação específica para o modal de exclusão (lógica do timer)
+            // Lógica específica do modal de exclusão (Mantido)
             if (modalId === 'confirm-delete-modal') {
                 onConfirmAction = () => {};
-
-                // Se o modal for fechado, o timer é cancelado
                 if (confirmDeleteTimer) {
                     clearTimeout(confirmDeleteTimer);
                     confirmDeleteTimer = null;
                 }
-
-                // E o botão de exclusão é resetado imediatamente
                 const deleteBtn = document.getElementById('confirm-delete-btn');
-                if (deleteBtn) { // Adiciona verificação se o botão existe
+                if (deleteBtn) {
                     deleteBtn.disabled = false;
                     deleteBtn.classList.remove('bg-slate-400', 'cursor-not-allowed');
                     deleteBtn.classList.add('bg-red-600', 'hover:bg-red-700');
@@ -6872,31 +7027,28 @@ let dividerHtml = '';
                 }
             }
 
-            // --- INÍCIO DA ATUALIZAÇÃO ---
-            // Desliga os listeners de Despesas Pessoais (Despesas E Categorias)
+            // Lógica do modal de despesas (Mantido)
             if (modalId === 'my-expenses-modal') {
+                if (typeof myExpensesExpensesRef !== 'undefined' && myExpensesExpensesRef) off(myExpensesExpensesRef); 
+                if (typeof myExpensesCategoriesRef !== 'undefined' && myExpensesCategoriesRef) off(myExpensesCategoriesRef);
                 
-                // 1. Desliga os dois listeners do Firebase
-                if (myExpensesExpensesRef) {
-                    off(myExpensesExpensesRef); 
-                }
-                if (myExpensesCategoriesRef) {
-                    off(myExpensesCategoriesRef);
-                }
-                
-                // 2. Limpa as referências e os dados em cache
-                myExpensesExpensesRef = null; 
-                myExpensesCategoriesRef = null;
-                myExpensesData = []; 
-                myExpensesCategories = []; // Limpa o cache de categorias também
+                if (typeof myExpensesExpensesRef !== 'undefined') myExpensesExpensesRef = null; 
+                if (typeof myExpensesCategoriesRef !== 'undefined') myExpensesCategoriesRef = null;
+                if (typeof myExpensesData !== 'undefined') myExpensesData = []; 
+                if (typeof myExpensesCategories !== 'undefined') myExpensesCategories = []; 
             }
-            // --- FIM DA ATUALIZAÇÃO ---
 
-            const activeModals = document.querySelectorAll('.modal:not(.hidden)');
-                if (activeModals.length === 0) {
-                    document.body.classList.remove('modal-open');
-                }
-        }
+            // --- CORREÇÃO 2: O PULO DO GATO ---
+            // Em vez de procurar qualquer coisa fixa, procura APENAS elementos que são modais de verdade (role="dialog")
+            // e que NÃO estão escondidos.
+            const remainingModals = document.querySelectorAll('[role="dialog"]:not(.hidden)');
+            
+            if (remainingModals.length === 0) {
+                document.body.classList.remove('modal-open');
+                // Destrava o scroll do site
+                document.body.classList.remove('overflow-hidden');
+            }
+        };
         
         window.scrollToItinerary = () => {
             const itineraryPanel = document.getElementById('daily-itinerary-panel');
@@ -8591,93 +8743,65 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         // --- LISTENERS DOS FORMULÁRIOS ---
         document.getElementById('add-trip-form').addEventListener('submit', async function(e) {
-            e.preventDefault();            
+            e.preventDefault();
+            console.log("=== SALVANDO VIAGEM (PRIORIDADE: LISTA DE CIDADES) ===");
 
+            // --- 1. CAPTURA OBRIGATÓRIA DA LISTA DE CIDADES ---
             const cityRows = document.querySelectorAll('.city-row');
             const citiesToInclude = Array.from(cityRows).map(row => {
                 return {
-                    name: row.querySelector('.city-name-input').value,
+                    name: row.querySelector('.city-name-input').value.trim(),
                     date: row.querySelector('.city-arrival-date').value,
-                    // ADICIONE ESTA LINHA PARA PEGAR A IMAGEM DO CAMPO HIDDEN
                     imageUrl: row.querySelector('.city-image-url-storage')?.value || ''
                 };
-            });          
-            
+            });
+
+            // CRÍTICO: Se não tiver cidade na lista, avisa e para.
+            if (citiesToInclude.length === 0) {
+                alert("⚠️ Por favor, adicione pelo menos uma cidade na lista de destinos.");
+                return;
+            }
+
+            // --- 2. DEFINE O DESTINO BASEADO NA LISTA ---
+            // Cria uma string com todas as cidades (ex: "Belém, Manaus")
+            const nomeDestinoFinal = citiesToInclude.map(c => c.name).join(', ');
+            console.log("✅ Cidades para busca de roteiro:", nomeDestinoFinal);
+
+            const tripName = document.getElementById('trip-name').value;
+            const startDateStr = document.getElementById('trip-start-date').value;
+            const endDateStr = document.getElementById('trip-end-date').value;
+
             const user = auth.currentUser;
             if (!user) return;
 
-            // --- CORREÇÃO 1: REUTILIZAR O ID SE ELE JÁ EXISTIR (CRÉDITO APLICADO) ---
             let newTripId;
             let newTripRef;
 
             if (tripIdPendingUpgrade) {
-                // Se já tentamos salvar antes e paramos pra pagar, usa o MESMO ID
                 newTripId = tripIdPendingUpgrade;
                 newTripRef = ref(db, `trips/${newTripId}`);
             } else {
-                // Se é a primeira tentativa, gera um novo
                 newTripRef = push(ref(db, 'trips'));
                 newTripId = newTripRef.key;
             }
 
-            // --- 2. VALIDAÇÕES ---
-            // Verifica se essa viagem ESPECÍFICA já foi comprada/desbloqueada com crédito
+            // Validação de Plano (Mantida)
             const isPurchased = currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[newTripId];
-
-            if (currentUserLicense.type === 'gratuito' && !isPurchased) { // Adicionamos !isPurchased
-                const startDateStr = document.getElementById('trip-start-date').value;
-                const endDateStr = document.getElementById('trip-end-date').value;
-                const date1 = new Date(startDateStr);
-                const date2 = new Date(endDateStr);
-                const utc1 = Date.UTC(date1.getFullYear(), date1.getMonth(), date1.getDate());
-                const utc2 = Date.UTC(date2.getFullYear(), date2.getMonth(), date2.getDate());
-                const MS_PER_DAY = 1000 * 60 * 60 * 24;
-                const diffDays = Math.floor((utc2 - utc1) / MS_PER_DAY) + 1;
-                
-               //LIMITAÇão DE VIAGENS DE 7 DIAS
-                // if (diffDays > 7) {
-               //     //alert("Plano Gratuito: A duração máxima da viagem é de 7 dias...");
-               //     
-               //     tripIdPendingUpgrade = newTripId;     
-               //     pendingFormId = 'add-trip-form'; // <-- ADICIONE ISSO
-               //     
-               //     prepareUpgradeModal();
-               //     openModal('upgrade-plan-modal'); 
-                //    return;
-              //  }
-
-              // Pega o ano da data de início escolhida pelo usuário
-                // Adicionamos 'T00:00:00' para garantir a leitura correta do ano localmente
+            if (currentUserLicense.type === 'gratuito' && !isPurchased) {
                 const newTripYear = new Date(startDateStr + 'T00:00:00').getFullYear();
-
-                // Filtra as viagens que já existem na memória (tripsData)
                 const tripsInSameYear = tripsData.filter(t => {
-                    // 1. A viagem deve pertencer ao usuário ('owner')
-                    // Se o usuário for apenas convidado (viewer/editor), não conta para a cota dele.
                     const isOwner = t.members && t.members[user.uid] === 'owner';
                     if (!isOwner) return false;
-
-                    // 2. A viagem deve ser no mesmo ano da nova
-                    // t.startDate geralmente é salvo como timestamp no Firebase
                     const tDate = new Date(t.startDate); 
                     return tDate.getFullYear() === newTripYear;
                 });
 
-               // Se já existir 1 ou mais viagens próprias neste ano, bloqueia.
                 if (tripsInSameYear.length >= 1) {
-                    //alert(`⚠️ Limite do Plano Gratuito\n\nVocê pode criar/manter apenas 1 viagem por ano no plano gratuito.\nVocê já possui uma viagem cadastrada em ${newTripYear}. Edite ela para corresponder à nova viagem ou assine um plano para criar viagens ilimitadas.`);
                     openModal('upgrade-plan-modal');
-                    return; // Interrompe o salvamento
+                    return; 
                 }
             }
 
-            // --- 3. PEGA OS DADOS E SALVA ---
-            const tripName = document.getElementById('trip-name').value;
-            const tripDestinationField = document.getElementById('trip-destination');
-            const tripDestination = tripDestinationField ? tripDestinationField.value : "";
-            const tripStartDate = document.getElementById('trip-start-date').value;
-            const tripEndDate = document.getElementById('trip-end-date').value;
-            
             try {
                 const userProfileRef = ref(db, `users/${user.uid}/profile`);
                 const profileSnapshot = await get(userProfileRef);
@@ -8688,172 +8812,99 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     return; 
                 }
 
-                const firstCityName = citiesToInclude.length > 0 ? citiesToInclude[0].name : "travel";
-
-                // 1. Primeiro, tenta pegar a imagem do seu banco de dados (Passo que você pediu)
+                // Imagem (Usa a primeira cidade da lista)
                 let finalTripImageUrl = await getPriorityImageUrl(citiesToInclude);
-
-                // 2. Se não encontrou nenhuma imagem no seu banco, aí sim usa o BING como fallback
                 if (!finalTripImageUrl) {
-                    const firstCityName = citiesToInclude.length > 0 ? citiesToInclude[0].name : "travel";
-                    finalTripImageUrl = `https://www.bing.com/th?id=OIP.static&q=${encodeURIComponent(firstCityName + " city landscape travel")}&w=1280&h=720&c=7&rs=1&p=0&qlt=90`;
+                    finalTripImageUrl = `https://www.bing.com/th?id=OIP.static&q=${encodeURIComponent(citiesToInclude[0].name + " city landscape travel")}&w=1280&h=720&c=7&rs=1&p=0&qlt=90`;
                 }
 
+                // Salva Viagem
                 const newTripData = {
                     name: tripName,
-                    destination: tripDestination,
-                    startDate: new Date(tripStartDate + 'T00:00:00Z').getTime(),
-                    endDate: new Date(tripEndDate + 'T00:00:00Z').getTime(),
-                    imageUrl: finalTripImageUrl, // Agora usa a URL definida acima
+                    destination: nomeDestinoFinal, // Salva "Belém, Manaus" no banco
+                    startDate: new Date(startDateStr + 'T00:00:00Z').getTime(),
+                    endDate: new Date(endDateStr + 'T00:00:00Z').getTime(),
+                    imageUrl: finalTripImageUrl,
                     featured: false,
                     members: { [user.uid]: "owner" },
                     travelers: [{ uid: user.uid, name: userProfile.fullName, email: user.email }],
                     DateAdded: serverTimestamp()
                 };
                 
-                // Salva usando a referência que definimos no topo (seja nova ou reutilizada)
                 await set(newTripRef, newTripData);
+                // --- ADICIONE ESTA LINHA AQUI EMBAIXO: ---
+                window.pendingImportTripId = newTripId; // <--- SALVA O ID PARA USAR DEPOIS
+                console.log("ID da viagem salvo para importação:", window.pendingImportTripId);
 
-                const activitiesRef = ref(db, `trips/${newTripId}/activities`);
                 const initialActivities = {};
-
                 citiesToInclude.forEach(city => {
                     const activityId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                     initialActivities[activityId] = {
-                        id: activityId,
-                        name: city.name,
-                        date: city.date,
-                        time: "08:00",
-                        type: "Cidade",
-                        icon: "default",
-                        description: `Chegada em ${city.name}`,
-                        // ADICIONE A URL DA IMAGEM AQUI TAMBÉM
-                        imageUrl: city.imageUrl || '', 
-                        authorName: currentUserProfile.fullName || 'Sistema'
+                        id: activityId, name: city.name, date: city.date, time: "08:00",
+                        type: "Cidade", icon: "default", description: `Chegada em ${city.name}`,
+                        imageUrl: city.imageUrl || '', authorName: userProfile.fullName || 'Sistema'
                     };
                 });
 
                 await update(ref(db, `trips/${newTripId}`), { activities: initialActivities });
-
                 await set(ref(db, `users/${user.uid}/memberOf/${newTripId}`), true);
-                
-                // Limpeza final
+
+                // --- 3. BUSCA DE ROTEIRO (USANDO APENAS A LISTA) ---
+                if (citiesToInclude.length > 0) {
+                    console.log("🔎 BUSCANDO ROTEIROS PARA AS CIDADES DA LISTA...");
+                    
+                    const limpar = (t) => t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+                    // Cria array com nomes limpos das cidades da lista
+                    const cidadesDaLista = citiesToInclude.map(c => limpar(c.name));
+
+                    const snap = await get(ref(db, 'suggestedItineraries'));
+                    
+                    if (snap.exists()) {
+                        const todasSugestoes = snap.val();
+                        const encontradas = [];
+
+                        for (const id in todasSugestoes) {
+                            const sugg = todasSugestoes[id];
+                            const cidadeBanco = limpar(sugg.cityName);
+                            
+                            // Verifica se a cidade do banco está na nossa lista
+                            if (cidadesDaLista.includes(cidadeBanco) || cidadesDaLista.some(c => cidadeBanco.includes(c))) {
+                                console.log(`✅ MATCH! Encontrou: ${sugg.cityName}`);
+                                
+                                const acts = sugg.activities ? Object.values(sugg.activities) : [];
+                                const temDia1 = acts.some(a => parseInt(a.day) === 1);
+
+                                if (temDia1) {
+                                    encontradas.push({ id: id, cityName: sugg.cityName });
+                                }
+                            }
+                        }
+
+                        if (encontradas.length > 0) {
+                            const list = document.getElementById('itinerary-city-selection-list');
+                            if(list) {
+                                list.innerHTML = encontradas.map(c => `
+                                    <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-blue-50">
+                                        <input type="checkbox" name="city-to-import" value="${c.id}" data-name="${c.cityName}" class="w-5 h-5" checked>
+                                        <span class="font-medium">${c.cityName}</span>
+                                    </label>
+                                `).join('');
+                                openModal('available-itineraries-modal');
+                            }
+                        } else {
+                            console.log("⚠️ Nenhuma sugestão compatível encontrada.");
+                        }
+                    }
+                }
+
                 tripIdPendingUpgrade = null; 
                 closeModal('add-trip-modal');
+                e.target.reset();
 
             } catch (error) {
-                console.error("Erro ao salvar viagem:", error);
-                alert("Ocorreu um erro ao salvar sua nova viagem.");
+                console.error("Erro ao salvar:", error);
+                alert("Ocorreu um erro ao salvar.");
             }
-
-            // --- 5. TAREFAS "FIRE AND FORGET" (VERIFICAÇÃO DE SUGESTÃO) ---
-            (async (nameToCheck, savedTripId) => {
-                try {
-                    let foundCity = null; // Objeto da cidade encontrada (ou a primeira do país)
-                    let foundCountryName = null; // Nome do país encontrado, se houver
-                    let citiesInCountry = []; // Lista de cidades se achar pelo país
-
-                    const suggestions = await loadSuggestedItineraries();
-
-                    if (Object.keys(suggestions).length > 0) {
-                        const tripWords = cleanAndSplit(nameToCheck);
-                        
-                        // Prepara os dados para busca
-                        const availableCities = Object.keys(suggestions).map(cityId => ({
-                            id: cityId,
-                            displayName: suggestions[cityId].cityName,
-                            country: suggestions[cityId].country, // Importante: pegar o país
-                            cleanName: suggestions[cityId].cityName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[,\.]/g, ''),
-                            cleanWords: cleanAndSplit(suggestions[cityId].cityName)
-                        }));
-
-                        // --- PASSO 1: TENTA ACHAR PELA CIDADE (Prioridade) ---
-                        
-                        // Busca exata/parcial
-                        for (const word of tripWords) {
-                            const match = availableCities.find(city => city.cleanName.includes(word));
-                            if (match) {
-                                foundCity = match;
-                                break;
-                            }
-                        }
-
-                        // Busca Fuzzy (typos) se não achou exata
-                        if (!foundCity) {
-                            let bestMatch = null;
-                            let minDistance = 1;
-                            for (const tripWord of tripWords) {
-                                for (const city of availableCities) { 
-                                    for (const cityWord of city.cleanWords) {
-                                        const distance = getLevenshteinDistance(tripWord, cityWord);
-                                        if (distance <= minDistance) {
-                                            minDistance = distance;
-                                            bestMatch = city;
-                                        }
-                                    }
-                                }
-                            }
-                            if (bestMatch) foundCity = bestMatch;
-                        }
-
-                        // --- PASSO 2: SE NÃO ACHOU CIDADE, TENTA ACHAR PELO PAÍS ---
-                        if (!foundCity) {
-                            // Cria uma lista única de países disponíveis e suas palavras chave
-                            const availableCountries = [...new Set(availableCities.map(c => c.country))];
-                            
-                            for (const word of tripWords) {
-                                // Verifica se a palavra digitada bate com algum país (busca simples, insensível a acento/case)
-                                const matchedCountry = availableCountries.find(countryName => {
-                                    const cleanCountry = countryName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                                    return cleanCountry.includes(word);
-                                });
-
-                                if (matchedCountry) {
-                                    foundCountryName = matchedCountry;
-                                    // Filtra todas as cidades desse país
-                                    citiesInCountry = availableCities.filter(c => c.country === matchedCountry);
-                                    break; // Para na primeira correspondência de país
-                                }
-                            }
-                        }
-                    }
-
-                    // --- PASSO 3: PREPARA A MENSAGEM E O ALVO ---
-                    let message = "";
-                    let targetCityForButton = null;
-
-                    if (foundCity) {
-                        // Cenário A: Achou a cidade direto
-                        targetCityForButton = foundCity;
-                        message = `A sua viagem é para ${foundCity.displayName}, certo? Nós temos algumas sugestões de pontos turísticos para você. Gostaria de visualizá-las agora?`;
-                    } else if (foundCountryName && citiesInCountry.length > 0) {
-                        // Cenário B: Achou o país -> Pega a primeira cidade como alvo padrão
-                        targetCityForButton = citiesInCountry[0]; // Define a primeira cidade para abrir o modal
-                        
-                        const cityListNames = citiesInCountry.map(c => c.displayName).join(', ');
-                        message = `Notamos que sua viagem é para o país: ${foundCountryName}. Temos roteiros cadastrados para as seguintes cidades: ${cityListNames}. \n\nDeseja visualizar as sugestões?`;
-                    }
-
-                    // --- PASSO 4: ABRE O MODAL SE HOUVER ALVO ---
-                    if (targetCityForButton) {
-                        // 1. Prepara os dados globais temporários para o botão "Ver sugestões" funcionar
-                        tempSuggestionTripId = savedTripId;
-                        tempSuggestionCityId = targetCityForButton.id;
-                        tempSuggestionCityName = targetCityForButton.displayName;
-
-                        // 2. Atualiza o texto e abre o modal
-                        const msgElement = document.getElementById('suggestion-prompt-message');
-                        // Usa innerText para que o \n funcione como quebra de linha
-                        msgElement.innerText = message; 
-                        
-                        openModal('suggestion-prompt-modal');
-                    }
-
-                } catch (err) {
-                    console.warn("A verificação de sugestão em F&F falhou:", err);
-                }
-            })(tripName, newTripId);
-
         });
         
 
@@ -8893,6 +8944,10 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         document.getElementById('edit-trip-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+
+            const campoEdicao = document.getElementById('edit-trip-destination');
+            const valorDestinoEditado = campoEdicao ? campoEdicao.value : "";
+
             if (!currentTripId) return;
 
             // --- INÍCIO DA NOVA LÓGICA DE SAVE ---
@@ -9068,6 +9123,10 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             // 3. Força o redesenho da lista de viagens...
             renderTripLists();
+
+            if (valorDestino) {
+                checkSuggestedItineraries(newTripId, valorDestino);
+            }
 
             closeModal('edit-trip-modal');
         });
@@ -12475,6 +12534,9 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
         });
 
+        let pendingCities = []; // Cidades que o usuário marcou para ver roteiro
+        let currentCityIndex = 0;   
+
         // Função para selecionar a cidade no modal de atividade
         window.selectActivityCity = (cityName, imageUrl) => {
             document.getElementById('activity-name').value = cityName;
@@ -12550,6 +12612,483 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             toggleButtons.forEach(btn => {
                 btn.innerHTML = '<span>Mais detalhes</span><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>';
             });
+        };
+       
+
+        function renderCitySelection(cities) {
+            const list = document.getElementById('itinerary-city-selection-list');
+            list.innerHTML = cities.map(city => `
+                <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-blue-50 transition-colors">
+                    <input type="checkbox" name="city-to-import" value="${city.id}" data-name="${city.cityName}" class="w-5 h-5 accent-blue-600" checked>
+                    <span class="font-medium text-slate-700">${city.cityName}</span>
+                </label>
+            `).join('');
+        }
+
+        // Função para iniciar o fluxo de importação do roteiro
+        window.startItineraryFlow = function() {
+            console.log("Iniciando fluxo de importação...");
+            
+            // 1. Captura todas as checkboxes marcadas no modal
+            const checkboxes = document.querySelectorAll('input[name="city-to-import"]:checked');
+            
+            if (checkboxes.length === 0) {
+                alert("Por favor, selecione pelo menos uma cidade para importar o roteiro.");
+                return;
+            }
+
+            // 2. Cria a lista de cidades selecionadas NA HORA
+            const selectedCities = Array.from(checkboxes).map(cb => ({
+                id: cb.value, // ID do roteiro no banco
+                cityName: cb.getAttribute('data-name') // Nome da cidade
+            }));
+
+            console.log("Cidades selecionadas para importação:", selectedCities);
+
+            // 3. Salva na variável global (se o resto do código usa ela)
+            // Se você não tiver essa variável declarada lá no topo, pode declarar aqui mesmo window.pending...
+            window.pendingCitiesForItinerary = selectedCities;
+
+            // 4. Fecha o modal de seleção e abre o de dias
+            closeModal('available-itineraries-modal');
+            
+            // Chama a função que prepara o próximo modal (verifique se o nome dela é esse mesmo no seu código)
+            if (typeof prepareDaysSelection === 'function') {
+                prepareDaysSelection(selectedCities);
+            } else {
+                console.error("Erro: Função prepareDaysSelection não encontrada.");
+            }
+        };
+
+        async function showNextCityItinerary() {
+            const city = pendingCitiesForItinerary[currentItineraryCityIndex];
+            const nameElem = document.getElementById('current-itinerary-city-name');
+            const stepElem = document.getElementById('itinerary-step-indicator');
+            
+            if (nameElem) nameElem.textContent = city.name;
+            if (stepElem) stepElem.textContent = `${currentItineraryCityIndex + 1} de ${pendingCitiesForItinerary.length}`;
+            
+            const snapshot = await get(ref(db, `suggestedItineraries/${city.id}`));
+            renderDaysOptions(snapshot.val().activities || []);
+            openModal('select-days-modal');
+        }
+
+        function renderDaysOptions(activities) {
+            const container = document.getElementById('days-selection-container');
+            container.innerHTML = '';
+            
+            // Agrupa atividades sugeridas por dia
+            const suggestedDays = {};
+            activities.forEach(act => {
+                if (act.day) {
+                    if (!suggestedDays[act.day]) suggestedDays[act.day] = [];
+                    suggestedDays[act.day].push(act);
+                }
+            });
+
+            Object.keys(suggestedDays).sort().forEach(dayNum => {
+                const acts = suggestedDays[dayNum];
+                const dayDiv = document.createElement('div');
+                dayDiv.className = "border rounded-xl p-4 bg-slate-50";
+                dayDiv.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="font-bold text-slate-800">Dia Sugerido ${dayNum}</h4>
+                            <p class="text-xs text-slate-500">${acts.length} atividades: ${acts.map(a => a.name).join(', ')}</p>
+                        </div>
+                        <div class="text-right">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase">Adicionar na data:</label>
+                            <input type="date" class="itinerary-date-input border rounded px-2 py-1 text-sm" 
+                                data-day="${dayNum}" data-city-id="${pendingCities[currentCityIndex].id}">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(dayDiv);
+            });
+        }
+
+        window.processItinerarySelection = async () => {
+            const dateInputs = document.querySelectorAll('.itinerary-date-input');
+            const cityId = pendingCitiesForItinerary[currentItineraryCityIndex].id;
+            
+            const snapshot = await get(ref(db, `suggestedItineraries/${cityId}`));
+            const allActivities = snapshot.val().activities || [];
+
+            // Mostrar um loading ou desabilitar botão aqui seria ideal
+            for (const input of dateInputs) {
+                if (input.value) {
+                    const dayNum = parseInt(input.dataset.day);
+                    const targetDate = input.value;
+                    
+                    const activitiesToImport = Object.values(allActivities).filter(a => a.day === dayNum);
+                    
+                    for (const act of activitiesToImport) {
+                        const newActivity = {
+                            name: act.name,
+                            time: act.time || "09:00",
+                            icon: act.icon || "passeio",
+                            description: act.description || "",
+                            date: targetDate,
+                            completed: false
+                        };
+                        // Aqui usamos o currentTripId global do seu app
+                        await push(ref(db, `trips/${currentTripId}/activities`), newActivity);
+                    }
+                }
+            }
+
+            currentItineraryCityIndex++;
+            if (currentItineraryCityIndex < pendingCitiesForItinerary.length) {
+                showNextCityItinerary();
+            } else {
+                closeModal('select-days-modal');
+                // Em vez de reload, você pode chamar a função que renderiza a timeline
+                // se ela existir, ex: renderTripDetails(currentTripId);
+                location.reload(); 
+            }
+        };
+
+        // --- FUNÇÃO DE PREPARAÇÃO (CORRIGIDA: IGNORA ATIVIDADES SEM DIA) ---
+        window.prepareDaysSelection = async function(selectedCities) {
+            console.log("Preparando seleção (Ignorando atividades não alocadas)...");
+            
+            const tripId = window.pendingImportTripId;
+            if (!tripId) return alert("Erro de ID da viagem.");
+
+            window.itineraryPreviewCache = {}; // Limpa cache
+
+            const container = document.getElementById('itinerary-days-selection-list');
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-10 text-gray-500 space-y-4">
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                    <p>Carregando roteiro limpo...</p>
+                </div>
+            `;
+            
+            openModal('select-days-modal');
+
+            try {
+                const tripSnap = await get(ref(db, `trips/${tripId}`));
+                const tripData = tripSnap.val();
+                
+                const activitiesSnap = await get(ref(db, `trips/${tripId}/activities`));
+                const currentActivities = activitiesSnap.val() || {};
+                
+                const cityMarkers = Object.values(currentActivities)
+                    .filter(a => a.type === 'Cidade')
+                    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                const suggestionsSnap = await get(ref(db, 'suggestedItineraries'));
+                const allSuggestions = suggestionsSnap.val();
+
+                let htmlContent = '';
+
+                for (const selectedCity of selectedCities) {
+                    const cityIndex = cityMarkers.findIndex(c => 
+                        c.name.toLowerCase().includes(selectedCity.cityName.toLowerCase()) || 
+                        selectedCity.cityName.toLowerCase().includes(c.name.toLowerCase())
+                    );
+
+                    let minDateStr = new Date(tripData.startDate).toISOString().split('T')[0];
+                    let maxDateStr = new Date(tripData.endDate).toISOString().split('T')[0];
+                    
+                    if (cityIndex !== -1) {
+                        minDateStr = cityMarkers[cityIndex].date; 
+                        if (cityMarkers[cityIndex + 1]) {
+                            const nextCityDateRaw = cityMarkers[cityIndex + 1].date;
+                            const nextCityDateObj = new Date(nextCityDateRaw + 'T12:00:00');
+                            nextCityDateObj.setDate(nextCityDateObj.getDate() - 1);
+                            maxDateStr = nextCityDateObj.toISOString().split('T')[0];
+                        }
+                    }
+
+                    const d1 = new Date(minDateStr + 'T12:00:00');
+                    const d2 = new Date(maxDateStr + 'T12:00:00');
+                    const diffTime = Math.abs(d2 - d1);
+                    const availableDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+                    const displayMinDate = new Date(minDateStr + 'T12:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+                    const displayMaxDate = new Date(maxDateStr + 'T12:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+
+                    const suggestion = allSuggestions[selectedCity.id];
+                    
+                    const daysMap = {};
+                    if (suggestion && suggestion.activities) {
+                        Object.values(suggestion.activities).forEach(act => {
+                            // --- CORREÇÃO AQUI: Verifica estritamente se tem dia ---
+                            if (act.day && parseInt(act.day) > 0) {
+                                const dayNum = parseInt(act.day);
+                                if (!daysMap[dayNum]) daysMap[dayNum] = [];
+                                daysMap[dayNum].push(act);
+                            }
+                        });
+                    }
+
+                    const totalSuggestionDays = Object.keys(daysMap).length;
+
+                    htmlContent += `
+                        <div class="mb-8 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden city-card-container" data-city-id="${selectedCity.id}" data-max-days="${availableDays}">
+                            <div class="bg-blue-50 px-4 py-3 border-b border-blue-100 flex justify-between items-center flex-wrap gap-2">
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-bold text-blue-900 text-lg">🏙️ ${selectedCity.cityName}</h4>
+                                    <span class="text-xs font-bold bg-white text-blue-600 px-2 py-0.5 rounded border border-blue-200 selection-counter">
+                                        0/${availableDays} dias selecionados
+                                    </span>
+                                </div>
+                                <span class="text-xs font-medium text-blue-800">
+                                    Janela: ${displayMinDate} a ${displayMaxDate} (${availableDays} dias)
+                                </span>
+                            </div>
+                            
+                            <div class="p-4 space-y-3 bg-gray-50">
+                    `;
+
+                    if (totalSuggestionDays === 0) {
+                        htmlContent += `<div class="text-gray-500 italic text-center py-4 bg-white rounded-lg">Este roteiro ainda não tem dias definidos.</div>`;
+                    } else {
+                        Object.keys(daysMap).sort((a,b)=>a-b).forEach((dayNum, index) => {
+                            const isPreChecked = index < availableDays ? 'checked' : '';
+                            
+                            let suggestedDateObj = new Date(minDateStr + 'T12:00:00');
+                            suggestedDateObj.setDate(suggestedDateObj.getDate() + index);
+                            const maxDateObj = new Date(maxDateStr + 'T12:00:00');
+                            if (suggestedDateObj > maxDateObj) suggestedDateObj = maxDateObj;
+                            const suggestedDateStr = suggestedDateObj.toISOString().split('T')[0];
+
+                            const resumeHtml = daysMap[dayNum].map(a => `• ${a.name}`).join('<br>');
+
+                            const cacheKey = `${selectedCity.id}-${dayNum}`;
+                            window.itineraryPreviewCache[cacheKey] = {
+                                cityName: selectedCity.cityName,
+                                dayNum: dayNum,
+                                activities: daysMap[dayNum]
+                            };
+
+                            htmlContent += `
+                                <div class="flex flex-col sm:flex-row gap-3 items-start p-3 bg-white hover:bg-blue-50 rounded-lg border border-gray-200 transition-all shadow-sm group">
+                                    
+                                    <div class="pt-1 pl-1">
+                                        <input type="checkbox" 
+                                            class="day-import-check w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300 cursor-pointer" 
+                                            data-city-id="${selectedCity.id}"
+                                            data-day-num="${dayNum}"
+                                            onchange="updateSelectionLimit('${selectedCity.id}', ${availableDays})"
+                                            onclick="event.stopPropagation()" 
+                                            ${isPreChecked}>
+                                    </div>
+
+                                    <div class="flex-1 cursor-pointer" onclick="openItineraryPreview('${selectedCity.id}', '${dayNum}')">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="font-bold text-gray-800 group-hover:text-blue-700 transition-colors">Dia ${dayNum} do Roteiro</span>
+                                            <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 group-hover:bg-blue-100 group-hover:text-blue-600 group-hover:border-blue-200 uppercase font-bold tracking-wider">
+                                                Ver Detalhes 🔍
+                                            </span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 whitespace-normal leading-tight pl-2 border-l-2 border-blue-100 group-hover:border-blue-400 transition-colors">
+                                            ${resumeHtml}
+                                        </p>
+                                    </div>
+
+                                    <div class="flex items-center gap-2 w-full sm:w-auto bg-gray-50 p-1.5 rounded border border-gray-200 mt-2 sm:mt-0" onclick="event.stopPropagation()">
+                                        <span class="text-xs font-medium text-gray-500 whitespace-nowrap pl-1">Data:</span>
+                                        <input type="date" 
+                                            id="date-input-${selectedCity.id}-${dayNum}"
+                                            class="block w-full sm:w-36 py-1 px-2 text-sm border-gray-300 rounded-md focus:ring-blue-500 text-gray-700 bg-white"
+                                            min="${minDateStr}" 
+                                            max="${maxDateStr}"
+                                            value="${suggestedDateStr}">
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                    htmlContent += `</div></div>`;
+                }
+
+                container.innerHTML = htmlContent;
+
+                selectedCities.forEach(city => {
+                    const cityContainer = container.querySelector(`div[data-city-id="${city.id}"]`);
+                    if (cityContainer) {
+                        const maxDays = parseInt(cityContainer.dataset.maxDays);
+                        updateSelectionLimit(city.id, maxDays);
+                    }
+                });
+
+                const confirmBtn = document.getElementById('confirm-import-btn');
+                const newBtn = confirmBtn.cloneNode(true);
+                confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+                newBtn.onclick = () => window.finalizeImportGranular(tripId, allSuggestions);
+
+            } catch (error) {
+                console.error("Erro:", error);
+                container.innerHTML = `<div class="text-red-500 p-4">Erro: ${error.message}</div>`;
+            }
+        };
+
+        // --- FUNÇÃO AUXILIAR PARA CONTROLAR O LIMITE (Adicione esta função também) ---
+        window.updateSelectionLimit = function(cityId, maxDays) {
+            const container = document.querySelector(`div[data-city-id="${cityId}"]`);
+            if (!container) return;
+
+            const checkboxes = container.querySelectorAll('.day-import-check');
+            const checked = container.querySelectorAll('.day-import-check:checked');
+            const counterDisplay = container.querySelector('.selection-counter');
+
+            // Atualiza texto do contador
+            counterDisplay.innerText = `${checked.length}/${maxDays} dias selecionados`;
+            
+            // Muda a cor se atingiu o limite
+            if (checked.length >= maxDays) {
+                counterDisplay.classList.remove('text-blue-600', 'border-blue-200');
+                counterDisplay.classList.add('text-orange-600', 'border-orange-200', 'bg-orange-50');
+            } else {
+                counterDisplay.classList.add('text-blue-600', 'border-blue-200');
+                counterDisplay.classList.remove('text-orange-600', 'border-orange-200', 'bg-orange-50');
+            }
+
+            // Lógica de Bloqueio: Se atingiu o limite, desabilita os não marcados
+            checkboxes.forEach(cb => {
+                if (!cb.checked) {
+                    if (checked.length >= maxDays) {
+                        cb.disabled = true;
+                        cb.parentElement.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        cb.disabled = false;
+                        cb.parentElement.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+            });
+        };
+
+        // 3. Finaliza a importação GRÃO A GRÃO
+        window.finalizeImportGranular = async function(tripId, allSuggestions) {
+            const confirmBtn = document.getElementById('confirm-import-btn');
+            confirmBtn.innerText = "Processando...";
+            confirmBtn.disabled = true;
+
+            try {
+                const updates = {};
+                let count = 0;
+
+                // Pega todos os checkboxes marcados
+                const checkedBoxes = document.querySelectorAll('.day-import-check:checked');
+
+                checkedBoxes.forEach(checkbox => {
+                    const cityId = checkbox.dataset.cityId;
+                    const dayNum = checkbox.dataset.dayNum; // Dia original do roteiro (1, 2...)
+                    
+                    // Pega a data que o usuário escolheu para ESTE dia específico
+                    const dateInput = document.getElementById(`date-input-${cityId}-${dayNum}`);
+                    const targetDateStr = dateInput.value; // YYYY-MM-DD
+
+                    // Recupera as atividades originais deste dia
+                    const suggestion = allSuggestions[cityId];
+                    if (suggestion && suggestion.activities) {
+                        Object.values(suggestion.activities).forEach(act => {
+                            // Só importa se for do dia que estamos processando
+                            if (parseInt(act.day) == parseInt(dayNum)) {
+                                const newActId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                                
+                                updates[`trips/${tripId}/activities/${newActId}`] = {
+                                    ...act,
+                                    id: newActId,
+                                    date: targetDateStr, // DATA EXATA ESCOLHIDA PELO USUÁRIO
+                                    isImported: true
+                                };
+                                count++;
+                            }
+                        });
+                    }
+                });
+
+                if (count > 0) {
+                    await update(ref(db), updates);
+                    alert(`Sucesso! ${count} atividades importadas nas datas escolhidas.`);
+                    closeModal('select-days-modal');
+                    
+                    if (typeof loadTripDetails === 'function') {
+                        loadTripDetails(tripId);
+                    }
+                } else {
+                    alert("Nenhum dia foi selecionado ou as datas são inválidas.");
+                }
+
+            } catch (error) {
+                console.error("Erro final:", error);
+                alert("Erro ao salvar.");
+            } finally {
+                confirmBtn.innerText = "Confirmar Importação";
+                confirmBtn.disabled = false;
+            }
+        };
+
+        // --- FUNÇÃO PARA ABRIR O PREVIEW DETALHADO ---
+        window.openItineraryPreview = function(cityId, dayNum) {
+            const cacheKey = `${cityId}-${dayNum}`;
+            const data = window.itineraryPreviewCache[cacheKey];
+
+            if (!data) return console.error("Dados de preview não encontrados");
+
+            // 1. Atualiza Títulos
+            document.getElementById('preview-modal-title').innerText = `Dia ${data.dayNum} - ${data.cityName}`;
+            document.getElementById('preview-modal-subtitle').innerText = `${data.activities.length} atividades planejadas`;
+
+            const contentDiv = document.getElementById('preview-modal-content');
+            contentDiv.innerHTML = '';
+
+            // 2. Gera Lista de Atividades
+            data.activities.forEach(act => {
+                // Ícone padrão baseado no tipo (simples)
+                let iconBg = 'bg-blue-100 text-blue-600';
+                let iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`; // Pin
+                
+                if (act.type === 'Restaurante' || act.name.toLowerCase().includes('jantar') || act.name.toLowerCase().includes('almoço')) {
+                    iconBg = 'bg-orange-100 text-orange-600';
+                    iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>`; // Comida (exemplo)
+                }
+
+                // Imagem (se tiver)
+                let imageHtml = '';
+                if (act.imageUrl) {
+                    imageHtml = `<img src="${act.imageUrl}" class="w-full h-40 object-cover rounded-lg mb-3 border border-gray-200" alt="${act.name}" onerror="this.style.display='none'">`;
+                }
+
+                // Botão de Link (se tiver)
+                let linkHtml = '';
+                if (act.link) {
+                    linkHtml = `
+                        <a href="${act.link}" target="_blank" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:underline mt-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                            Mais informações
+                        </a>
+                    `;
+                }
+
+                const itemHtml = `
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex gap-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 rounded-full ${iconBg} flex items-center justify-center">
+                                ${iconSvg}
+                            </div>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-lg font-bold text-gray-800 leading-tight">${act.name}</h4>
+                            <p class="text-sm text-gray-500 font-mono mb-2">${act.time || 'Horário a definir'}</p>
+                            
+                            ${imageHtml}
+                            
+                            <p class="text-gray-600 text-sm leading-relaxed">${act.description || 'Sem descrição disponível.'}</p>
+                            
+                            ${linkHtml}
+                        </div>
+                    </div>
+                `;
+                contentDiv.innerHTML += itemHtml;
+            });
+
+            openModal('day-preview-modal');
         };
 
     </script>
