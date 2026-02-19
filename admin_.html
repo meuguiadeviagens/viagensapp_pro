@@ -392,9 +392,15 @@ O link deve ser o link direto do Google Maps para o local."
                         <label for="suggestion-activity-description" class="block text-sm font-medium text-slate-600">Descrição</label>
                         <textarea id="suggestion-activity-description" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md"></textarea>
                     </div>
-                    <div>
-                        <label for="suggestion-activity-link" class="block text-sm font-medium text-slate-600">Link (Opcional)</label>
-                        <input type="url" id="suggestion-activity-link" placeholder="https://..." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="suggestion-activity-link" class="block text-sm font-medium text-slate-600">📍 Google Maps (Link)</label>
+                            <input type="url" id="suggestion-activity-link" placeholder="https://maps.google.com/..." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md">
+                        </div>
+                        <div>
+                            <label for="suggestion-activity-extra-link" class="block text-sm font-medium text-slate-600">🔗 Link Extra (Opcional)</label>
+                            <input type="url" id="suggestion-activity-extra-link" placeholder="https://siteoficial.com/..." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md">
+                        </div>
                     </div>
                     <div>
                         <label for="suggestion-activity-image-url" class="block text-sm font-medium text-slate-600">🌄 URL da Imagem (Opcional)</label>
@@ -1935,6 +1941,7 @@ O link deve ser o link direto do Google Maps para o local."
                 document.getElementById('suggestion-activity-type').value = activity.type;
                 document.getElementById('suggestion-activity-description').value = activity.description || '';
                 document.getElementById('suggestion-activity-link').value = activity.link || '';
+                document.getElementById('suggestion-activity-extra-link').value = activity.extraLink || '';
                 document.getElementById('suggestion-activity-image-url').value = activity.imageUrl || '';
                 document.getElementById('suggestion-activity-icon').value = activity.icon || 'passeio';
 
@@ -1982,6 +1989,7 @@ O link deve ser o link direto do Google Maps para o local."
                 type: document.getElementById('suggestion-activity-type').value,
                 description: document.getElementById('suggestion-activity-description').value,
                 link: document.getElementById('suggestion-activity-link').value.trim(),
+                extraLink: document.getElementById('suggestion-activity-extra-link').value.trim(),
                 imageUrl: document.getElementById('suggestion-activity-image-url').value.trim(),
                 icon: document.getElementById('suggestion-activity-icon').value,
                 closedDays: closedDays
@@ -3063,6 +3071,7 @@ O link deve ser o link direto do Google Maps para o local."
             "day": 1,
             "imageUrl": "URL de uma foto real da atração que seja arquivo .JPG",
             "link": "URL do Google Maps da atração"
+            "extraLink": "URL do site oficial, menu ou reserva (se houver)"
         }
         Regras:
 
@@ -3082,7 +3091,7 @@ O link deve ser o link direto do Google Maps para o local."
         }
 
     </script>
-<br><center><p>V. 1.2.7 - 19/02/2026 08:42</p></center><br>
+<br><center><p>V. 1.2.8 - 19/02/2026 08:42</p></center><br>
 
 <script>
       if ('serviceWorker' in navigator) {
