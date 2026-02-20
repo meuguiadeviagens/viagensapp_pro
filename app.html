@@ -630,6 +630,17 @@
             flex-direction: column-reverse;
         }
 
+        /* Essa é a classe que o JS vai adicionar quando houver variações */
+        .btn-com-variacoes {
+            background-color: #007bff !important; /* Um tom de azul legal */
+            color: white !important;
+            border: none;
+            /* Se precisar ajustar padding ou tamanho para o ícone ficar centralizado: */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -907,7 +918,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.5 | 20/02/2026, 08:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.6 | 20/02/2026, 08:55</p>
             </main>
         </div>
 
@@ -6095,7 +6106,6 @@ window.addEventListener('popstate', (event) => {
                             if (t.arrivalDate && t.arrivalTime) allEvents.push({ dateTime: new Date(`${t.arrivalDate}T${t.arrivalTime}`), name: `Devolução de Carro`, description: t.description || 'Detalhes da devolução', icon: eventIcon, data: transportData });
                             break;
                         default:
-                            // Lógica atualizada para incluir o ícone de carro
                             if (t.type === 'Trem') {
                                 eventIcon = ICONS.train;
                             } else if (t.type === 'Ônibus') {
@@ -6114,7 +6124,7 @@ window.addEventListener('popstate', (event) => {
                 });
             }
 
-             // Adiciona Hospedagens
+            // Adiciona Hospedagens
             if (trip.lodging) {
                 Object.values(trip.lodging).forEach(l => {
                     const lodgingData = { isEditable: false, ...l };
@@ -6159,7 +6169,40 @@ window.addEventListener('popstate', (event) => {
             // Loop principal pelos dias
             while(currentDate <= endDate) {
                 const dayKey = currentDate.toISOString().split('T')[0];
-                const dayEvents = groupedByDay[dayKey] || [];
+                
+                // --- LÓGICA DE VARIAÇÃO AQUI ---
+                // Descobre qual variação o usuário prefere ver (por padrão é 'original')
+                const activeVariationId = trip.userPreferences?.[currentUserId]?.activeVariation?.[dayKey] || 'original';
+                
+                let dayEvents = [];
+                let isShowingVariation = false;
+
+                if (activeVariationId !== 'original' && trip.variations?.[dayKey]?.[activeVariationId]) {
+                    // Se escolheu uma variação e ela existe, pega as atividades DELA
+                    const variationActivities = Object.values(trip.variations[dayKey][activeVariationId].activities || {});
+                    
+                    // Transforma no formato que a renderização espera
+                    variationActivities.forEach(a => {
+                        const activityIcon = ICONS[a.icon] || ICONS.default;
+                        dayEvents.push({ 
+                            dateTime: new Date(`${a.date}T${a.time}`), 
+                            name: a.name || 'Atividade', 
+                            description: a.description || '', 
+                            icon: activityIcon, 
+                            data: { isEditable: true, ...a } 
+                        });
+                    });
+                    
+                    // Voos, Hospedagens e Transportes (allEvents originais sem atividades) são mantidos
+                    dayEvents = dayEvents.concat(groupedByDay[dayKey]?.filter(e => !e.data.hasOwnProperty('type') || e.data.type === 'Voo' || e.data.type === 'Carro Alugado' || e.data.type === 'Trem' || e.data.type === 'Ônibus' || e.data.type === 'Barco') || []);
+                    
+                    // Reordena pelo horário
+                    dayEvents.sort((a,b) => a.dateTime - b.dateTime);
+                    isShowingVariation = true;
+                } else {
+                    // Fluxo normal (Original)
+                    dayEvents = groupedByDay[dayKey] || [];
+                }
 
                 const dayPanel = document.createElement('div');
                 dayPanel.className = 'day-panel border-t pt-6 space-y-4';
@@ -6179,74 +6222,69 @@ window.addEventListener('popstate', (event) => {
 
                 // Gera HTML dos eventos do dia
                 let eventsHtml = dayEvents.map(event => {
-                const { isEditable, ...eventData } = event.data;
-                const { imageUrl, isClosedToday, closedDays, ...restEventData } = eventData;
-                
-                const datasetAttributes = Object.entries(restEventData)
-                    .map(([key, value]) => `data-${key.toLowerCase()}="${String(value || '').replace(/"/g, '&quot;')}"`)
-                    .join(' ');
+                    const { isEditable, ...eventData } = event.data;
+                    const { imageUrl, isClosedToday, closedDays, ...restEventData } = eventData;
+                    
+                    const datasetAttributes = Object.entries(restEventData)
+                        .map(([key, value]) => `data-${key.toLowerCase()}="${String(value || '').replace(/"/g, '&quot;')}"`)
+                        .join(' ');
 
-                const closedDaysAttr = closedDays && closedDays.length > 0 ? `data-closeddays='${JSON.stringify(closedDays)}'` : '';
+                    const closedDaysAttr = closedDays && closedDays.length > 0 ? `data-closeddays='${JSON.stringify(closedDays)}'` : '';
 
-                // Lógica da Cidade e Barra Lateral
-                if (event.data.type === 'Cidade') {
-                    currentCityColor = event.data.bgColor || '#F4C664';
-                }
-                let borderStyle = '';
-                if (currentCityColor && currentCityColor !== 'transparent') {
-                    borderStyle = `border-left: 6px solid ${currentCityColor};`;
-                }
+                    // Lógica da Cidade e Barra Lateral
+                    if (event.data.type === 'Cidade') {
+                        currentCityColor = event.data.bgColor || '#F4C664';
+                    }
+                    let borderStyle = '';
+                    if (currentCityColor && currentCityColor !== 'transparent') {
+                        borderStyle = `border-left: 6px solid ${currentCityColor};`;
+                    }
 
-                // Define cor de fundo
-                let bgColorStyle = '';
-                let bgColorHex = event.data.bgColor; // Guarda o hex para verificar contraste
-                
-                if (event.data.bgColor) {
-                    bgColorStyle = `background-color: ${event.data.bgColor};`;
-                } else if (isEditable) {
-                    // Cores padrão
-                    bgColorHex = (eventData.type === 'Cidade') ? '#F4C664' : '#e6f1ff';
-                    bgColorStyle = `background-color: ${bgColorHex};`;
-                }
+                    // Define cor de fundo
+                    let bgColorStyle = '';
+                    let bgColorHex = event.data.bgColor; 
+                    
+                    if (event.data.bgColor) {
+                        bgColorStyle = `background-color: ${event.data.bgColor};`;
+                    } else if (isEditable) {
+                        bgColorHex = (eventData.type === 'Cidade') ? '#F4C664' : '#e6f1ff';
+                        bgColorStyle = `background-color: ${bgColorHex};`;
+                    }
 
-                // --- LÓGICA DE CONTRASTE ---
-                const isDark = isDarkColor(bgColorHex);
-                const titleColorClass = isDark ? 'text-white' : 'text-slate-900';
-                const descColorClass = isDark ? 'text-slate-200' : 'text-slate-700';
-                const timeColorClass = isDark ? 'text-white' : 'text-slate-900'; // Hora
-                const iconColorClass = isDark ? 'text-slate-300' : 'text-slate-500';
-                const hoverClass = isDark ? 'hover:brightness-110' : 'hover:bg-slate-100'; // Ajuste do hover
-                // ---------------------------
+                    // LÓGICA DE CONTRASTE
+                    const isDark = isDarkColor(bgColorHex);
+                    const titleColorClass = isDark ? 'text-white' : 'text-slate-900';
+                    const descColorClass = isDark ? 'text-slate-200' : 'text-slate-700';
+                    const timeColorClass = isDark ? 'text-white' : 'text-slate-900'; 
+                    const iconColorClass = isDark ? 'text-slate-300' : 'text-slate-500';
+                    const hoverClass = isDark ? 'hover:brightness-110' : 'hover:bg-slate-100'; 
 
-                const time = event.dateTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
-                const closedClasses = isClosedToday ? 'text-red-400 font-bold' : ''; // Vermelho mais claro se fundo for escuro? Pode manter red-600 ou ajustar.
+                    const time = event.dateTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+                    const closedClasses = isClosedToday ? 'text-red-400 font-bold' : ''; 
 
-                // --- INÍCIO DA ALTERAÇÃO (FOTO NO TOPO PARA CIDADES) ---
                     const isCityWithImage = event.data.type === 'Cidade' && imageUrl && imageUrl.trim() !== '';
 
                     if (isCityWithImage) {
-                        // --- LAYOUT FINAL: COM A CLASSE 'activity-item' REINSERIDA ---
-                        
                         const textColorStyle = isDark ? '#ffffff' : '#000000';
                         const descColorStyle = isDark ? '#e2e8f0' : '#475569';
 
                         return `
                         <div class="activity-item relative group cursor-pointer transition-transform rounded-xl shadow-sm mb-6 break-inside-avoid" 
-                             style="margin-top: 24px;"
-                             onclick='openViewActivityModal(this)'
-                             data-icon='${event.icon}' 
-                             data-time="${time}" 
-                             data-name="${(event.name || '').replace(/"/g, '&quot;')}" 
-                             data-description="${(event.description || '').replace(/"/g, '&quot;')}" 
-                             data-iseditable="${isEditable}" 
-                             data-activity-id="${eventData.id || ''}" 
-                             data-imageurl="${imageUrl || ''}" 
-                             data-bgcolor="${event.data.bgColor || ''}"
-                             data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
-                             data-created-at="${event.data.createdAt || ''}"
-                             data-day-counter="${dayCounter}"
-                             data-total-trip-days="${totalTripDays}"
-                             ${datasetAttributes} ${closedDaysAttr}>
+                            style="margin-top: 24px;"
+                            onclick='openViewActivityModal(this)'
+                            data-icon='${event.icon}' 
+                            data-time="${time}" 
+                            data-name="${(event.name || '').replace(/"/g, '&quot;')}" 
+                            data-description="${(event.description || '').replace(/"/g, '&quot;')}" 
+                            data-iseditable="${isEditable}" 
+                            data-activity-id="${eventData.id || ''}" 
+                            data-imageurl="${imageUrl || ''}" 
+                            data-bgcolor="${event.data.bgColor || ''}"
+                            data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
+                            data-created-at="${event.data.createdAt || ''}"
+                            data-day-counter="${dayCounter}"
+                            data-total-trip-days="${totalTripDays}"
+                            ${datasetAttributes} ${closedDaysAttr}>
                             
                             <div class="w-full h-24 overflow-hidden rounded-t-xl relative border-x border-t border-gray-100/50 bg-gray-100">
                                 <img src="${imageUrl}" alt="${event.name}" class="w-full h-full object-cover">
@@ -6264,10 +6302,10 @@ window.addEventListener('popstate', (event) => {
                             </div>
 
                             <div class="p-3 rounded-b-xl flex items-center gap-3 border-x border-b border-gray-100/50" 
-                                 style="${bgColorStyle}; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                                style="${bgColorStyle}; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
                                 
                                 <div class="p-1.5 bg-white/40 backdrop-blur-sm rounded-full flex-shrink-0" 
-                                     style="color: ${textColorStyle} !important;">
+                                    style="color: ${textColorStyle} !important;">
                                     ${event.icon || ''} 
                                 </div>
                                 
@@ -6278,7 +6316,7 @@ window.addEventListener('popstate', (event) => {
                                     </h3>
                                     
                                     <p class="text-xs truncate" 
-                                       style="color: ${descColorStyle} !important;">
+                                    style="color: ${descColorStyle} !important;">
                                         ${time} • ${event.description || 'Explorar a cidade'}
                                     </p>
                                 </div>
@@ -6286,23 +6324,22 @@ window.addEventListener('popstate', (event) => {
                         </div>
                         `;
                     } else {
-                        // LAYOUT ORIGINAL (MANTIDO NO ELSE)
                         return `
                         <div class="activity-item flex items-start justify-between gap-4 p-2 rounded-md cursor-pointer ${hoverClass}" style="${bgColorStyle} ${borderStyle}" 
-                             onclick='openViewActivityModal(this)' 
-                             data-icon='${event.icon}' 
-                             data-time="${time}" 
-                             data-name="${(event.name || '').replace(/"/g, '&quot;')}" 
-                             data-description="${(event.description || '').replace(/"/g, '&quot;')}" 
-                             data-iseditable="${isEditable}" 
-                             data-activity-id="${eventData.id || ''}" 
-                             data-imageurl="${imageUrl || ''}" 
-                             data-bgcolor="${event.data.bgColor || ''}"
-                             data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
-                             data-created-at="${event.data.createdAt || ''}"
-                             data-day-counter="${dayCounter}"
-                             data-total-trip-days="${totalTripDays}"
-                             ${datasetAttributes} ${closedDaysAttr}
+                            onclick='openViewActivityModal(this)' 
+                            data-icon='${event.icon}' 
+                            data-time="${time}" 
+                            data-name="${(event.name || '').replace(/"/g, '&quot;')}" 
+                            data-description="${(event.description || '').replace(/"/g, '&quot;')}" 
+                            data-iseditable="${isEditable}" 
+                            data-activity-id="${eventData.id || ''}" 
+                            data-imageurl="${imageUrl || ''}" 
+                            data-bgcolor="${event.data.bgColor || ''}"
+                            data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
+                            data-created-at="${event.data.createdAt || ''}"
+                            data-day-counter="${dayCounter}"
+                            data-total-trip-days="${totalTripDays}"
+                            ${datasetAttributes} ${closedDaysAttr}
                         >
                             <div class="flex items-start gap-3 flex-1 min-w-0">
                                 <svg class="activity-drag-handle ${iconColorClass}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
@@ -6330,42 +6367,96 @@ window.addEventListener('popstate', (event) => {
                         </div>
                         `;
                     }
-            }).join('');
+                }).join('');
 
-                // Mensagem se não houver eventos
                 if (dayEvents.length === 0) {
                     eventsHtml = '<p class="text-sm text-slate-400 py-2 ml-4">Nenhuma atividade para este dia.</p>';
                 }
 
-                // Monta o HTML do painel do dia
-
-                // NOVA FORMATAÇÃO DE DATA (ABREVIAÇÃO) ---
                 const dateObj = new Date(dayKey + 'T00:00:00Z');
-                // Mapa para as abreviações exatas (DOM-SÁB)
                 const dayMap = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
-                // Usamos getUTCDay() pois estamos tratando a data como UTC (T00:00:00Z)
-                const weekdayAbbr = dayMap[dateObj.getUTCDay()]; 
-                // Formato original (ex: 10 de abril)
+                const weekdayAbbr = dayMap[dateObj.getUTCDay()];
                 const dateString = dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC', day: 'numeric', month: 'long' });
-                // Junta os dois (ex: SEG, 10 de abril)
                 const newDateDisplay = `${weekdayAbbr}, ${dateString}`;
 
+                // --- PREPARA AS VARIÁVEIS PARA O BOTÃO DE VARIAÇÕES APENAS UMA VEZ ---
+                const availableVariations = trip.variations?.[dayKey] ? Object.keys(trip.variations[dayKey]) : [];
+                let extraVariationsHtml = '';
+
+                availableVariations.forEach(vId => {
+                    const vAuthor = trip.variations[dayKey][vId].authorName || 'Viajante';
+                    const vInitials = vAuthor.substring(0, 2).toUpperCase();
+                    extraVariationsHtml += `
+                        <button onclick="selectVariation('${dayKey}', '${vId}')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full ${activeVariationId === vId ? 'bg-green-500' : 'bg-slate-300'}"></span> 
+                            👤 ${vInitials} - Variação de ${vAuthor.split(' ')[0]}
+                        </button>
+                    `;
+                });
+
+                let activeInitials = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>`;      
+                if (activeVariationId !== 'original' && trip.variations?.[dayKey]?.[activeVariationId]) {
+                    activeInitials = (trip.variations[dayKey][activeVariationId].authorName || 'VI').substring(0, 2).toUpperCase();
+                }
+
+                // Antes do dayPanel.innerHTML, vamos decidir como o botão vai parecer
+                const hasVariations = extraVariationsHtml && extraVariationsHtml.trim() !== '';
+
+                // Lógica de cores:
+                // 1. Se uma variação específica está selecionada: Fundo Azul Escuro + Sigla
+                // 2. Se o original está selecionado MAS existem variações: Fundo Azul Claro + Ícone de Variação
+                // 3. Se o original está selecionado e NÃO há variações: Fundo Cinza + Sigla
+                let buttonClasses = 'bg-slate-100 text-slate-600 border border-slate-200';
+                let buttonContent = activeInitials;
+
+                if (activeVariationId !== 'original') {
+                    buttonClasses = 'bg-blue-600 text-white shadow-md border border-blue-700';
+                } else if (hasVariations) {
+                    buttonClasses = 'bg-blue-500 text-white shadow-md border border-blue-600';
+                    // Colocamos um ícone de "shuffle/ramificação" quando há variações disponíveis mas não ativas
+                   // ÍCONE DIFERENTE? buttonContent = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M21 3 9 15"/><path d="M21 16v5h-5"/><path d="M21 21 15 15"/><path d="M3 3v5h5"/><path d="M3 3l6 6"/></svg>`;
+                }
+                
+                // Monta o HTML do painel do dia FINAL
                 dayPanel.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
-                         <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-3">
                             <svg class="drag-handle" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
                             <h3 class="font-bold text-lg text-slate-800">${newDateDisplay} | ${dayCounter}/${totalTripDays}</h3>
                         </div>
                         ${isReadOnly ? '' : `
                         <div class="flex items-center gap-2">
-                             <button onclick="deleteDay('${dayKey}')" class="delete-day-btn flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors" title="Excluir este dia e suas atividades">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            
+                            ${activeVariationId !== 'original' ? `
+                            <button onclick="deleteVariation('${dayKey}', '${activeVariationId}')" title="Excluir esta variação" class="flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors shadow-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                             </button>
-                            <button
-                                onclick="openAddActivityModal('${dayKey}')"
-                                oncontextmenu="openSuggestionsForDay(event, '${dayKey}')"
-                                title="Clique para adicionar / Botão direito para sugestões"
-                                class="add-activity-btn flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition-colors">
+                            ` : ''}
+
+                            <div class="relative">
+                                <button onclick="toggleVariationPopup(event, '${dayKey}')" 
+                                    class="w-10 h-10 rounded-full ${buttonClasses} text-xs font-bold flex items-center justify-center transition-all hover:scale-105" title="${hasVariations && activeVariationId === 'original' ? 'Ver variações disponíveis' : 'Variação Ativa'}">
+                                    ${buttonContent}
+                                </button>
+                                
+                                <div id="popup-${dayKey}" class="variation-popup hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-2xl border border-slate-200 z-[60] py-2">
+                                    <p class="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Roteiros do Dia</p>
+                                    
+                                    <button onclick="selectVariation('${dayKey}', 'original')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full ${activeVariationId === 'original' ? 'bg-blue-500' : 'bg-slate-300'}"></span> 
+                                        📌 Roteiro Original (Raiz)
+                                    </button>
+                                    
+                                    ${extraVariationsHtml}
+                                    
+                                    <button onclick="createNewVariation('${dayKey}')" class="w-full text-left px-4 py-2 text-sm text-blue-600 font-semibold border-t mt-1 hover:bg-blue-50 flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                        Nova Variação
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button onclick="openAddActivityModal('${dayKey}')" oncontextmenu="openSuggestionsForDay(event, '${dayKey}')" title="Clique para adicionar / Botão direito para sugestões" class="add-activity-btn flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             </button>
                         </div>
@@ -6375,6 +6466,7 @@ window.addEventListener('popstate', (event) => {
                         ${eventsHtml}
                     </div>
                 `;
+
                 container.appendChild(dayPanel);
 
                 // Ponto de inserção após o dia
@@ -6388,14 +6480,14 @@ window.addEventListener('popstate', (event) => {
                 dayCounter++;
             }
 
-          // Inicializa SortableJS se estiver no modo de reorganização
-          if (isReorganizing) {
-                if (reorganizationMode === 'activities') {
-                    initializeActivitySorting();
-                } else if (reorganizationMode === 'days') {
-                    initializeDaySorting();
+            // Inicializa SortableJS se estiver no modo de reorganização
+            if (isReorganizing) {
+                    if (reorganizationMode === 'activities') {
+                        initializeActivitySorting();
+                    } else if (reorganizationMode === 'days') {
+                        initializeDaySorting();
+                    }
                 }
-            }
         }
         
         function renderDetailList(elementId, items, itemTemplate, emptyMessage, isReadOnly) {
@@ -7493,7 +7585,33 @@ let dividerHtml = '';
         window.openEditActivityModal = (activityId) => {
             event.stopPropagation();
             const trip = tripsData.find(t => t.id === currentTripId);
-            const activity = Object.values(trip.activities).find(a => a.id === activityId);
+            
+            // --- INÍCIO DA NOVA LÓGICA DE BUSCA ---
+            let activity = null;
+
+            // 1. Procura no roteiro original primeiro
+            if (trip.activities) {
+                activity = Object.values(trip.activities).find(a => a.id === activityId);
+            }
+
+            // 2. Se não achou no original, procura dentro de todas as variações
+            if (!activity && trip.variations) {
+                for (const date in trip.variations) {
+                    for (const varId in trip.variations[date]) {
+                        const acts = trip.variations[date][varId].activities;
+                        if (acts) {
+                            const found = Object.values(acts).find(a => a.id === activityId);
+                            if (found) {
+                                activity = found;
+                                break;
+                            }
+                        }
+                    }
+                    if (activity) break; // Para a busca assim que encontrar
+                }
+            }
+            // --- FIM DA NOVA LÓGICA DE BUSCA ---
+
             if (activity) {
                 document.getElementById('edit-activity-id').value = activity.id;
                 document.getElementById('edit-activity-date').value = activity.date;
@@ -7503,19 +7621,23 @@ let dividerHtml = '';
                 document.getElementById('edit-activity-description').value = activity.description || '';
                 document.getElementById('edit-activity-link').value = activity.link || '';
                 document.getElementById('edit-activity-extra-link').value = activity.extraLink || '';
-                document.getElementById('edit-activity-image-url').value = activity.imageUrl || ''; // <-- LINHA ADICIONADA
+                document.getElementById('edit-activity-image-url').value = activity.imageUrl || ''; 
                 document.getElementById('edit-activity-cost').value = activity.cost || '';
                 document.getElementById('edit-activity-icon').value = activity.icon;
 
                 const picker = document.getElementById('edit-icon-picker');
-                picker.querySelectorAll('.icon-picker-option').forEach(opt => opt.classList.remove('selected'));
-                const selectedIcon = picker.querySelector(`[data-icon="${activity.icon}"]`);
-                if(selectedIcon) selectedIcon.classList.add('selected');
+                if (picker) {
+                    picker.querySelectorAll('.icon-picker-option').forEach(opt => opt.classList.remove('selected'));
+                    const selectedIcon = picker.querySelector(`[data-icon="${activity.icon}"]`);
+                    if(selectedIcon) selectedIcon.classList.add('selected');
+                }
 
                 const suggestions = document.getElementById('edit-activity-suggestions');
                 if (suggestions) suggestions.classList.add('hidden');
                 
                 openModal('edit-activity-modal');
+            } else {
+                console.error("Atividade não encontrada para edição!");
             }
         };
 
@@ -7872,10 +7994,65 @@ let dividerHtml = '';
             event.stopPropagation();
             showConfirmDelete('Tem certeza que deseja excluir esta atividade?', async () => {
                 const trip = tripsData.find(t => t.id === currentTripId);
-                const currentActivities = trip.activities ? Object.values(trip.activities) : [];
+                
+                // 1. PASSO EXTRA: Precisamos descobrir a data da atividade para saber se há variação
+                let activityDate = null;
+                
+                // Tenta achar no roteiro principal primeiro
+                let foundActivity = trip.activities && Object.values(trip.activities).find(a => a.id === activityId);
+                if (foundActivity) {
+                    activityDate = foundActivity.date;
+                } else if (trip.variations) {
+                    // Se não achou, procura nas variações
+                    for (const date in trip.variations) {
+                        for (const varId in trip.variations[date]) {
+                            const acts = trip.variations[date][varId].activities;
+                            if (acts && Object.values(acts).find(a => a.id === activityId)) {
+                                activityDate = date;
+                                break; // Achou a data!
+                            }
+                        }
+                        if (activityDate) break;
+                    }
+                }
+
+                if (!activityDate) {
+                    console.error("Atividade não encontrada para exclusão.");
+                    closeModal('confirm-delete-modal');
+                    return;
+                }
+
+                // 2. AGORA SABEMOS A DATA, VERIFICAMOS A VARIAÇÃO ATIVA
+                // Descobre a variação ativa nas preferências do usuário
+                let activeVariationId = trip.userPreferences?.[currentUserId]?.activeVariation?.[activityDate];
+
+                // Se não tiver nenhuma ativa ou se for a 'original', definimos como null 
+                // para o sistema salvar no array do roteiro principal
+                if (!activeVariationId || activeVariationId === 'original') {
+                    activeVariationId = null;
+                }
+                
+                let currentActivities = [];
+                let updates = {};
+
+                if (activeVariationId) {
+                    currentActivities = (trip.variations && trip.variations[activityDate] && trip.variations[activityDate][activeVariationId] && trip.variations[activityDate][activeVariationId].activities) 
+                        ? [...Object.values(trip.variations[activityDate][activeVariationId].activities)] 
+                        : [];
+                } else {
+                    currentActivities = trip.activities ? [...Object.values(trip.activities)] : [];
+                }
+
+                // 3. REMOVE A ATIVIDADE E PREPARA O CAMINHO PRO FIREBASE
                 const updatedActivities = currentActivities.filter(a => a.id !== activityId);
                 const tripRef = ref(db, `trips/${currentTripId}`);
-                const updates = { "activities": updatedActivities };
+
+                if (activeVariationId) {
+                    updates[`variations/${activityDate}/${activeVariationId}/activities`] = updatedActivities;
+                } else {
+                    updates["activities"] = updatedActivities;
+                }
+
                 await update(tripRef, updates);
                 closeModal('confirm-delete-modal');
             });
@@ -8178,33 +8355,37 @@ let dividerHtml = '';
             const selectedIndexes = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
             const activitiesToImport = selectedIndexes.map(index => suggestedItinerariesData[cityId].activities[index]);
 
-            let currentActivities = trip.activities ? Object.values(trip.activities) : [];
+            // --- NOVA LÓGICA: Verifica se há uma variação ativa para este dia ---
+            const activeVariationId = trip.userPreferences?.[currentUserId]?.activeVariation?.[targetDate] || 'original';
+            const isVariation = activeVariationId !== 'original';
 
-            // --- INÍCIO DA LÓGICA DE VERIFICAÇÃO DO DIA DA SEMANA ---
+            let currentActivities = [];
+            if (isVariation && trip.variations?.[targetDate]?.[activeVariationId]) {
+                // Puxa as atividades DA VARIAÇÃO
+                currentActivities = trip.variations[targetDate][activeVariationId].activities ? Object.values(trip.variations[targetDate][activeVariationId].activities) : [];
+            } else {
+                // Puxa as atividades DA RAIZ (Original)
+                currentActivities = trip.activities ? Object.values(trip.activities) : [];
+            }
+            // ----------------------------------------------------------------------
+
+            // --- LÓGICA DE VERIFICAÇÃO DO DIA DA SEMANA ---
             const dayMap = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
-            // Criar a data com hora ao meio-dia para evitar problemas de fuso/DST
             const targetDateObj = new Date(targetDate + 'T12:00:00');
             const dayOfWeekString = dayMap[targetDateObj.getDay()];
-            // --- FIM DA LÓGICA DE VERIFICAÇÃO DO DIA DA SEMANA ---
-
 
             const activitiesOnTargetDay = currentActivities
                 .filter(a => a.date === targetDate)
                 .sort((a, b) => a.time.localeCompare(b.time));
 
             let lastTimeInMinutes = 8 * 60 + 59;
-
             if (activitiesOnTargetDay.length > 0) {
                 const lastActivity = activitiesOnTargetDay[activitiesOnTargetDay.length - 1];
-                
-                // CORREÇÃO: Verifica se 'time' existe antes de dar o split
                 if (lastActivity && lastActivity.time && typeof lastActivity.time === 'string') {
                     const [lastHours, lastMinutes] = lastActivity.time.split(':').map(Number);
                     lastTimeInMinutes = (lastHours * 60) + lastMinutes;
                 } else {
-                    // Se a última atividade não tem hora (ex: marcador de cidade corrompido), 
-                    // define um horário padrão para começar o dia
-                    lastTimeInMinutes = 8 * 60; // 08:00
+                    lastTimeInMinutes = 8 * 60; 
                 }
             }
 
@@ -8213,22 +8394,19 @@ let dividerHtml = '';
                 const hours = Math.floor(lastTimeInMinutes / 60).toString().padStart(2, '0');
                 const minutes = (lastTimeInMinutes % 60).toString().padStart(2, '0');
 
-                // --- VERIFICA SE ESTÁ FECHADO ---
                 let isClosedToday = false;
                 let descriptionPrefix = "";
                 if (activity.closedDays && activity.closedDays.includes(dayOfWeekString)) {
                     isClosedToday = true;
                     descriptionPrefix = "(Neste dia não abre) ";
                 }
-                // --- FIM DA VERIFICAÇÃO ---
 
                 const newActivity = {
-                    id: `${Date.now()}-${Math.random().toString().replace('0.', '')}`,
+                    id: `${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
                     date: targetDate,
                     time: `${hours}:${minutes}`,
                     name: activity.name,
                     type: activity.type,
-                    // Adiciona o prefixo à descrição
                     description: descriptionPrefix + (activity.description || ''),
                     icon: activity.icon,
                     link: activity.link || '',
@@ -8237,24 +8415,36 @@ let dividerHtml = '';
                     cost: '',
                     authorName: currentUserProfile.fullName || 'Sugestão',
                     createdAt: serverTimestamp(),
-                    isClosedToday: isClosedToday // <-- Guarda a informação
+                    isClosedToday: isClosedToday
                 };
                 currentActivities.push(newActivity);
             });
 
             try {
-                // Convert back to object if necessary or save as array
-                const activitiesToSave = Array.isArray(trip.activities) ? currentActivities : currentActivities.reduce((obj, item) => { obj[item.id] = item; return obj; }, {});
+                const activitiesToSaveAsObject = currentActivities.reduce((obj, item) => {
+                    obj[item.id] = item;
+                    return obj;
+                }, {});
 
-                // Use update to potentially save as an array or object depending on original structure
-                await update(ref(db, `trips/${currentTripId}`), { activities: activitiesToSave });
-                await logTripActivity(`importou ${activitiesToImport.length} atividades sugeridas para ${formatDate(targetDate)}`);
-
-                const selectedDayText = document.getElementById('import-target-day-select').options[document.getElementById('import-target-day-select').selectedIndex].text;
+                const updates = {};
                 
+                // Salva no local correto baseado no estado da UI!
+                if (isVariation) {
+                    updates[`trips/${currentTripId}/variations/${targetDate}/${activeVariationId}/activities`] = activitiesToSaveAsObject;
+                } else {
+                    // Mantém a compatibilidade com a raiz antiga (array ou objeto)
+                    const activitiesToSave = Array.isArray(trip.activities) ? currentActivities : activitiesToSaveAsObject;
+                    updates[`trips/${currentTripId}/activities`] = activitiesToSave;
+                }
+
+                await update(ref(db), updates);
+
+                await logTripActivity(`importou ${activitiesToImport.length} atividades sugeridas para ${formatDate(targetDate)}${isVariation ? ' (em uma variação)' : ''}`);
+                
+                const selectedDayText = document.getElementById('import-target-day-select').options[document.getElementById('import-target-day-select').selectedIndex].text;
                 const successMessage = `${activitiesToImport.length} atividade(s) importada(s) para "${selectedDayText}"!`;
                 showInfoModal("Atividades Importadas", successMessage);
-
+                
                 closeModal('import-suggestions-modal');
             } catch(error) {
                 console.error("Erro ao importar atividades:", error);
@@ -9324,9 +9514,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         document.getElementById('add-activity-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const trip = tripsData.find(t => t.id === currentTripId);
+            const activityDate = document.getElementById('activity-date').value;
+            
             const newActivity = {
                 id: Date.now().toString(),
-                date: document.getElementById('activity-date').value,
+                date: activityDate,
                 time: document.getElementById('activity-time').value,
                 name: document.getElementById('activity-name').value,
                 type: document.getElementById('activity-type').value,
@@ -9334,18 +9526,57 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 icon: document.getElementById('activity-icon').value,
                 link: document.getElementById('activity-link').value.trim(),
                 extraLink: document.getElementById('activity-extra-link').value.trim(),
-                imageUrl: document.getElementById('activity-image-url').value.trim(), // <-- LINHA ADICIONADA
+                imageUrl: document.getElementById('activity-image-url').value.trim(),
                 cost: document.getElementById('activity-cost').value,
                 authorName: currentUserProfile.fullName || 'Usuário Desconhecido',
                 createdAt: serverTimestamp()
             };
-            const currentActivities = trip.activities ? [...Object.values(trip.activities)] : [];
-            currentActivities.push(newActivity);
+
+            // 1. DESVIO DE ROTA: Descobrir se há uma variação visível para este dia
+            // Importante: Você precisará substituir 'obterIdVariacaoAtiva' pela forma como
+            // o seu sistema controla qual aba está aberta (pode ser uma variável global,
+            // um atributo 'data-id' na div do dia, etc).
+            // Descobre a variação ativa nas preferências do usuário
+            let activeVariationId = trip.userPreferences?.[currentUserId]?.activeVariation?.[activityDate];
+
+            // Se não tiver nenhuma ativa ou se for a 'original', definimos como null 
+            // para o sistema salvar no array do roteiro principal
+            if (!activeVariationId || activeVariationId === 'original') {
+                activeVariationId = null;
+            } 
 
             const tripRef = ref(db, `trips/${currentTripId}`);
-            const updates = { "activities": currentActivities };
+            const updates = {};
+
+            // 2. LÓGICA CONDICIONAL DE SALVAMENTO NO FIREBASE
+            if (activeVariationId) {
+                // Se TEM variação ativa, preparamos as atividades DESSA variação
+                // *Atenção: Adapte o caminho do objeto abaixo para bater exatamente com a 
+                // estrutura que você criou no Firebase para as variações*
+                const currentVariationActivities = (trip.variations && trip.variations[activityDate] && trip.variations[activityDate][activeVariationId] && trip.variations[activityDate][activeVariationId].activities) 
+                    ? [...Object.values(trip.variations[activityDate][activeVariationId].activities)] 
+                    : [];
+                    
+                currentVariationActivities.push(newActivity);
+                
+                // Atualiza o Firebase no caminho específico da variação
+                updates[`variations/${activityDate}/${activeVariationId}/activities`] = currentVariationActivities;
+                
+            } else {
+                // Se NÃO TEM variação ativa, segue o fluxo normal do roteiro original
+                const currentActivities = trip.activities ? [...Object.values(trip.activities)] : [];
+                currentActivities.push(newActivity);
+                
+                // Atualiza o Firebase no caminho raiz de atividades
+                updates["activities"] = currentActivities;
+            }
+
+            // 3. ENVIA PARA O BANCO E FINALIZA
             await update(tripRef, updates);
-            await logTripActivity(`adicionou a atividade: "${newActivity.name}" no dia ${formatDate(newActivity.date)}`);
+            
+            // (Opcional) Deixar o log mais inteligente para avisar que foi numa variação
+            await logTripActivity(`adicionou a atividade: "${newActivity.name}" no dia ${formatDate(newActivity.date)}${activeVariationId ? ' (em uma variação)' : ''}`);
+            
             closeModal('add-activity-modal');
         });
 
@@ -9353,13 +9584,37 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             e.preventDefault();
             const trip = tripsData.find(t => t.id === currentTripId);
             const activityId = document.getElementById('edit-activity-id').value;
-            const currentActivities = trip.activities ? Object.values(trip.activities) : [];
+            
+            // Pegamos a data para saber onde procurar a variação
+            const activityDate = document.getElementById('edit-activity-date').value; 
+            // Descobre a variação ativa nas preferências do usuário
+            let activeVariationId = trip.userPreferences?.[currentUserId]?.activeVariation?.[activityDate];
+
+            // Se não tiver nenhuma ativa ou se for a 'original', definimos como null 
+            // para o sistema salvar no array do roteiro principal
+            if (!activeVariationId || activeVariationId === 'original') {
+                activeVariationId = null;
+            }
+            
+            let currentActivities = [];
+            let updates = {};
+
+            // 1. BUSCA AS ATIVIDADES NO LUGAR CERTO
+            if (activeVariationId) {
+                currentActivities = (trip.variations && trip.variations[activityDate] && trip.variations[activityDate][activeVariationId] && trip.variations[activityDate][activeVariationId].activities) 
+                    ? [...Object.values(trip.variations[activityDate][activeVariationId].activities)] 
+                    : [];
+            } else {
+                currentActivities = trip.activities ? [...Object.values(trip.activities)] : [];
+            }
+
             const activityIndex = currentActivities.findIndex(a => a.id === activityId);
             
             if (activityIndex > -1) {
+                // 2. ATUALIZA OS DADOS DA ATIVIDADE
                 currentActivities[activityIndex] = {
                     ...currentActivities[activityIndex],
-                    date: document.getElementById('edit-activity-date').value,
+                    date: activityDate,
                     time: document.getElementById('edit-activity-time').value,
                     name: document.getElementById('edit-activity-name').value,
                     type: document.getElementById('edit-activity-type').value,
@@ -9367,14 +9622,22 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     icon: document.getElementById('edit-activity-icon').value,
                     link: document.getElementById('edit-activity-link').value.trim(),
                     extraLink: document.getElementById('edit-activity-extra-link').value,
-                    imageUrl: document.getElementById('edit-activity-image-url').value.trim(), // <-- LINHA ADICIONADA
+                    imageUrl: document.getElementById('edit-activity-image-url').value.trim(),
                     cost: document.getElementById('edit-activity-cost').value,
                 };
+
                 const tripRef = ref(db, `trips/${currentTripId}`);
-                const updates = { "activities": currentActivities };
+                
+                // 3. DEFINE O CAMINHO DE ATUALIZAÇÃO NO FIREBASE
+                if (activeVariationId) {
+                    updates[`variations/${activityDate}/${activeVariationId}/activities`] = currentActivities;
+                } else {
+                    updates["activities"] = currentActivities;
+                }
+
                 await update(tripRef, updates);
                 const updatedActivity = currentActivities[activityIndex];
-                await logTripActivity(`editou a atividade: "${updatedActivity.name}"`);
+                await logTripActivity(`editou a atividade: "${updatedActivity.name}"${activeVariationId ? ' (em uma variação)' : ''}`);
             }
             closeModal('edit-activity-modal');
         });
@@ -13449,6 +13712,132 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
             });
         }
+
+        // Seleciona uma variação para ver e salva a preferência no Firebase
+        window.selectVariation = async (dayKey, variationUserId) => {
+            if (!currentTripId || !currentUserId) return;
+            
+            const prefRef = ref(db, `trips/${currentTripId}/userPreferences/${currentUserId}/activeVariation/${dayKey}`);
+            
+            try {
+                await set(prefRef, variationUserId); // Salva no Firebase
+                const trip = tripsData.find(t => t.id === currentTripId);
+                renderDailyItinerary(trip); // Recarrega a tela
+            } catch (error) {
+                console.error("Erro ao salvar preferência de variação:", error);
+            }
+        };
+
+        // Cria uma nova variação copiando as atividades "originais" daquele dia
+        window.createNewVariation = async (dayKey) => {
+            if (!currentTripId || !currentUserId) return;
+            
+            const trip = tripsData.find(t => t.id === currentTripId);
+            
+            // Filtra apenas as atividades originais daquele dia
+            const originalActivities = trip.activities ? Object.values(trip.activities).filter(a => a.date === dayKey) : [];
+            
+            // Clona e gera novos IDs para não conflitar
+            const clonedActivitiesObject = {};
+            originalActivities.forEach((act, index) => {
+                const newId = `var-${Date.now()}-${index}`;
+                clonedActivitiesObject[newId] = {
+                    ...act,
+                    id: newId,
+                    authorName: currentUserProfile.fullName // Você passa a ser o autor desta variação
+                };
+            });
+
+            const updates = {};
+            updates[`trips/${currentTripId}/variations/${dayKey}/${currentUserId}/activities`] = clonedActivitiesObject;
+            updates[`trips/${currentTripId}/variations/${dayKey}/${currentUserId}/authorName`] = currentUserProfile.fullName;
+            updates[`trips/${currentTripId}/userPreferences/${currentUserId}/activeVariation/${dayKey}`] = currentUserId; 
+
+            try {
+                await update(ref(db), updates);
+                
+                // --- ATUALIZAÇÃO OTIMISTA (INÍCIO) ---
+                // Atualizamos o objeto local na marra para a tela não piscar ou renderizar dados velhos
+                if (!trip.variations) trip.variations = {};
+                if (!trip.variations[dayKey]) trip.variations[dayKey] = {};
+                trip.variations[dayKey][currentUserId] = {
+                    activities: clonedActivitiesObject,
+                    authorName: currentUserProfile.fullName
+                };
+
+                if (!trip.userPreferences) trip.userPreferences = {};
+                if (!trip.userPreferences[currentUserId]) trip.userPreferences[currentUserId] = {};
+                if (!trip.userPreferences[currentUserId].activeVariation) trip.userPreferences[currentUserId].activeVariation = {};
+                
+                // Define localmente que essa é a variação ativa agora
+                trip.userPreferences[currentUserId].activeVariation[dayKey] = currentUserId;
+                // --- ATUALIZAÇÃO OTIMISTA (FIM) ---
+
+                alert("Variação criada com sucesso! As alterações aqui não afetarão o roteiro original.");
+                
+                // Agora o render vai usar a variável 'trip' fresquinha com as novidades!
+                renderDailyItinerary(trip); 
+            } catch (error) {
+                console.error("Erro ao criar variação:", error);
+            }
+        };
+
+        // Alterna a visibilidade do popup de variações
+        window.toggleVariationPopup = (event, dayKey) => {
+            event.stopPropagation();
+            const popup = document.getElementById(`popup-${dayKey}`);
+            document.querySelectorAll('.variation-popup').forEach(p => {
+                if (p !== popup) p.classList.add('hidden'); // Fecha outros abertos
+            });
+            popup.classList.toggle('hidden');
+        };
+
+        // Fecha popups ao clicar fora
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.variation-popup').forEach(p => p.classList.add('hidden'));
+        });
+
+        // Exclui uma variação específica e retorna para o roteiro original
+        window.deleteVariation = async (dayKey, variationId) => {
+            if (!currentTripId || !currentUserId || !variationId) return;
+
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const variation = trip.variations?.[dayKey]?.[variationId];
+            const varName = variation?.name || 'esta variação';
+
+            if (!confirm(`Tem certeza que deseja excluir "${varName}"? As atividades originais do grupo não serão afetadas.`)) {
+                return;
+            }
+
+            const updates = {};
+            // Deleta o nó da variação inteira
+            updates[`trips/${currentTripId}/variations/${dayKey}/${variationId}`] = null;
+            
+            // Retorna a visualização deste usuário para o roteiro 'original'
+            updates[`trips/${currentTripId}/userPreferences/${currentUserId}/activeVariation/${dayKey}`] = 'original';
+
+            try {
+                // --- NOVO: Atualiza o objeto local IMEDIATAMENTE antes de renderizar ---
+                if (!trip.userPreferences) trip.userPreferences = {};
+                if (!trip.userPreferences[currentUserId]) trip.userPreferences[currentUserId] = {};
+                if (!trip.userPreferences[currentUserId].activeVariation) trip.userPreferences[currentUserId].activeVariation = {};
+                
+                trip.userPreferences[currentUserId].activeVariation[dayKey] = 'original';
+                
+                if (trip.variations && trip.variations[dayKey]) {
+                    delete trip.variations[dayKey][variationId];
+                }
+                // ------------------------------------------------------------------------
+
+                await update(ref(db), updates);
+                
+                // Agora, ao renderizar, ele já sabe que deve mostrar a raiz
+                renderDailyItinerary(trip); 
+            } catch (error) {
+                console.error("Erro ao excluir variação:", error);
+                alert("Ocorreu um erro ao excluir a variação.");
+            }
+        };
 
     </script>
 
