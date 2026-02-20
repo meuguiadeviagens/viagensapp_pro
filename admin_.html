@@ -1813,8 +1813,20 @@ O link deve ser o link direto do Google Maps para o local."
                 if (cityId === selectedCityId) {
                     item.classList.add('selected');
                 }
+                
+                // --- NOVO: Lógica da bolinha de revisão ---
+                const isReviewed = city.isReviewed || false;
+                const dotColor = isReviewed ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-400 hover:bg-yellow-500';
+                const dotTitle = isReviewed ? 'Cidade revisada (Clique para desmarcar)' : 'Pendente de revisão (Clique para marcar)';
+
                 item.innerHTML = `
-                    <span class="truncate mr-2">${city.cityName}</span>
+                    <div class="flex items-center gap-2 overflow-hidden flex-grow">
+                        <button onclick="event.stopPropagation(); toggleCityReview('${cityId}', ${isReviewed})" 
+                                class="w-3.5 h-3.5 rounded-full flex-shrink-0 transition-colors shadow-sm border border-black/10 ${dotColor}" 
+                                title="${dotTitle}">
+                        </button>
+                        <span class="truncate mr-2">${city.cityName}</span>
+                    </div>
                     <div class="flex gap-1 flex-shrink-0">
                         <button onclick="event.stopPropagation(); openEditCityModal('${cityId}')" class="text-blue-400 hover:text-blue-700 p-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
@@ -1929,7 +1941,7 @@ O link deve ser o link direto do Google Maps para o local."
 
             if (index === null) { // Adicionando
                 title.textContent = `Nova Atividade para ${suggestedItinerariesData[selectedCityId].cityName}`;
-                indexInput.value = -1;
+                indexInput.value = -1;I
                 document.getElementById('suggestion-activity-image-url').value = '';
                 // Define o ícone padrão ao adicionar
                 document.getElementById('suggestion-activity-icon').value = 'passeio';
@@ -2822,8 +2834,6 @@ O link deve ser o link direto do Google Maps para o local."
                         ${linkBtn}
                         <button onclick="event.stopPropagation(); openEditActivitySuggestionModal(${act.index})" 
                                 class="text-blue-400 hover:text-blue-600 p-1">✏️</button>
-                        <button onclick="event.stopPropagation(); deleteActivitySuggestion(${act.index})" 
-                                class="text-red-400 hover:text-red-600 p-1">🗑️</button>
                     </div>`;
             }
 
@@ -2860,9 +2870,22 @@ O link deve ser o link direto do Google Maps para o local."
             
             try {
                 const updates = { day: day };
-                if (day === null) updates.time = null; // Limpa o horário se sair do roteiro
-                
                 const cityRef = ref(db, `suggestedItineraries/${currentItineraryCityId}/activities/${activityIndex}`);
+                
+                if (day === null) {
+                    updates.time = null; // Limpa o horário se voltar para as "Atrações Disponíveis"
+                } else {
+                    // NOVO: Verifica se a atividade já possui horário antes de definir 08:00
+                    const currentActSnapshot = await get(cityRef);
+                    if (currentActSnapshot.exists()) {
+                        const actData = currentActSnapshot.val();
+                        // Se não tiver horário, define 08:00 como padrão de segurança
+                        if (!actData.time || actData.time.trim() === "") {
+                            updates.time = "08:00";
+                        }
+                    }
+                }
+                
                 await update(cityRef, updates);
                 
                 const snapshot = await get(ref(db, `suggestedItineraries/${currentItineraryCityId}`));
@@ -3090,8 +3113,27 @@ O link deve ser o link direto do Google Maps para o local."
             });
         }
 
+        // --- NOVA FUNÇÃO: Alternar status de revisão da cidade ---
+        window.toggleCityReview = async (cityId, currentState) => {
+            try {
+                // Inverte o estado atual (se era true vira false, se era false vira true)
+                const newState = !currentState;
+                
+                // Atualiza APENAS o campo isReviewed da cidade no Firebase
+                await update(ref(db, `suggestedItineraries/${cityId}`), {
+                    isReviewed: newState
+                });
+                
+                // Nota: Não precisamos chamar render() aqui, pois o onValue() da 
+                // loadSuggestedItineraries vai detectar a mudança e re-renderizar a lista automaticamente!
+            } catch (error) {
+                console.error("Erro ao alterar status de revisão:", error);
+                alert("Erro ao salvar o status da cidade.");
+            }
+        };
+
     </script>
-<br><center><p>V. 1.2.8 - 19/02/2026 08:42</p></center><br>
+<br><center><p>V. 1.2.9 - 20/02/2026 08:42</p></center><br>
 
 <script>
       if ('serviceWorker' in navigator) {
