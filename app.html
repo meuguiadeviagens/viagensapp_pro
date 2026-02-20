@@ -918,7 +918,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.6 | 20/02/2026, 08:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.7 | 20/02/2026, 08:55</p>
             </main>
         </div>
 
@@ -3179,58 +3179,83 @@
         window.openActivityLogModal = () => {
             // Esconde a bolinha vermelha imediatamente ao abrir
             const badge = document.getElementById('activity-log-badge');
-            if (badge) badge.classList.add('hidden'); // <-- ADICIONE ESTA LINHA
+            if (badge) badge.classList.add('hidden');
 
             const trip = tripsData.find(t => t.id === currentTripId);
             const logList = document.getElementById('activity-log-list');
 
-            // 1. Pega o carimbo da última vez que ESTE usuário viu o log
-            // Se não existir (|| 0), será a primeira vez, então o carimbo é 0.
+            // Pega o carimbo da última vez que este usuário viu o log
             const lastViewedTimestamp = (trip.userViewTimestamps && trip.userViewTimestamps[currentUserId])
                                         ? trip.userViewTimestamps[currentUserId]
                                         : 0;
             
             if (!trip || !trip.activityLog) {
-                logList.innerHTML = '<p class="text-center text-slate-500">Nenhuma atividade registrada para esta viagem ainda.</p>';
+                logList.innerHTML = '<p class="text-center text-slate-500 py-8">Nenhuma atividade registrada para esta viagem ainda.</p>';
             } else {
-                logList.innerHTML = ''; // Limpa o "Carregando..."
+                logList.innerHTML = '';
                 
-                // O log é salvo como um objeto { key1: entry1, key2: entry2 }
-                // Precisamos convertê-lo em um array, ordenar pela data, e reverter (mais novo primeiro)
+                // Converte o objeto em array, ordena (mais novo primeiro)
                 const logEntries = Object.values(trip.activityLog)
-                                       .sort((a, b) => a.timestamp - b.timestamp) // Ordena do mais antigo para o mais novo
-                                       .reverse(); // Reverte para mostrar o mais novo no topo
+                                    .sort((a, b) => a.timestamp - b.timestamp)
+                                    .reverse();
 
-                let hasNewItems = false;
-                
                 logEntries.forEach(entry => {
                     const date = new Date(entry.timestamp);
                     const formattedDate = date.toLocaleString('pt-BR', {
                         day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
                     });
 
-                    // 2. Compara o carimbo do log com o carimbo da última visualização
                     const isNew = entry.timestamp > lastViewedTimestamp;
-                    if (isNew) hasNewItems = true;
+                    
+                    // --- LÓGICA DE HYPERLINKS (REGEX PARA ASPAS DUPLAS E SIMPLES) ---
+                    const rawActionText = `${entry.userName} ${entry.action}`;
+                    
+                    // Esta Regex agora captura textos entre "aspas duplas" ou 'aspas simples'
+                    const actionTextWithLinks = rawActionText.replace(/["']([^"']+)["']/g, (match, activityName) => {
+                        let foundId = null;
 
-                    // 3. Monta o texto da ação, aplicando <strong> se for novo
-                    const actionText = `${entry.userName} ${entry.action}`;
+                        // 1. Busca no roteiro original
+                        const originalAct = Object.values(trip.activities || {}).find(a => a.name === activityName);
+                        if (originalAct) {
+                            foundId = originalAct.id;
+                        } else if (trip.variations) {
+                            // 2. Busca nas variações de todos os usuários
+                            for (const d in trip.variations) {
+                                for (const u in trip.variations[d]) {
+                                    const varAct = Object.values(trip.variations[d][u].activities || {}).find(a => a.name === activityName);
+                                    if (varAct) { foundId = varAct.id; break; }
+                                }
+                                if (foundId) break;
+                            }
+                        }
+
+                        // Se o ID foi encontrado, cria o link azul clicável
+                        if (foundId) {
+                            return `<span class="text-blue-600 underline cursor-pointer hover:text-blue-800 font-medium" 
+                                        onclick="event.stopPropagation(); abrirAtividadePeloLog('${foundId}')">
+                                        "${activityName}"
+                                    </span>`;
+                        }
+                        return match; // Mantém o texto original se não encontrar a atividade
+                    });
+
                     const styledAction = isNew 
-                        ? `<strong class="text-slate-900">${actionText}</strong>` 
-                        : actionText;
+                        ? `<strong class="text-slate-900">${actionTextWithLinks}</strong>` 
+                        : actionTextWithLinks;
 
                     const logElement = document.createElement('div');
-                    // Estiliza cada entrada do log
                     logElement.className = 'flex items-start gap-3 pb-3 border-b border-slate-100 last:border-b-0';
                     logElement.innerHTML = `
-                        <div class="flex-shrink-0 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-semibold text-xs" title="${entry.userName}">
-                            ${entry.userName.substring(0, 3)}
+                        <div class="flex-shrink-0 w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-semibold text-xs">
+                            ${entry.userName.substring(0, 3).toUpperCase()}
                         </div>
-                        <div>
-                            <p class="text-sm ${isNew ? 'text-slate-800' : 'text-slate-700'}">
-                                ${styledAction} </p>
-                            <p class="text-xs ${isNew ? 'text-blue-600 font-medium' : 'text-slate-400'} mt-0.5">
-                                ${formattedDate} ${isNew ? ' (Novo)' : ''} </p>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm ${isNew ? 'text-slate-800' : 'text-slate-700'} leading-relaxed">
+                                ${styledAction}
+                            </p>
+                            <p class="text-[10px] ${isNew ? 'text-blue-600 font-medium' : 'text-slate-400'} mt-0.5 uppercase tracking-wider">
+                                ${formattedDate} ${isNew ? ' • NOVO' : ''}
+                            </p>
                         </div>
                     `;
                     logList.appendChild(logElement);
@@ -3238,8 +3263,6 @@
             }
             
             openModal('activity-log-modal');
-
-            // 4. CHAMA A FUNÇÃO para atualizar o carimbo DEPOIS de abrir o modal
             updateLastViewedTimestamp();
         }
 
@@ -6167,21 +6190,19 @@ window.addEventListener('popstate', (event) => {
             </div>`);
 
             // Loop principal pelos dias
+            // Loop principal pelos dias
             while(currentDate <= endDate) {
                 const dayKey = currentDate.toISOString().split('T')[0];
                 
-                // --- LÓGICA DE VARIAÇÃO AQUI ---
-                // Descobre qual variação o usuário prefere ver (por padrão é 'original')
+                // --- LÓGICA DE VARIAÇÃO ---
                 const activeVariationId = trip.userPreferences?.[currentUserId]?.activeVariation?.[dayKey] || 'original';
                 
                 let dayEvents = [];
                 let isShowingVariation = false;
 
                 if (activeVariationId !== 'original' && trip.variations?.[dayKey]?.[activeVariationId]) {
-                    // Se escolheu uma variação e ela existe, pega as atividades DELA
                     const variationActivities = Object.values(trip.variations[dayKey][activeVariationId].activities || {});
                     
-                    // Transforma no formato que a renderização espera
                     variationActivities.forEach(a => {
                         const activityIcon = ICONS[a.icon] || ICONS.default;
                         dayEvents.push({ 
@@ -6193,14 +6214,11 @@ window.addEventListener('popstate', (event) => {
                         });
                     });
                     
-                    // Voos, Hospedagens e Transportes (allEvents originais sem atividades) são mantidos
-                    dayEvents = dayEvents.concat(groupedByDay[dayKey]?.filter(e => !e.data.hasOwnProperty('type') || e.data.type === 'Voo' || e.data.type === 'Carro Alugado' || e.data.type === 'Trem' || e.data.type === 'Ônibus' || e.data.type === 'Barco') || []);
-                    
-                    // Reordena pelo horário
+                    // Mantém Voos e Transportes do dia original mesmo na variação
+                    dayEvents = dayEvents.concat(groupedByDay[dayKey]?.filter(e => !e.data.hasOwnProperty('type') || ['Voo', 'Carro Alugado', 'Trem', 'Ônibus', 'Barco'].includes(e.data.type)) || []);
                     dayEvents.sort((a,b) => a.dateTime - b.dateTime);
                     isShowingVariation = true;
                 } else {
-                    // Fluxo normal (Original)
                     dayEvents = groupedByDay[dayKey] || [];
                 }
 
@@ -6208,50 +6226,37 @@ window.addEventListener('popstate', (event) => {
                 dayPanel.className = 'day-panel border-t pt-6 space-y-4';
                 dayPanel.dataset.date = dayKey;
 
-                // Define ID para âncora de cidade
-                for (const event of dayEvents) {
-                    if (event.data.isEditable && event.data.type === 'Cidade') {
-                        const cityName = event.data.name;
-                        if (!cityAnchorsCreated.has(cityName)) {
-                            dayPanel.id = `itinerary-day-${cityName.toLowerCase().replace(/\s+/g, '-')}`;
-                            cityAnchorsCreated.add(cityName);
-                            break;
-                        }
-                    }
-                }
-
-                // Gera HTML dos eventos do dia
+                // --- GERAÇÃO DO HTML DOS EVENTOS ---
                 let eventsHtml = dayEvents.map(event => {
                     const { isEditable, ...eventData } = event.data;
-                    const { imageUrl, isClosedToday, closedDays, ...restEventData } = eventData;
+                    const { imageUrl, closedDays, ...restEventData } = eventData;
                     
+                    // Cálculo de fechamento em tempo real
+                    const dateObjForClosed = new Date(dayKey + 'T12:00:00');
+                    const dayMapForClosed = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
+                    const currentDayOfWeek = dayMapForClosed[dateObjForClosed.getDay()];
+
+                    let parsedClosedDays = [];
+                    try { 
+                        parsedClosedDays = (typeof closedDays === 'string') ? JSON.parse(closedDays) : (closedDays || []); 
+                    } catch(e) { parsedClosedDays = []; }
+
+                    const isNowClosed = parsedClosedDays.includes(currentDayOfWeek);
+                    const closedClasses = isNowClosed ? 'text-red-600 font-bold underline decoration-wavy' : ''; 
+
+                    // Prepara os atributos data-
                     const datasetAttributes = Object.entries(restEventData)
                         .map(([key, value]) => `data-${key.toLowerCase()}="${String(value || '').replace(/"/g, '&quot;')}"`)
                         .join(' ');
 
-                    const closedDaysAttr = closedDays && closedDays.length > 0 ? `data-closeddays='${JSON.stringify(closedDays)}'` : '';
+                    const closedDaysAttr = parsedClosedDays.length > 0 ? `data-closeddays='${JSON.stringify(parsedClosedDays)}'` : '';
 
-                    // Lógica da Cidade e Barra Lateral
-                    if (event.data.type === 'Cidade') {
-                        currentCityColor = event.data.bgColor || '#F4C664';
-                    }
-                    let borderStyle = '';
-                    if (currentCityColor && currentCityColor !== 'transparent') {
-                        borderStyle = `border-left: 6px solid ${currentCityColor};`;
-                    }
+                    if (event.data.type === 'Cidade') { currentCityColor = event.data.bgColor || '#F4C664'; }
+                    let borderStyle = (currentCityColor && currentCityColor !== 'transparent') ? `border-left: 6px solid ${currentCityColor};` : '';
 
-                    // Define cor de fundo
-                    let bgColorStyle = '';
-                    let bgColorHex = event.data.bgColor; 
-                    
-                    if (event.data.bgColor) {
-                        bgColorStyle = `background-color: ${event.data.bgColor};`;
-                    } else if (isEditable) {
-                        bgColorHex = (eventData.type === 'Cidade') ? '#F4C664' : '#e6f1ff';
-                        bgColorStyle = `background-color: ${bgColorHex};`;
-                    }
+                    let bgColorHex = event.data.bgColor || (isEditable ? (eventData.type === 'Cidade' ? '#F4C664' : '#e6f1ff') : '');
+                    let bgColorStyle = bgColorHex ? `background-color: ${bgColorHex};` : '';
 
-                    // LÓGICA DE CONTRASTE
                     const isDark = isDarkColor(bgColorHex);
                     const titleColorClass = isDark ? 'text-white' : 'text-slate-900';
                     const descColorClass = isDark ? 'text-slate-200' : 'text-slate-700';
@@ -6260,164 +6265,89 @@ window.addEventListener('popstate', (event) => {
                     const hoverClass = isDark ? 'hover:brightness-110' : 'hover:bg-slate-100'; 
 
                     const time = event.dateTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
-                    const closedClasses = isClosedToday ? 'text-red-400 font-bold' : ''; 
 
-                    const isCityWithImage = event.data.type === 'Cidade' && imageUrl && imageUrl.trim() !== '';
-
-                    if (isCityWithImage) {
+                    // 1. Caso: Cidade com Imagem
+                    if (event.data.type === 'Cidade' && imageUrl && imageUrl.trim() !== '') {
                         const textColorStyle = isDark ? '#ffffff' : '#000000';
-                        const descColorStyle = isDark ? '#e2e8f0' : '#475569';
-
                         return `
-                        <div class="activity-item relative group cursor-pointer transition-transform rounded-xl shadow-sm mb-6 break-inside-avoid" 
-                            style="margin-top: 24px;"
-                            onclick='openViewActivityModal(this)'
-                            data-icon='${event.icon}' 
-                            data-time="${time}" 
-                            data-name="${(event.name || '').replace(/"/g, '&quot;')}" 
-                            data-description="${(event.description || '').replace(/"/g, '&quot;')}" 
-                            data-iseditable="${isEditable}" 
-                            data-activity-id="${eventData.id || ''}" 
-                            data-imageurl="${imageUrl || ''}" 
-                            data-bgcolor="${event.data.bgColor || ''}"
-                            data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
-                            data-created-at="${event.data.createdAt || ''}"
-                            data-day-counter="${dayCounter}"
-                            data-total-trip-days="${totalTripDays}"
-                            ${datasetAttributes} ${closedDaysAttr}>
-                            
-                            <div class="w-full h-24 overflow-hidden rounded-t-xl relative border-x border-t border-gray-100/50 bg-gray-100">
-                                <img src="${imageUrl}" alt="${event.name}" class="w-full h-full object-cover">
-                                
+                        <div class="activity-item relative group cursor-pointer transition-transform rounded-xl shadow-sm mb-6" 
+                             style="margin-top: 24px;" onclick='openViewActivityModal(this)' 
+                             data-iseditable="${isEditable}"
+                             data-activity-id="${eventData.id || ''}" ${datasetAttributes} ${closedDaysAttr}>
+                            <div class="w-full h-24 overflow-hidden rounded-t-xl bg-gray-100">
+                                <img src="${imageUrl}" class="w-full h-full object-cover">
                                 ${(isEditable && !isReadOnly) ? `
                                 <div class="absolute top-2 right-2 flex gap-1.5 z-10 print:hidden">
-                                    <button onclick="event.stopPropagation(); openEditActivityModal('${eventData.id}')" class="bg-white/90 text-blue-600 p-1 rounded-full hover:bg-white shadow-sm" title="Editar">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                                    </button>
-                                    <button onclick="event.stopPropagation(); deleteActivity('${eventData.id}')" class="bg-white/90 text-red-600 p-1 rounded-full hover:bg-white shadow-sm" title="Excluir">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                                    </button>
-                                </div>
-                                ` : ''}
+                                    <button onclick="event.stopPropagation(); openEditActivityModal('${eventData.id}')" class="bg-white/90 text-blue-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+                                    <button onclick="event.stopPropagation(); deleteActivity('${eventData.id}')" class="bg-white/90 text-red-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
+                                </div>` : ''}
                             </div>
-
-                            <div class="p-3 rounded-b-xl flex items-center gap-3 border-x border-b border-gray-100/50" 
-                                style="${bgColorStyle}; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-                                
-                                <div class="p-1.5 bg-white/40 backdrop-blur-sm rounded-full flex-shrink-0" 
-                                    style="color: ${textColorStyle} !important;">
-                                    ${event.icon || ''} 
-                                </div>
-                                
+                            <div class="p-3 rounded-b-xl flex items-center gap-3 border-x border-b border-gray-100/50" style="${bgColorStyle}">
+                                <div class="p-1.5 bg-white/40 backdrop-blur-sm rounded-full flex-shrink-0" style="color: ${textColorStyle} !important;">${event.icon || ''}</div>
                                 <div class="min-w-0 flex-1">
-                                    <h3 class="font-bold text-base leading-tight truncate" 
-                                        style="color: ${textColorStyle} !important;">
-                                        ${event.name}
+                                    <h3 class="font-bold text-base truncate ${isNowClosed ? 'text-red-600' : ''}" style="${isNowClosed ? '' : `color: ${textColorStyle} !important;`}">
+                                        ${event.name} ${isNowClosed ? '⚠️' : ''}
                                     </h3>
-                                    
-                                    <p class="text-xs truncate" 
-                                    style="color: ${descColorStyle} !important;">
-                                        ${time} • ${event.description || 'Explorar a cidade'}
+                                    <p class="text-xs truncate" style="color: ${isDark ? '#e2e8f0' : '#475569'} !important;">
+                                        ${time} • ${event.description || 'Explorar'}
                                     </p>
                                 </div>
                             </div>
-                        </div>
-                        `;
+                        </div>`;
                     } else {
+                        // 2. Caso: Atividade Comum
                         return `
-                        <div class="activity-item flex items-start justify-between gap-4 p-2 rounded-md cursor-pointer ${hoverClass}" style="${bgColorStyle} ${borderStyle}" 
-                            onclick='openViewActivityModal(this)' 
-                            data-icon='${event.icon}' 
-                            data-time="${time}" 
-                            data-name="${(event.name || '').replace(/"/g, '&quot;')}" 
-                            data-description="${(event.description || '').replace(/"/g, '&quot;')}" 
-                            data-iseditable="${isEditable}" 
-                            data-activity-id="${eventData.id || ''}" 
-                            data-imageurl="${imageUrl || ''}" 
-                            data-bgcolor="${event.data.bgColor || ''}"
-                            data-author-name="${(event.data.authorName || 'Desconhecido').replace(/"/g, '&quot;')}"
-                            data-created-at="${event.data.createdAt || ''}"
-                            data-day-counter="${dayCounter}"
-                            data-total-trip-days="${totalTripDays}"
-                            ${datasetAttributes} ${closedDaysAttr}
-                        >
+                        <div class="activity-item flex items-start justify-between gap-4 p-2 rounded-md cursor-pointer ${hoverClass}" 
+                             style="${bgColorStyle} ${borderStyle}" onclick='openViewActivityModal(this)' 
+                             data-iseditable="${isEditable}"
+                             data-imageurl="${imageUrl || ''}"
+                             data-activity-id="${eventData.id || ''}" data-time="${time}" data-name="${(event.name || '').replace(/"/g, '&quot;')}" ${datasetAttributes} ${closedDaysAttr}>
                             <div class="flex items-start gap-3 flex-1 min-w-0">
                                 <svg class="activity-drag-handle ${iconColorClass}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
                                 <span class="font-bold text-sm w-12 text-right flex-shrink-0 ${timeColorClass}">${time}</span>
-                                <div class="flex items-center gap-2 ${iconColorClass} flex-shrink-0 cursor-pointer hover:scale-125 transition-transform" onclick="handleActivityIconClick(event, '${(event.data.link || '').replace(/'/g, "\\'")}')" title="${event.data.link ? 'Clique para abrir o link' : 'Ver detalhes'}">
+                                <div class="flex items-center gap-2 ${iconColorClass} flex-shrink-0 cursor-pointer hover:scale-125 transition-transform" onclick="handleActivityIconClick(event, '${(event.data.link || '').replace(/'/g, "\\'")}')">
                                     ${event.icon || ''}
                                 </div>
                                 <div class="min-w-0 flex-1">
                                     <p class="text-sm ${descColorClass} truncate">
-                                        <strong class="font-semibold ${closedClasses} ${isClosedToday ? '' : titleColorClass}">${event.name}</strong>
+                                        <strong class="font-semibold ${closedClasses} ${isNowClosed ? '' : titleColorClass}">${event.name}</strong>
+                                        ${isNowClosed ? '<span class="text-red-600 text-[10px] ml-1 font-black">FECHADO</span>' : ''}
                                         ${event.description ? ` | ${event.description}` : ''}
                                     </p>
                                 </div>
                             </div>
                             ${(isEditable && !isReadOnly) ? `
                             <div class="activity-actions-print flex gap-2 items-center flex-shrink-0">
-                                <button onclick="event.stopPropagation(); openEditActivityModal('${eventData.id}')" class="${iconColorClass} hover:text-blue-400 p-1" title="Editar Atividade">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                                </button>
-                                <button onclick="event.stopPropagation(); deleteActivity('${eventData.id}')" class="${iconColorClass} hover:text-red-400 p-1" title="Excluir Atividade">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                                </button>
-                            </div>
-                            ` : ''}
-                        </div>
-                        `;
+                                <button onclick="event.stopPropagation(); openEditActivityModal('${eventData.id}')" class="${iconColorClass} hover:text-blue-400 p-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+                                <button onclick="event.stopPropagation(); deleteActivity('${eventData.id}')" class="${iconColorClass} hover:text-red-400 p-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
+                            </div>` : ''}
+                        </div>`;
                     }
                 }).join('');
 
-                if (dayEvents.length === 0) {
-                    eventsHtml = '<p class="text-sm text-slate-400 py-2 ml-4">Nenhuma atividade para este dia.</p>';
-                }
+                if (dayEvents.length === 0) eventsHtml = '<p class="text-sm text-slate-400 py-2 ml-4">Nenhuma atividade para este dia.</p>';
 
                 const dateObj = new Date(dayKey + 'T00:00:00Z');
-                const dayMap = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
-                const weekdayAbbr = dayMap[dateObj.getUTCDay()];
-                const dateString = dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC', day: 'numeric', month: 'long' });
-                const newDateDisplay = `${weekdayAbbr}, ${dateString}`;
+                const weekdayAbbr = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"][dateObj.getUTCDay()];
+                const newDateDisplay = `${weekdayAbbr}, ${dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC', day: 'numeric', month: 'long' })}`;
 
-                // --- PREPARA AS VARIÁVEIS PARA O BOTÃO DE VARIAÇÕES APENAS UMA VEZ ---
                 const availableVariations = trip.variations?.[dayKey] ? Object.keys(trip.variations[dayKey]) : [];
                 let extraVariationsHtml = '';
-
                 availableVariations.forEach(vId => {
                     const vAuthor = trip.variations[dayKey][vId].authorName || 'Viajante';
-                    const vInitials = vAuthor.substring(0, 2).toUpperCase();
                     extraVariationsHtml += `
                         <button onclick="selectVariation('${dayKey}', '${vId}')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full ${activeVariationId === vId ? 'bg-green-500' : 'bg-slate-300'}"></span> 
-                            👤 ${vInitials} - Variação de ${vAuthor.split(' ')[0]}
-                        </button>
-                    `;
+                            <span class="w-2 h-2 rounded-full ${activeVariationId === vId ? 'bg-green-500' : 'bg-slate-300'}"></span> 👤 ${(vAuthor.substring(0,2).toUpperCase())} - Variação de ${vAuthor.split(' ')[0]}
+                        </button>`;
                 });
 
-                let activeInitials = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>`;      
-                if (activeVariationId !== 'original' && trip.variations?.[dayKey]?.[activeVariationId]) {
-                    activeInitials = (trip.variations[dayKey][activeVariationId].authorName || 'VI').substring(0, 2).toUpperCase();
-                }
-
-                // Antes do dayPanel.innerHTML, vamos decidir como o botão vai parecer
-                const hasVariations = extraVariationsHtml && extraVariationsHtml.trim() !== '';
-
-                // Lógica de cores:
-                // 1. Se uma variação específica está selecionada: Fundo Azul Escuro + Sigla
-                // 2. Se o original está selecionado MAS existem variações: Fundo Azul Claro + Ícone de Variação
-                // 3. Se o original está selecionado e NÃO há variações: Fundo Cinza + Sigla
-                let buttonClasses = 'bg-slate-100 text-slate-600 border border-slate-200';
-                let buttonContent = activeInitials;
-
-                if (activeVariationId !== 'original') {
-                    buttonClasses = 'bg-blue-600 text-white shadow-md border border-blue-700';
-                } else if (hasVariations) {
-                    buttonClasses = 'bg-blue-500 text-white shadow-md border border-blue-600';
-                    // Colocamos um ícone de "shuffle/ramificação" quando há variações disponíveis mas não ativas
-                   // ÍCONE DIFERENTE? buttonContent = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5"/><path d="M21 3 9 15"/><path d="M21 16v5h-5"/><path d="M21 21 15 15"/><path d="M3 3v5h5"/><path d="M3 3l6 6"/></svg>`;
-                }
+                const hasVariations = extraVariationsHtml !== '';
+                let activeInitials = (activeVariationId !== 'original' && trip.variations?.[dayKey]?.[activeVariationId]) 
+                    ? (trip.variations[dayKey][activeVariationId].authorName || 'VI').substring(0, 2).toUpperCase()
+                    : `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>`;
                 
-                // Monta o HTML do painel do dia FINAL
+                let buttonClasses = activeVariationId !== 'original' ? 'bg-blue-600 text-white shadow-md border border-blue-700' : (hasVariations ? 'bg-blue-500 text-white shadow-md border border-blue-600' : 'bg-slate-100 text-slate-600 border border-slate-200');
+
                 dayPanel.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
                         <div class="flex items-center gap-3">
@@ -6426,56 +6356,27 @@ window.addEventListener('popstate', (event) => {
                         </div>
                         ${isReadOnly ? '' : `
                         <div class="flex items-center gap-2">
-                            
-                            ${activeVariationId !== 'original' ? `
-                            <button onclick="deleteVariation('${dayKey}', '${activeVariationId}')" title="Excluir esta variação" class="flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors shadow-sm">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                            </button>
-                            ` : ''}
-
+                            ${activeVariationId !== 'original' ? `<button onclick="deleteVariation('${dayKey}', '${activeVariationId}')" class="flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>` : ''}
                             <div class="relative">
-                                <button onclick="toggleVariationPopup(event, '${dayKey}')" 
-                                    class="w-10 h-10 rounded-full ${buttonClasses} text-xs font-bold flex items-center justify-center transition-all hover:scale-105" title="${hasVariations && activeVariationId === 'original' ? 'Ver variações disponíveis' : 'Variação Ativa'}">
-                                    ${buttonContent}
-                                </button>
-                                
+                                <button onclick="toggleVariationPopup(event, '${dayKey}')" class="w-10 h-10 rounded-full ${buttonClasses} text-xs font-bold flex items-center justify-center transition-all hover:scale-105">${activeInitials}</button>
                                 <div id="popup-${dayKey}" class="variation-popup hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-2xl border border-slate-200 z-[60] py-2">
                                     <p class="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Roteiros do Dia</p>
-                                    
                                     <button onclick="selectVariation('${dayKey}', 'original')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2">
-                                        <span class="w-2 h-2 rounded-full ${activeVariationId === 'original' ? 'bg-blue-500' : 'bg-slate-300'}"></span> 
-                                        📌 Roteiro Original (Raiz)
+                                        <span class="w-2 h-2 rounded-full ${activeVariationId === 'original' ? 'bg-blue-500' : 'bg-slate-300'}"></span> 📌 Roteiro Original
                                     </button>
-                                    
                                     ${extraVariationsHtml}
-                                    
-                                    <button onclick="createNewVariation('${dayKey}')" class="w-full text-left px-4 py-2 text-sm text-blue-600 font-semibold border-t mt-1 hover:bg-blue-50 flex items-center gap-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                        Nova Variação
-                                    </button>
+                                    <button onclick="createNewVariation('${dayKey}')" class="w-full text-left px-4 py-2 text-sm text-blue-600 font-semibold border-t mt-1 hover:bg-blue-50 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Nova Variação</button>
                                 </div>
                             </div>
-
-                            <button onclick="openAddActivityModal('${dayKey}')" oncontextmenu="openSuggestionsForDay(event, '${dayKey}')" title="Clique para adicionar / Botão direito para sugestões" class="add-activity-btn flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            </button>
-                        </div>
-                        `}
+                            <button onclick="openAddActivityModal('${dayKey}')" oncontextmenu="openSuggestionsForDay(event, '${dayKey}')" class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full hover:bg-green-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+                        </div>`}
                     </div>
                     <div class="activity-list border-l-2 border-slate-100 pl-2 space-y-1" data-date="${dayKey}">
                         ${eventsHtml}
-                    </div>
-                `;
+                    </div>`;
 
                 container.appendChild(dayPanel);
-
-                // Ponto de inserção após o dia
-                container.insertAdjacentHTML('beforeend', `<div class="insertion-point" onclick="insertNewDay(${dayCounter})">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    <span>Inserir Novo Dia</span>
-                </div>`);
-
-                // Avança para o próximo dia
+                container.insertAdjacentHTML('beforeend', `<div class="insertion-point" onclick="insertNewDay(${dayCounter})"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg><span>Inserir Novo Dia</span></div>`);
                 currentDate.setUTCDate(currentDate.getUTCDate() + 1);
                 dayCounter++;
             }
@@ -7328,150 +7229,149 @@ let dividerHtml = '';
             openModal('edit-trip-modal');
         };
 
+        //AJUSTAR AQUI - Modal de Visualização
         window.openViewActivityModal = (element) => {
-            const isReorganizingActive = document.getElementById('daily-itinerary-list').classList.contains('is-reorganizing');
-            if (isReorganizingActive) return;
+            const dailyList = document.getElementById('daily-itinerary-list');
+            if (dailyList && dailyList.classList.contains('is-reorganizing')) return;
 
             const ds = element.dataset;
-            
-            // 1. Preenchimento de Informações Básicas
-            document.getElementById('view-activity-icon').innerHTML = ds.icon.replace('w-5 h-5', 'w-8 h-8');
-            document.getElementById('view-activity-name').textContent = ds.name;
 
-            // 2. Lógica de Data e Contador
+            // 1. ÍCONE (A Correção do "shopping")
+            // Se ds.icon for "shopping", buscamos o SVG real no seu dicionário ICONS
+            const iconContainer = document.getElementById('view-activity-icon');
+            const iconKey = ds.icon;
+            
+            if (iconKey && iconKey !== 'undefined') {
+                if (iconKey.includes('<svg')) {
+                    // Se já for SVG
+                    iconContainer.innerHTML = iconKey.replace(/w-\d+\s*h-\d+/g, 'w-8 h-8');
+                } else if (typeof ICONS !== 'undefined' && ICONS[iconKey]) {
+                    // A MÁGICA AQUI: Converte a palavra "shopping" para o desenho SVG
+                    iconContainer.innerHTML = ICONS[iconKey].replace(/w-\d+\s*h-\d+/g, 'w-8 h-8');
+                } else {
+                    iconContainer.textContent = ''; // Limpa para não escrever textos feios
+                }
+            } else {
+                iconContainer.innerHTML = '';
+            }
+
+            // 2. NOME E HORÁRIO
+            document.getElementById('view-activity-name').textContent = ds.name || 'Atividade';
+            document.getElementById('view-activity-time').textContent = ds.time || '--:--';
+
+            // 3. DATA
             const dateISO = ds.date;
             const dateEl = document.getElementById('view-activity-date');
             const dateSep = document.getElementById('view-activity-date-sep');
 
-            if (dateISO) {
+            if (dateISO && dateISO !== 'undefined') {
                 const dayMap = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
-                const dateObj = new Date(dateISO + 'T00:00:00Z');
-                const weekdayAbbr = dayMap[dateObj.getUTCDay()];
-                const dateString = dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC', day: 'numeric', month: 'long' });
-                const formattedDate = `${weekdayAbbr}, ${dateString}`;
+                const dateObj = new Date(dateISO + 'T12:00:00'); // T12 previne erro de fuso
+                const formattedDate = `${dayMap[dateObj.getDay()]}, ${dateObj.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}`;
                 
-                if (ds.dayCounter && ds.totalTripDays) {
-                    dateEl.textContent = `${formattedDate} | ${ds.dayCounter}/${ds.totalTripDays}`;
-                } else {
-                    dateEl.textContent = formattedDate;
-                }
-                
+                dateEl.textContent = (ds.daycounter && ds.totaltripdays && ds.daycounter !== 'undefined') 
+                    ? `${formattedDate} | ${ds.daycounter}/${ds.totaltripdays}` 
+                    : formattedDate;
+                    
                 dateEl.classList.remove('hidden');
-                dateSep.classList.remove('hidden');
+                if(dateSep) dateSep.classList.remove('hidden');
             } else {
-                dateEl.textContent = '';
                 dateEl.classList.add('hidden');
-                dateSep.classList.add('hidden');
+                if(dateSep) dateSep.classList.add('hidden');
             }
 
-            document.getElementById('view-activity-time').textContent = ds.time;
-
-            // 3. Meta Informações (Autor e Data de Criação)
+            // 4. AUTOR E DATA DE CRIAÇÃO (Correção do "Desconhecido")
+            // O JavaScript ignora camelCase em dataset vindo do HTML. O correto é tudo minúsculo!
             const metaElement = document.getElementById('view-activity-meta');
-            const authorName = ds.authorName || 'Desconhecido';
-            const createdAt = ds.createdAt;
-            let metaText = `Adicionado por: ${authorName}`;            
+            const author = ds.authorname || ds.authorName || 'Desconhecido';
+            const createdAt = ds.createdat || ds.createdAt;
             
-            if (createdAt && !isNaN(createdAt)) { 
-                const date = new Date(parseInt(createdAt, 10)); 
-                metaText += ` em ${date.toLocaleDateString('pt-BR')}`;
+            let metaText = `Adicionado por: ${author}`;
+            if (createdAt && createdAt !== 'undefined' && !isNaN(createdAt)) {
+                metaText += ` em ${new Date(parseInt(createdAt)).toLocaleDateString('pt-BR')}`;
             }
             metaElement.textContent = metaText;
-            
-            // 4. Tipo e Descrição
-            const typeElement = document.getElementById('view-activity-type');
-            if (ds.type && ds.iseditable === 'true') {
-                typeElement.textContent = ds.type;
-                typeElement.style.display = 'inline-block';
-            } else {
-                typeElement.style.display = 'none';
-            }
-            
-            const descriptionElement = document.getElementById('view-activity-description');
-            descriptionElement.textContent = ds.description;
-            descriptionElement.style.display = (ds.description && ds.description !== 'undefined') ? 'block' : 'none';
 
-            // 5. Imagem do Usuário
-            const imgElement = document.getElementById('view-activity-image'); 
-            const userImageUrl = ds.imageurl;
-            if (userImageUrl && userImageUrl !== 'undefined') {
-                imgElement.src = userImageUrl;
+            // 5. IMAGEM DO LOCAL
+            const imgElement = document.getElementById('view-activity-image');
+            // Busca o container específico da imagem (se você tiver um) ou o pai imediato
+            const imgContainer = document.getElementById('view-activity-image-container') || imgElement.parentElement;
+            
+            // Pega a URL que agora chegará corretamente pelo data-imageurl
+            const imageUrl = ds.imageurl;
+
+            if (imageUrl && imageUrl !== 'undefined' && imageUrl.trim() !== '') {
+                // Limpa possíveis aspas residuais da URL
+                imgElement.src = imageUrl.replace(/^["']|["']$/g, '').trim();
                 imgElement.classList.remove('hidden');
+                imgElement.style.display = 'block';
+                
+                if (imgContainer) {
+                    imgContainer.classList.remove('hidden');
+                    imgContainer.style.display = 'block';
+                }
             } else {
                 imgElement.src = '';
-                imgElement.classList.add('hidden'); 
+                imgElement.classList.add('hidden');
+                imgElement.style.display = 'none';
+                
+                // Só esconde o container se ele for especificamente feito para a imagem
+                if (imgContainer && (imgContainer.id === 'view-activity-image-container' || imgContainer.tagName === 'DIV')) {
+                    imgContainer.classList.add('hidden');
+                    imgContainer.style.display = 'none';
+                }
             }
 
-            // 6. Lista de Detalhes (Endereço e Trajeto)
+            // 6. TIPO E DESCRIÇÃO
+            const typeEl = document.getElementById('view-activity-type');
+            if (ds.type && ds.type !== 'undefined') {
+                typeEl.textContent = ds.type;
+                typeEl.style.display = 'inline-block';
+            } else {
+                typeEl.style.display = 'none';
+            }
+
+            const descEl = document.getElementById('view-activity-description');
+            if (ds.description && ds.description !== 'undefined' && ds.description.trim() !== '') {
+                descEl.textContent = ds.description;
+                descEl.style.display = 'block';
+            } else {
+                descEl.style.display = 'none';
+            }
+
+            // 7. DETALHES E BOTÕES
             const detailsList = document.getElementById('view-activity-details-list');
             let detailsHtml = '';
+            if (ds.from || ds.to) detailsHtml += `<p class="mt-2"><strong class="font-semibold text-slate-600">Trajeto:</strong> ${ds.from || '?'} → ${ds.to || '?'}</p>`;
+            if (ds.address && ds.address !== 'undefined') detailsHtml += `<p class="mt-2"><strong class="font-semibold text-slate-600">Endereço:</strong> ${ds.address}</p>`;
+            if (detailsList) { detailsList.innerHTML = detailsHtml; detailsList.style.display = detailsHtml ? 'block' : 'none'; }
 
-            if (ds.iseditable !== 'true') {
-                detailsHtml += `<p class="font-semibold text-base text-slate-800">${ds.name}</p>`;
-            }            
-            if (ds.from || ds.to) {
-                detailsHtml += `<p class="mt-2"><strong class="font-semibold text-slate-600">Trajeto:</strong> ${ds.from || 'N/A'} → ${ds.to || 'N/A'}</p>`;
-            }
-            if(ds.address) {
-                detailsHtml += `<p class="mt-2"><strong class="font-semibold text-slate-600">Endereço:</strong> ${ds.address}</p>`;
-            }
-            if (ds.description && ds.iseditable !== 'true') {
-                detailsHtml += `<p class="mt-2"><strong class="font-semibold text-slate-600">Detalhes:</strong> ${ds.description}</p>`;
-            }
-            detailsList.innerHTML = detailsHtml;
-            detailsList.style.display = detailsHtml ? 'block' : 'none';
-
-            // --- ⬇️ NOVA LÓGICA DE BOTÕES (MAPS, LINK, BUSCA) ⬇️ ---
-            const mapsBtn = document.getElementById('view-activity-maps-btn'); // O antigo linkBtn agora é focado em Maps
+            const mapsBtn = document.getElementById('view-activity-maps-btn');
             const extraBtn = document.getElementById('view-activity-extra-link-btn');
             const searchBtn = document.getElementById('view-activity-search-btn');
 
-            // Inicialmente esconde os opcionais e remove classes de largura total
-            mapsBtn.style.display = 'none';
-            extraBtn.style.display = 'none';
-            mapsBtn.classList.remove('flex-1');
-            extraBtn.classList.remove('flex-1');
-            searchBtn.classList.remove('flex-1');
-
-            let visibleCount = 0;
-
-            // Lógica para o Botão Google Maps (campo 'link')
-            if (ds.link && ds.link.trim() !== '' && ds.link.trim() !== 'undefined') {
-                mapsBtn.href = ds.link;
-                mapsBtn.style.display = 'inline-flex';
-                visibleCount++;
+            if(mapsBtn) {
+                if (ds.link && ds.link !== 'undefined' && ds.link.trim() !== '') {
+                    mapsBtn.href = ds.link; mapsBtn.style.display = 'inline-flex';
+                } else { mapsBtn.style.display = 'none'; }
+            }
+            if(extraBtn) {
+                if (ds.extralink && ds.extralink !== 'undefined' && ds.extralink.trim() !== '') {
+                    extraBtn.href = ds.extralink; extraBtn.style.display = 'inline-flex';
+                } else { extraBtn.style.display = 'none'; }
+            }
+            if(searchBtn) {
+                searchBtn.onclick = () => window.open(`https://www.google.com/search?q=${encodeURIComponent(ds.name)}`, '_blank');
             }
 
-            // Lógica para o Botão Link Adicional (campo 'extralink')
-            if (ds.extralink && ds.extralink.trim() !== '' && ds.extralink.trim() !== 'undefined') {
-                extraBtn.href = ds.extralink;
-                extraBtn.style.display = 'inline-flex';
-                visibleCount++;
-            }
-
-            // Lógica para o Botão de Busca (Sempre Visível)
-            searchBtn.style.display = 'inline-flex';
-            searchBtn.classList.add('cursor-pointer');
-            searchBtn.onclick = () => {
-                window.open(`https://www.google.com/search?q=${encodeURIComponent(ds.name)}`, '_blank');
-            };
-            visibleCount++;
-
-            // Ajuste de Layout: se houver mais de um botão, todos dividem o espaço igualmente (flex-1)
-            if (visibleCount > 1) {
-                if (mapsBtn.style.display !== 'none') mapsBtn.classList.add('flex-1');
-                if (extraBtn.style.display !== 'none') extraBtn.classList.add('flex-1');
-                searchBtn.classList.add('flex-1');
-            }
-
-            // Reseta a rolagem do conteúdo
-            const scrollContent = document.getElementById('view-activity-scroll-content');
-            if (scrollContent) {
-                scrollContent.scrollTop = 0;
-            }
+            // Z-INDEX (Força o modal de visualização a ficar na frente do Log)
+            const logModal = document.getElementById('activity-log-modal');
+            const viewModal = document.getElementById('view-activity-modal');
+            if (logModal) logModal.style.zIndex = '1050';
+            if (viewModal) viewModal.style.zIndex = '2000';
 
             openModal('view-activity-modal');
-        }
+        };
 
         // NOVO: Funções para abrir os modais de anotação
         window.openViewNoteModal = (element) => {
@@ -8456,17 +8356,42 @@ let dividerHtml = '';
         // --- SEÇÃO ATUALIZADA: LÓGICA DE REORGANIZAÇÃO DO ROTEIRO COM DUPLO MODO ---        
         async function updateActivityOrderAndDate(evt) {
             if (!currentTripId) return;
+            
+            // Buscamos a versão mais recente dos dados da viagem
             const trip = tripsData.find(t => t.id === currentTripId);
             if (!trip) return;
 
-            // --- 1. Atualização Visual Imediata (Mantido o seu código original) ---
-            if (evt && evt.item && evt.to) {
+            // --- 1. TRAVA DE SEGURANÇA (INTERRUPÇÃO) ---
+            // Identificamos os IDs das listas de origem (from) e destino (to)
+            const daySource = evt.from.dataset.date;
+            const dayTarget = evt.to.dataset.date;
+
+            // Verificamos se algum dos dias envolvidos não é o "original"
+            const isSourceVariation = trip.userPreferences?.[currentUserId]?.activeVariation?.[daySource] && 
+                                    trip.userPreferences?.[currentUserId]?.activeVariation?.[daySource] !== 'original';
+            
+            const isTargetVariation = trip.userPreferences?.[currentUserId]?.activeVariation?.[dayTarget] && 
+                                    trip.userPreferences?.[currentUserId]?.activeVariation?.[dayTarget] !== 'original';
+
+            // Se houver variação em qualquer uma das pontas, cancelamos tudo
+            if (isSourceVariation || isTargetVariation) {
+                alert("⚠️ Ação bloqueada: A reorganização de atividades só é permitida no 'Roteiro Original'. Mude a visualização do dia para organizar.");
+                
+                // DICA EXTRA: Reseta a interface visual imediatamente para a ordem do banco de dados
+                renderDailyItinerary(trip); 
+                return; 
+            }
+
+            // --- 2. ATUALIZAÇÃO VISUAL (FEEDBACK DE LOCAL FECHADO) ---
+            // (Esta parte cuida de avisar se o local abre ou não no novo dia sorteado)
+            if (evt.item && evt.to) {
                 const movedItem = evt.item;
                 const targetList = evt.to;
                 const newDate = targetList.dataset.date;
+
                 let closedDays = [];
                 try { closedDays = JSON.parse(movedItem.dataset.closeddays || '[]'); } catch (e) {}
-                
+
                 const dayMap = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
                 const targetDateObj = new Date(newDate + 'T12:00:00');
                 const dayOfWeekString = dayMap[targetDateObj.getDay()];
@@ -8477,12 +8402,16 @@ let dividerHtml = '';
                 const descriptionSpanText = movedItem.dataset.description || ''; 
                 const closedWarningText = "(Neste dia não abre) ";
 
+                // Atualiza o dataset para o salvamento
                 if (isNowClosed) {
-                    movedItem.dataset.description = descriptionSpanText ? `${closedWarningText}${descriptionSpanText}` : closedWarningText;
+                    movedItem.dataset.description = descriptionSpanText.includes(closedWarningText) 
+                        ? descriptionSpanText 
+                        : `${closedWarningText}${descriptionSpanText}`;
                 } else {
                     movedItem.dataset.description = descriptionSpanText.replace(closedWarningText, '');
                 }
 
+                // Atualiza o HTML interno do item arrastado
                 if (textElement && nameElement) {
                     nameElement.classList.toggle('text-red-600', isNowClosed);
                     nameElement.classList.toggle('font-bold', isNowClosed);
@@ -8492,89 +8421,55 @@ let dividerHtml = '';
                 }
             }
 
-            // --- 2. Coleta de Dados Inteligente (Original vs Variação) ---
+            // --- 3. COLETA E SALVAMENTO NO FIREBASE (APENAS ROTEIRO ORIGINAL) ---
             const allActivityElements = document.querySelectorAll('#daily-itinerary-list .activity-item[data-activity-id]');
             
-            // Criamos mapas para separar o que pertence a cada lugar
-            let newOriginalActivities = [];
-            let variationUpdates = {}; // Guardará { "data/id_variacao": [atividades] }
+            // Criamos uma cópia limpa dos dados atuais
+            let allCurrentActivitiesData = trip.activities ? JSON.parse(JSON.stringify(Object.values(trip.activities))) : [];
+            let updatedActivitiesForSave = [];
 
             allActivityElements.forEach(el => {
                 const activityId = el.dataset.activityId;
-                const dayKey = el.closest('.activity-list')?.dataset.date;
-                
-                // Descobre se este dia específico na tela está em modo variação
-                const activeVariationId = trip.userPreferences?.[currentUserId]?.activeVariation?.[dayKey];
-                const isVariationActive = activeVariationId && activeVariationId !== 'original';
+                const currentDayDate = el.closest('.activity-list')?.dataset.date;
+                const activityData = allCurrentActivitiesData.find(a => a.id === activityId);
 
-                // Busca os dados básicos da atividade (em qualquer lugar que ela esteja)
-                let activityData = null;
-                if (trip.activities) activityData = Object.values(trip.activities).find(a => a.id === activityId);
-                if (!activityData && trip.variations) {
-                    for (const d in trip.variations) {
-                        for (const v in trip.variations[d]) {
-                            const found = Object.values(trip.variations[d][v].activities || {}).find(a => a.id === activityId);
-                            if (found) { activityData = found; break; }
-                        }
-                        if (activityData) break;
-                    }
-                }
+                if (activityData && currentDayDate) {
+                    // Atualizamos a nova data e descrição baseada na posição atual na tela
+                    activityData.date = currentDayDate; 
+                    activityData.description = el.dataset.description || '';
 
-                if (activityData && dayKey) {
-                    // Clona para não sujar o original durante o loop
-                    const updatedAct = { ...activityData };
-                    updatedAct.date = dayKey;
-                    updatedAct.description = el.dataset.description || '';
-                    
-                    // Lógica de fechamento (Mantida a sua)
-                    let closedDays = [];
-                    try { closedDays = JSON.parse(el.dataset.closeddays || '[]'); } catch(e) {}
-                    const saveDateObj = new Date(dayKey + 'T12:00:00');
+                    // Recalcula se está fechado para salvar o estado correto no banco
+                    let closedDaysForSave = [];
+                    try { closedDaysForSave = JSON.parse(el.dataset.closeddays || '[]'); } catch(e) {}
+                    const saveDateObj = new Date(currentDayDate + 'T12:00:00');
                     const saveDayMap = ["dom", "seg", "ter", "qua", "qui", "sex", "sab"];
-                    updatedAct.isClosedToday = closedDays.includes(saveDayMap[saveDateObj.getDay()]);
+                    activityData.isClosedToday = closedDaysForSave.includes(saveDayMap[saveDateObj.getDay()]);
 
-                    if (isVariationActive) {
-                        const path = `${dayKey}/${activeVariationId}`;
-                        if (!variationUpdates[path]) variationUpdates[path] = [];
-                        variationUpdates[path].push(updatedAct);
-                    } else {
-                        newOriginalActivities.push(updatedAct);
-                    }
+                    updatedActivitiesForSave.push(activityData);
                 }
             });
 
-            // --- 3. Preparação dos Updates para o Firebase ---
-            const finalUpdates = {};
+            // Garante que não perderemos atividades de dias que não estão renderizados (ex: filtros ativos)
+            allCurrentActivitiesData.forEach(act => {
+                if (!updatedActivitiesForSave.find(a => a.id === act.id)) {
+                    updatedActivitiesForSave.push(act);
+                }
+            });
 
-            // 1. Atualiza o Roteiro Original (Raiz)
-            // Importante: Mantemos as atividades de outros dias que não estão na tela
-            const currentOriginals = trip.activities ? Object.values(trip.activities) : [];
-            const idsOnScreen = Array.from(allActivityElements).map(el => el.dataset.activityId);
-            
-            // Filtra as que não estavam na tela para não perdê-las, e junta com as novas
-            const activitiesToSave = [
-                ...newOriginalActivities,
-                ...currentOriginals.filter(a => !idsOnScreen.includes(a.id))
-            ];
-
-            finalUpdates[`trips/${currentTripId}/activities`] = activitiesToSave.reduce((obj, item) => {
+            // Converte de volta para objeto para manter a estrutura do Firebase
+            const activitiesObject = updatedActivitiesForSave.reduce((obj, item) => {
                 obj[item.id] = item;
                 return obj;
             }, {});
 
-            // 2. Atualiza cada Variação que foi mexida
-            for (const path in variationUpdates) {
-                finalUpdates[`trips/${currentTripId}/variations/${path}/activities`] = variationUpdates[path].reduce((obj, item) => {
-                    obj[item.id] = item;
-                    return obj;
-                }, {});
-            }
-
             try {
-                await update(ref(db), finalUpdates);
-                console.log("Ordem e variações sincronizadas com sucesso.");
+                // O salvamento é feito estritamente no nó "activities" (Original)
+                await update(ref(db, `trips/${currentTripId}`), { "activities": activitiesObject });
+                console.log("✅ Ordem do Roteiro Original salva com sucesso.");
             } catch (error) {
-                console.error("Erro ao salvar reordenação:", error);
+                console.error("❌ Erro ao salvar reordenação:", error);
+                // Em caso de erro no banco, voltamos a tela para o estado anterior
+                renderDailyItinerary(trip);
             }
         }
 
@@ -13842,6 +13737,53 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             } catch (error) {
                 console.error("Erro ao excluir variação:", error);
                 alert("Ocorreu um erro ao excluir a variação.");
+            }
+        };
+
+        window.abrirAtividadePeloLog = (activityId) => {
+            const el = document.querySelector(`.activity-item[data-activity-id="${activityId}"]`);
+            
+            if (el) {
+                openViewActivityModal(el);
+            } else {
+                const trip = tripsData.find(t => t.id === currentTripId);
+                let act = (trip.activities && trip.activities[activityId]) ? trip.activities[activityId] : null;
+
+                if (!act && trip.variations) {
+                    for (const d in trip.variations) {
+                        for (const u in trip.variations[d]) {
+                            if (trip.variations[d][u].activities?.[activityId]) {
+                                act = trip.variations[d][u].activities[activityId];
+                                break;
+                            }
+                        }
+                        if (act) break;
+                    }
+                }
+
+                if (act) {
+                    const dummy = document.createElement('div');
+                    
+                    // Garantindo que todos os atributos estejam em minúsculas (para o .dataset ler)
+                    Object.assign(dummy.dataset, {
+                        activityId: activityId,
+                        name: act.name || '',
+                        description: act.description || '',
+                        time: act.time || '',
+                        icon: act.icon || '', 
+                        imageurl: act.imageUrl || '', // imageurl minúsculo!
+                        authorname: act.authorName || '', // authorname minúsculo!
+                        createdat: act.createdAt || '', // createdat minúsculo!
+                        address: act.address || '',
+                        link: act.link || '',
+                        extralink: act.extralink || '',
+                        type: act.type || '',
+                        bgcolor: act.bgColor || '',
+                        iseditable: "true"
+                    });
+                    
+                    openViewActivityModal(dummy);
+                }
             }
         };
 
