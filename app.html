@@ -907,7 +907,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.4 | 19/02/2026, 20:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.5 | 20/02/2026, 08:55</p>
             </main>
         </div>
 
@@ -12489,7 +12489,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const query = input.value.toLowerCase().trim();
             const dropdown = input.nextElementSibling.nextElementSibling; // Localiza o .city-suggestions-dropdown
             
-            if (query.length < 2) {
+            if (query.length < 1) {
                 dropdown.classList.add('hidden');
                 return;
             }
@@ -12649,7 +12649,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const query = this.value.toLowerCase().trim();
 
             // SÓ ativa o autocomplete se o tipo for "Cidade"
-            if (type !== 'Cidade' || query.length < 2) {
+            if (type !== 'Cidade' || query.length < 1) {
                 dropdown.classList.add('hidden');
                 return;
             }
@@ -12694,7 +12694,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const dropdown = document.getElementById('edit-activity-suggestions');
             const query = this.value.toLowerCase().trim();
 
-            if (type !== 'Cidade' || query.length < 2) {
+            if (type !== 'Cidade' || query.length < 1) {
                 dropdown.classList.add('hidden');
                 return;
             }
@@ -13040,6 +13040,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                                         <span class="text-xs font-medium text-gray-500 whitespace-nowrap pl-1">Data:</span>
                                         <input type="date" 
                                             id="date-input-${selectedCity.id}-${dayNum}"
+                                            onchange="highlightDuplicateDates()"
                                             class="block w-full sm:w-36 py-1 px-2 text-sm border-gray-300 rounded-md focus:ring-blue-500 text-gray-700 bg-white"
                                             min="${minDateStr}" 
                                             max="${maxDateStr}"
@@ -13053,6 +13054,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
 
                 container.innerHTML = htmlContent;
+                highlightDuplicateDates();
 
                 selectedCities.forEach(city => {
                     const cityContainer = container.querySelector(`div[data-city-id="${city.id}"]`);
@@ -13071,6 +13073,41 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 console.error("Erro:", error);
                 container.innerHTML = `<div class="text-red-500 p-4">Erro: ${error.message}</div>`;
             }
+        };
+
+        window.highlightDuplicateDates = function() {
+            // Seleciona todos os inputs de data dentro da lista de seleção
+            const container = document.getElementById('itinerary-days-selection-list');
+            const inputs = container.querySelectorAll('input[type="date"]');
+            
+            // Objeto para contar ocorrências de cada data
+            const dateCounts = {};
+            
+            // Primeiro passo: contar
+            inputs.forEach(input => {
+                const date = input.value;
+                if (date) {
+                    dateCounts[date] = (dateCounts[date] || 0) + 1;
+                }
+            });
+
+            // Segundo passo: destacar
+            inputs.forEach(input => {
+                // Encontramos o container do input para pintar o fundo conforme seu desenho
+                const wrapper = input.parentElement; // A div com bg-gray-50 que envolve o input
+                
+                if (dateCounts[input.value] > 1) {
+                    // Se repetido: Fundo amarelo e borda amarela
+                    wrapper.classList.remove('bg-gray-50', 'border-gray-200');
+                    wrapper.classList.add('bg-yellow-100', 'border-yellow-400');
+                    input.classList.add('bg-yellow-50');
+                } else {
+                    // Se único: Volta ao padrão
+                    wrapper.classList.remove('bg-yellow-100', 'border-yellow-400');
+                    wrapper.classList.add('bg-gray-50', 'border-gray-200');
+                    input.classList.remove('bg-yellow-50');
+                }
+            });
         };
 
         // --- FUNÇÃO AUXILIAR PARA CONTROLAR O LIMITE (Adicione esta função também) ---
@@ -13385,6 +13422,33 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 if (text) text.textContent = 'Mais Detalhes';
             }
         };
+
+        function checkDuplicateDates() {
+            // Seleciona todos os inputs de data dentro do modal de importação
+            const dateInputs = document.querySelectorAll('#import-modal-container input[type="date"]');
+            const dateCounts = {};
+
+            // Primeiro, contamos quantas vezes cada data aparece
+            dateInputs.forEach(input => {
+                const dateValue = input.value;
+                if (dateValue) {
+                    dateCounts[dateValue] = (dateCounts[dateValue] || 0) + 1;
+                }
+            });
+
+            // Depois, aplicamos ou removemos a cor de destaque
+            dateInputs.forEach(input => {
+                if (dateCounts[input.value] > 1) {
+                    // Adiciona o fundo amarelo e uma borda suave se for duplicado
+                    input.classList.add('bg-yellow-200', 'border-yellow-400');
+                    input.classList.remove('bg-white');
+                } else {
+                    // Remove o destaque se for única
+                    input.classList.remove('bg-yellow-200', 'border-yellow-400');
+                    input.classList.add('bg-white');
+                }
+            });
+        }
 
     </script>
 
