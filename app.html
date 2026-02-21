@@ -918,7 +918,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.7 | 20/02/2026, 08:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.8 | 20/02/2026, 08:55</p>
             </main>
         </div>
 
@@ -993,6 +993,28 @@
             </div>
         </div>
 
+        <div id="invite-modal" class="hidden fixed inset-0 z-[3000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform transition-all scale-95 border border-slate-100">
+                <div class="p-6 text-center">
+                    <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Convite Especial!</h3>
+                    <p id="invite-modal-text" class="text-slate-600 mb-6 text-sm leading-relaxed">
+                        Carregando detalhes do convite...
+                    </p>
+                    <div class="flex flex-col gap-3">
+                        <button id="invite-accept-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors shadow-lg shadow-blue-200">
+                            Sim, quero participar!
+                        </button>
+                        <button id="invite-decline-btn" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-semibold py-3 rounded-xl transition-colors">
+                            Agora não
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div id="available-itineraries-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
             <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
                 <h3 class="text-xl font-bold mb-4 text-slate-800">Roteiros Encontrados!</h3>
@@ -2958,6 +2980,16 @@
         const auth = getAuth(app);
         const db = getDatabase(app);
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const inviteTripId = urlParams.get('invite');
+
+        if (inviteTripId) {
+            // Salva no "bolso" para usar depois do login
+            sessionStorage.setItem('pendingInviteTripId', inviteTripId);
+            // Limpa a URL para ficar bonita: naovousozinho.com/app.html
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
         // --- FUNÇÃO GLOBAL DE ROTEIROS (COLE NO TOPO DO SCRIPT) ---
         window.checkSuggestedItineraries = async function(tripId, citiesString) {
             if (!citiesString) return;
@@ -3459,7 +3491,6 @@ window.addEventListener('popstate', (event) => {
                 }
             };
         }
-
        
         let tempInviteEmail = '';
         let tempInviteName = '';
@@ -3478,21 +3509,7 @@ window.addEventListener('popstate', (event) => {
             // O tempInviteEmail será vazio no caso genérico, abrindo o cliente de e-mail com o campo "Para:" em branco
             window.location.href = `mailto:${tempInviteEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             closeModal('invitation-choice-modal');
-        });
-
-        document.getElementById('send-whatsapp-invite-btn').addEventListener('click', () => {
-            const trip = tripsData.find(t => t.id === currentTripId);
-            const tripName = trip ? trip.name : "uma viagem incrível";
-
-            const recipientName = tempInviteName || 'alguém';
-            const greeting = tempInviteName ? `Olá, ${tempInviteName}!` : 'Olá!';
-
-            const body = `Olá! Queria te convidar para participar da *viagem "${tripName}"*.\n\nPara participar, crie gratuitamente sua conta no site Meu Guia de Viagens e depois peça para ser adicionado(a) *me informando seu e-mail de cadastro*:\n\nhttps://meuguiadeviagens.github.io/viagensapp_pro`;
-
-            const whatsappLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(body)}`;
-            window.open(whatsappLink, '_blank');
-            closeModal('invitation-choice-modal');
-        });
+        });      
         
 
         // Função para mostrar as sugestões filtradas na tela
@@ -4522,6 +4539,18 @@ window.addEventListener('popstate', (event) => {
             if (user) {
 
                 currentUserId = user.uid; // Guarda o ID do usuário logado
+
+                // --- VERIFICAÇÃO DE CONVITE PENDENTE PELO WHATSAPP ---
+                const pendingTripId = sessionStorage.getItem('pendingInviteTripId');
+                if (pendingTripId) {
+                    sessionStorage.removeItem('pendingInviteTripId'); // Limpa para não repetir
+                    
+                    // Pergunta ao usuário. 
+                    // Dica: Se quiser algo mais bonito, use o seu 'info-modal' depois.
+                    if (confirm("Você acessou um link de convite! Deseja se juntar a esta viagem agora?")) {
+                        joinTripViaLink(pendingTripId, user);
+                    }
+                }
               
                 // 1. USUÁRIO ESTÁ LOGADO
                 //console.log("Usuário logado:", user.uid);
@@ -13786,6 +13815,91 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
             }
         };
+
+        //whatsapp
+        document.getElementById('send-whatsapp-invite-btn').addEventListener('click', () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const tripName = trip ? trip.name : "uma viagem";
+            
+            // Gera a URL com o parâmetro invite
+            const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${currentTripId}`;
+
+            const body = `Olá! Bora viajar? ✈️\n\n Queria te convidar para editar o roteiro: *${tripName}*.\n\n Basta clicar no link para aceitar o convite e participar do planejamento:\n${inviteUrl}`;
+
+            const whatsappLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(body)}`;
+            window.open(whatsappLink, '_blank');
+            closeModal('invitation-choice-modal');
+        });
+
+        async function joinTripViaLink(tripId, user) {
+            try {
+                const tripRef = ref(db, `trips/${tripId}`);
+                const snapshot = await get(tripRef);
+                
+                if (!snapshot.exists()) {
+                    showToast("Viagem não encontrada. O link pode ter expirado.", "error");
+                    return;
+                }
+
+                const trip = snapshot.val();
+                const tripName = trip.name || "viagem incrível";
+                const userName = (currentUserProfile && currentUserProfile.fullName) || user.displayName || user.email.split('@')[0];
+
+                // Se já for membro, avisa e abre a viagem direto
+                if (trip.members && trip.members[user.uid]) {
+                    showTripDetails(tripId);
+                    return;
+                }
+
+                // CHAMA O MODAL BONITÃO
+                const confirmJoin = await showInviteModal(userName, tripName);
+                
+                if (confirmJoin) {
+                    const updates = {};
+                    updates[`/trips/${tripId}/members/${user.uid}`] = 'editor';
+                    
+                    const currentTravelers = Array.isArray(trip.travelers) ? trip.travelers : [];
+                    const newTraveler = { uid: user.uid, name: userName, email: user.email };
+                    
+                    if (!currentTravelers.some(t => t.uid === user.uid)) {
+                        updates[`/trips/${tripId}/travelers`] = [...currentTravelers, newTraveler];
+                    }
+                    
+                    updates[`/users/${user.uid}/memberOf/${tripId}`] = true;
+
+                    await update(ref(db), updates);
+                    
+                    // Aqui você pode usar uma notificação toast se tiver, ou manter um aviso discreto
+                    showTripDetails(tripId); 
+                }
+
+            } catch (error) {
+                console.error("Erro no convite:", error);
+            }
+        }
+
+        function showInviteModal(userName, tripName) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('invite-modal');
+                const textElement = document.getElementById('invite-modal-text');
+                const acceptBtn = document.getElementById('invite-accept-btn');
+                const declineBtn = document.getElementById('invite-decline-btn');
+
+                textElement.innerHTML = `Olá <strong>${userName}</strong>!<br>Você foi convidado para planejar a viagem <strong>"${tripName}"</strong>. Deseja se juntar ao grupo?`;
+                
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                const close = (result) => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    resolve(result);
+                };
+
+                acceptBtn.onclick = () => close(true);
+                declineBtn.onclick = () => close(false);
+            });
+        }
 
     </script>
 
