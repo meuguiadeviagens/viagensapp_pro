@@ -918,7 +918,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.8 | 20/02/2026, 08:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.9 | 22/02/2026, 19:55</p>
             </main>
         </div>
 
@@ -6255,6 +6255,13 @@ window.addEventListener('popstate', (event) => {
                 dayPanel.className = 'day-panel border-t pt-6 space-y-4';
                 dayPanel.dataset.date = dayKey;
 
+                // Adiciona o ID de âncora se houver uma atividade do tipo 'Cidade' neste dia
+                const cidadeDoDia = dayEvents.find(e => e.data.type === 'Cidade');
+                if (cidadeDoDia) {
+                    const cityAnchorId = `itinerary-day-${cidadeDoDia.name.toLowerCase().replace(/\s+/g, '-')}`;
+                    dayPanel.id = cityAnchorId;
+                }
+
                 // --- GERAÇÃO DO HTML DOS EVENTOS ---
                 let eventsHtml = dayEvents.map(event => {
                     const { isEditable, ...eventData } = event.data;
@@ -6894,9 +6901,17 @@ let dividerHtml = '';
         window.scrollToCity = (cityName) => {
             const targetId = `itinerary-day-${cityName.toLowerCase().replace(/\s+/g, '-')}`;
             const targetElement = document.getElementById(targetId);
-
+            
             if (targetElement) {
-                targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Calcula a posição descontando um pouco para não ficar colado no topo
+                const headerOffset = 100; 
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
             } else {
                 console.warn(`Âncora para a cidade "${cityName}" não encontrada.`);
             }
