@@ -58,6 +58,15 @@
         }
         /* FIM: ESTILOS PARA POPUP DE IMAGEM */
 
+        /*permitir duas linhas por atividade no celular */
+        .line-clamp-2 {
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            white-space: normal !important;
+        }
+
         @media print {
             /* * Regra 1: Força a impressão de cores e fundos 
             * (Corrigido para evitar comentários aninhados)
@@ -159,13 +168,17 @@
                 break-inside: auto !important;
             }
 
-            /* * Regra 7: Garante que o texto do roteiro quebre a linha (remove o "truncate")
-            */
-            .activity-item p.truncate {
+            /* Regra 7: Permite quebra de linha na impressão (Anula o clamp) */
+            .activity-item p.line-clamp-2, 
+            .activity-item strong.line-clamp-2,
+            .activity-item p.truncate,
+            .activity-item h3.line-clamp-2 {
+                display: block !important;
                 overflow: visible !important;
                 text-overflow: clip !important;
                 white-space: normal !important;
                 word-break: break-word !important;
+                -webkit-line-clamp: unset !important;
             }
 
             /* * Regra 8: Garante que as descrições nos modais (se impressas) também quebrem
@@ -918,7 +931,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.9 | 22/02/2026, 19:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.10 | 25/02/2026, 07:55</p>
             </main>
         </div>
 
@@ -2186,6 +2199,11 @@
                     <div id="activity-name-suggestions" class="hidden absolute z-50 w-full bg-white border border-slate-300 rounded-md mt-1 shadow-lg max-h-40 overflow-y-auto"></div>
                 </div>
 
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">🗺️ Google Maps (Link)</label>
+                    <input type="url" id="activity-link" class="w-full p-2 border rounded" placeholder="http://maps.google.com/...">
+                </div>
+
                 <button type="button" onclick="toggleMoreDetails(this, 'activity-more-details')" class="toggle-details-btn flex items-center gap-2 text-sm text-blue-600 font-medium py-2">
                     <span>Mais detalhes</span>
                 </button>
@@ -2195,11 +2213,7 @@
                 <div>
                     <label for="activity-description" class="block text-sm font-medium text-slate-600">Descrição (Opcional)</label>
                     <textarea id="activity-description" rows="3" placeholder="Ex: Tour guiado com acesso ao subterrâneo." class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm"></textarea>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1">🗺️ Google Maps (Link)</label>
-                    <input type="url" id="activity-link" class="w-full p-2 border rounded" placeholder="http://maps.google.com/...">
-                </div>
+                </div>                
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-1">🔗 Link Adicional (Site, Menu, Reserva)</label>
                     <input type="url" id="activity-extra-link" class="w-full p-2 border rounded" placeholder="https://siteoficial.com...">
@@ -6299,8 +6313,11 @@ window.addEventListener('popstate', (event) => {
                     const timeColorClass = isDark ? 'text-white' : 'text-slate-900'; 
                     const iconColorClass = isDark ? 'text-slate-300' : 'text-slate-500';
                     const hoverClass = isDark ? 'hover:brightness-110' : 'hover:bg-slate-100'; 
-
+                    
                     const time = event.dateTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
+
+                    const isCidade = event.data.type === 'Cidade';
+                    const nameMobileClasses = isCidade ? "truncate" : "line-clamp-2 md:truncate";
 
                     // 1. Caso: Cidade com Imagem
                     if (event.data.type === 'Cidade' && imageUrl && imageUrl.trim() !== '') {
@@ -6321,7 +6338,7 @@ window.addEventListener('popstate', (event) => {
                             <div class="p-3 rounded-b-xl flex items-center gap-3 border-x border-b border-gray-100/50" style="${bgColorStyle}">
                                 <div class="p-1.5 bg-white/40 backdrop-blur-sm rounded-full flex-shrink-0" style="color: ${textColorStyle} !important;">${event.icon || ''}</div>
                                 <div class="min-w-0 flex-1">
-                                    <h3 class="font-bold text-base truncate ${isNowClosed ? 'text-red-600' : ''}" style="${isNowClosed ? '' : `color: ${textColorStyle} !important;`}">
+                                    <h3 class="font-bold text-base ${nameMobileClasses} ${isNowClosed ? 'text-red-600' : ''}" style="${isNowClosed ? '' : `color: ${textColorStyle} !important;`}">
                                         ${event.name} ${isNowClosed ? '⚠️' : ''}
                                     </h3>
                                     <p class="text-xs truncate" style="color: ${isDark ? '#e2e8f0' : '#475569'} !important;">
@@ -6345,7 +6362,7 @@ window.addEventListener('popstate', (event) => {
                                     ${event.icon || ''}
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <p class="text-sm ${descColorClass} truncate">
+                                    <p class="text-sm ${descColorClass} ${nameMobileClasses}">
                                         <strong class="font-semibold ${closedClasses} ${isNowClosed ? '' : titleColorClass}">${event.name}</strong>
                                         ${isNowClosed ? '<span class="text-red-600 text-[10px] ml-1 font-black">FECHADO</span>' : ''}
                                         ${event.description ? ` | ${event.description}` : ''}
