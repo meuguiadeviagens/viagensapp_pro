@@ -61,7 +61,7 @@
         /*permitir duas linhas por atividade no celular */
         .line-clamp-2 {
             display: -webkit-box !important;
-            -webkit-line-clamp: 2 !important;
+            -webkit-line-clamp: 3 !important;
             -webkit-box-orient: vertical !important;
             overflow: hidden !important;
             white-space: normal !important;
@@ -931,7 +931,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.10 | 25/02/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.11 | 25/02/2026, 07:55</p>
             </main>
         </div>
 
@@ -7355,18 +7355,17 @@ let dividerHtml = '';
 
             // 5. IMAGEM DO LOCAL
             const imgElement = document.getElementById('view-activity-image');
-            // Busca o container específico da imagem (se você tiver um) ou o pai imediato
-            const imgContainer = document.getElementById('view-activity-image-container') || imgElement.parentElement;
-            
+            // Alterado: Removemos o "|| imgElement.parentElement" para ele não selecionar a div principal de rolagem
+            const imgContainer = document.getElementById('view-activity-image-container'); 
+
             // Pega a URL que agora chegará corretamente pelo data-imageurl
             const imageUrl = ds.imageurl;
-
             if (imageUrl && imageUrl !== 'undefined' && imageUrl.trim() !== '') {
                 // Limpa possíveis aspas residuais da URL
                 imgElement.src = imageUrl.replace(/^["']|["']$/g, '').trim();
                 imgElement.classList.remove('hidden');
                 imgElement.style.display = 'block';
-                
+
                 if (imgContainer) {
                     imgContainer.classList.remove('hidden');
                     imgContainer.style.display = 'block';
@@ -7375,9 +7374,9 @@ let dividerHtml = '';
                 imgElement.src = '';
                 imgElement.classList.add('hidden');
                 imgElement.style.display = 'none';
-                
-                // Só esconde o container se ele for especificamente feito para a imagem
-                if (imgContainer && (imgContainer.id === 'view-activity-image-container' || imgContainer.tagName === 'DIV')) {
+
+                // Alterado: Agora só esconde estritamente se existir um container específico para imagem
+                if (imgContainer) {
                     imgContainer.classList.add('hidden');
                     imgContainer.style.display = 'none';
                 }
