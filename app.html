@@ -68,6 +68,15 @@
         }
 
         @media print {
+            /* 0º: Índice Interativo do PDF */
+            #pdf-index-page {
+                display: block !important;
+                page-break-after: always !important;
+                padding-bottom: 20px !important;
+                order: 2 !important;
+                /* Se o cabeçalho sumir ou ficar fora de ordem, adicione: order: 2 !important; */
+            }
+            
             /* * Regra 1: Força a impressão de cores e fundos 
             * (Corrigido para evitar comentários aninhados)
             */
@@ -200,8 +209,12 @@
                 padding-bottom: 1rem !important;
             }
 
-            /* 10. Esconde o botão "Adicionar Anotação" */
+            /* 10. Esconde o botão "Adicionar Anotação" e Adicionar Pendências*/
             #notes-content button[onclick*="add-note-modal"] {
+                display: none !important;
+            }
+
+            #pendencias-list button {
                 display: none !important;
             }
 
@@ -931,7 +944,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.11 | 25/02/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.12 | 27/02/2026, 07:55</p>
             </main>
         </div>
 
@@ -1287,7 +1300,7 @@
                         <ul id="pendencias-list" class="space-y-3 mb-4">
                             </ul>
 
-                        <form id="add-pendencia-form" class="flex gap-2">
+                        <form id="add-pendencia-form" class="flex gap-2 print:hidden">
                             <input type="text" id="new-pendencia-name" placeholder="Ex.: comprar ingressos..." class="flex-1 min-w-0 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all" required>
                             
                             <button type="submit" class="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 font-medium transition-colors flex items-center gap-2 flex-shrink-0">
@@ -12497,14 +12510,33 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
             }
 
+            // 1. CHAME A FUNÇÃO AQUI! Logo após decidir o que vai ser impresso.
+            buildPrintIndex();
+
             // Fecha o modal
             closeModal('print-options-modal');
 
-            // Aguarda um breve momento para o modal fechar visualmente e chama a impressão
+            // Aguarda um breve momento para o modal fechar visualmente, processar o índice e chama a impressão
             setTimeout(() => {
+
+                // 1. Salva o título original da aba do navegador
+                const originalTitle = document.title;
+                
+                // 2. Tenta pegar o nome da viagem (Busca o H1 ou H2 dentro do seu cabeçalho)
+                const tripNameElement = document.querySelector('#details-header h1, #details-header h2');
+                // Formata o nome tirando espaços e caracteres estranhos para ficar um nome de arquivo bonito
+                const tripName = tripNameElement ? tripNameElement.innerText.trim().replace(/[^a-zA-Z0-9]/g, '_') : 'Viagem';
+                
+                // 3. Muda o título da página temporariamente (É esse nome que vai pro PDF!)
+                document.title = `${tripName}_Roteiro_NaoVouSozinho`;
+
+                // 4. Chama a impressão
                 window.print();
                 
-                // Opcional: Remove as classes depois de imprimir para restaurar a visualização normal
+                // 5. Restaura o título original da aba imediatamente
+                document.title = originalTitle;
+                
+                // Remove as classes depois de imprimir para restaurar a visualização normal
                 // (Isso evita que o painel suma da tela se o usuário cancelar a impressão e continuar navegando)
                 setTimeout(() => {
                     for (const panelId of Object.values(sectionMap)) {
@@ -13930,6 +13962,105 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 acceptBtn.onclick = () => close(true);
                 declineBtn.onclick = () => close(false);
             });
+        }
+
+        function buildPrintIndex() {
+            // 1. Remove sumário antigo se houver
+            const oldIndex = document.getElementById('pdf-index-page');
+            if (oldIndex) oldIndex.remove();
+
+            // 2. Cria o container do Índice
+            const indexContainer = document.createElement('div');
+            indexContainer.id = 'pdf-index-page';
+            indexContainer.className = 'hidden print:block mb-8 mt-6 p-8 bg-white rounded-xl border border-slate-200';
+            
+            let indexHTML = `
+                <h2 class="text-3xl font-bold mb-6 text-slate-800 border-b pb-4">Índice da Viagem</h2>
+                <ul class="space-y-5 text-slate-700 text-xl font-medium pl-2">
+            `;
+
+            // 3. Função auxiliar que retorna o HTML do link da seção
+            function getSectionLinkHTML(panelId, title, emoji) {
+                const panel = document.getElementById(panelId);
+                if (panel && !panel.classList.contains('print-hidden')) {
+                    panel.id = panelId; // Garante a âncora
+                    return `
+                        <li class="flex flex-col gap-2">
+                            <div class="flex items-center gap-3">
+                                <span>${emoji}</span>
+                                <a href="#${panelId}" style="text-decoration: none; color: #2563eb; border-bottom: 1px dashed #2563eb; font-weight: bold;">
+                                    ${title}
+                                </a>
+                            </div>
+                            <ul id="subindex-${panelId}" class="pl-10 space-y-1 mt-1 text-base text-slate-600 font-normal"></ul>
+                        </li>
+                    `;
+                }
+                return '';
+            }
+
+            // 4. Monta a lista principal
+            indexHTML += getSectionLinkHTML('flights-section', 'Voos', '✈️');
+            indexHTML += getSectionLinkHTML('transport-section', 'Transportes', '🚗');
+            indexHTML += getSectionLinkHTML('lodging-section', 'Hospedagens', '🏨');
+            indexHTML += getSectionLinkHTML('daily-itinerary-panel', 'Roteiro da Viagem', '📍');
+            indexHTML += getSectionLinkHTML('notes-panel', 'Anotações', '📝');
+            indexHTML += getSectionLinkHTML('print-emergency-section', 'Dados de Emergência', '🏥');
+
+            indexHTML += `</ul>`;
+            indexContainer.innerHTML = indexHTML;
+
+            // --- 5. ADICIONA SUBTÓPICOS DE CIDADES NO ROTEIRO ---
+            const roteiroPanel = document.getElementById('daily-itinerary-panel');
+            const subIndexRoteiro = indexContainer.querySelector('#subindex-daily-itinerary-panel');
+            
+            if (roteiroPanel && subIndexRoteiro) {
+                // Busca itens do roteiro focando na forma como seu sistema identifica cidades ou usando a classe
+                const cityElements = roteiroPanel.querySelectorAll('.cidade-titulo, .activity-item[data-type="Cidade"], [data-activity-type="Cidade"]'); 
+                const processedCities = new Set(); 
+
+                cityElements.forEach((el, index) => {
+                    // Se for o contêiner da atividade, busca o primeiro texto forte ou h3 dentro dele
+                    let cityName = el.innerText.trim();
+                    
+                    if (el.classList.contains('activity-item')) {
+                        // Tenta achar o título da cidade ignorando botões de ação
+                        const titleEl = el.querySelector('h3, h4, p.font-bold, p.font-semibold');
+                        if (titleEl) cityName = titleEl.innerText.trim();
+                    }
+
+                    // Limpa quebras de linha caso puxe alguma descrição extra junto
+                    cityName = cityName.split('\n')[0].trim();
+
+                    if (cityName && !processedCities.has(cityName)) {
+                        processedCities.add(cityName); 
+                        
+                        if (!el.id) el.id = `print-cidade-ref-${index}`;
+
+                        subIndexRoteiro.innerHTML += `
+                            <li class="list-disc ml-2">
+                                <a href="#${el.id}" style="text-decoration: none; color: #475569; border-bottom: 1px dashed #cbd5e1;">
+                                    ${cityName}
+                                </a>
+                            </li>
+                        `;
+                    }
+                });
+            }
+
+            // --- 6. INSERE O ÍNDICE ABAIXO DO CABEÇALHO ---
+            // Tenta achar o ID exato, ou então procura a primeira imagem (capa) dentro da view de detalhes
+            const detailsView = document.getElementById('details-view');
+            const tripHeader = document.getElementById('details-header') || (detailsView ? detailsView.querySelector('img').closest('div') : null); 
+            
+            if (tripHeader) {
+                // Insere o índice EXATAMENTE após a div que contém a imagem de capa
+                tripHeader.insertAdjacentElement('afterend', indexContainer);
+            } else if (detailsView) {
+                // Fallback: insere como o segundo elemento da tela
+                detailsView.insertBefore(indexContainer, detailsView.children[1]);
+            }
+
         }
 
     </script>
