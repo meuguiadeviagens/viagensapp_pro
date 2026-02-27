@@ -944,7 +944,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.13 | 27/02/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.14 | 27/02/2026, 07:55</p>
             </main>
         </div>
 
@@ -12331,12 +12331,13 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             
             container.innerHTML = '';
 
-            // 1. Monta a lista completa combinando Viajantes e Dependentes
             let allPeople = [];
+            const travelerUids = new Set(); // Vamos guardar os IDs dos viajantes aqui
 
-            // A. Adiciona os viajantes principais (mesmo que não tenham dados preenchidos)
+            // A. Adiciona os Viajantes Principais
             if (trip.travelers && Array.isArray(trip.travelers)) {
                 trip.travelers.forEach(t => {
+                    travelerUids.add(t.uid); // Regista o ID do viajante
                     const savedData = trip.emergencyData ? trip.emergencyData[t.uid] : null;
                     allPeople.push({
                         name: t.name,
@@ -12346,12 +12347,13 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 });
             }
 
-            // B. Adiciona os dependentes (que ficam salvos no emergencyData)
+            // B. Adiciona os Dependentes (qualquer registo que NÃO seja de um viajante principal)
             if (trip.emergencyData) {
-                Object.values(trip.emergencyData).forEach(data => {
-                    if (data.type === 'dependent') {
+                Object.entries(trip.emergencyData).forEach(([key, data]) => {
+                    // Se a chave não está na lista de viajantes, então é um dependente!
+                    if (!travelerUids.has(key)) {
                         allPeople.push({
-                            name: data.name,
+                            name: data.name || 'Dependente',
                             type: 'dependent',
                             info: data.info || data.text || data.description || data.value || ''
                         });
@@ -12359,18 +12361,18 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 });
             }
 
-            // Se a viagem não tiver absolutamente ninguém (algo muito raro), sai da função
+            // Se a viagem não tiver absolutamente ninguém, sai da função
             if (allPeople.length === 0) {
                 container.style.display = 'none';
                 openModal('print-options-modal');
                 return;
             }
             
-            // 2. Constrói o HTML
+            // Constrói o HTML
             let htmlContent = `
                 <div class="mb-6 border-b-2 border-slate-800 pb-2">
                     <h2 class="text-3xl font-bold text-slate-900">🚨 Dados de Emergência</h2>
-                    <p class="text-slate-600">Informações pessoais dos viajantes.</p>
+                    <p class="text-slate-600">Informações pessoais dos viajantes e dependentes.</p>
                 </div>
                 <div class="space-y-4">
             `;
@@ -12378,11 +12380,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             allPeople.forEach(person => {
                 let rawText = person.info;
                 
-                // Em vez de pular quem está com dados vazios, colocamos um aviso amigável
+                // Mantemos o aviso amigável para quem não tem dados
                 if (!rawText || rawText.trim() === '') {
                     rawText = person.type === 'dependent' 
-                        ? "Dependente cadastrado (sem dados adicionais)." 
-                        : "Nenhuma informação de emergência cadastrada.";
+                        ? "Dependente registado (sem dados adicionais)." 
+                        : "Nenhuma informação de emergência registada.";
                 }
 
                 const infoText = rawText.replace(/\n/g, '<br>');
@@ -12403,7 +12405,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             htmlContent += `</div>`;
             
-            // Injeta na tela e deixa o container pronto para impressão
+            // Injeta no ecrã e prepara a impressão
             container.innerHTML = htmlContent;
             container.style.display = 'block';
 
