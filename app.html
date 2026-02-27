@@ -944,7 +944,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.12 | 27/02/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.13 | 27/02/2026, 07:55</p>
             </main>
         </div>
 
@@ -12323,22 +12323,50 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         window.printTripWithEmergency = async () => {
             const container = document.getElementById('print-emergency-section');
             const trip = tripsData.find(t => t.id === currentTripId);
-
+            
             if (!container || !trip) {
                 window.print();
                 return;
             }
-
+            
             container.innerHTML = '';
 
-            // Verifica se emergencyData existe
-            if (!trip.emergencyData || Object.keys(trip.emergencyData).length === 0) {
-                container.style.display = 'none'; // Garante que não ocupe espaço se vazio
-                window.print();
-                return;
+            // 1. Monta a lista completa combinando Viajantes e Dependentes
+            let allPeople = [];
+
+            // A. Adiciona os viajantes principais (mesmo que não tenham dados preenchidos)
+            if (trip.travelers && Array.isArray(trip.travelers)) {
+                trip.travelers.forEach(t => {
+                    const savedData = trip.emergencyData ? trip.emergencyData[t.uid] : null;
+                    allPeople.push({
+                        name: t.name,
+                        type: 'traveler',
+                        info: savedData ? (savedData.info || savedData.text || savedData.description || savedData.value || '') : ''
+                    });
+                });
             }
 
-            // Título da seção
+            // B. Adiciona os dependentes (que ficam salvos no emergencyData)
+            if (trip.emergencyData) {
+                Object.values(trip.emergencyData).forEach(data => {
+                    if (data.type === 'dependent') {
+                        allPeople.push({
+                            name: data.name,
+                            type: 'dependent',
+                            info: data.info || data.text || data.description || data.value || ''
+                        });
+                    }
+                });
+            }
+
+            // Se a viagem não tiver absolutamente ninguém (algo muito raro), sai da função
+            if (allPeople.length === 0) {
+                container.style.display = 'none';
+                openModal('print-options-modal');
+                return;
+            }
+            
+            // 2. Constrói o HTML
             let htmlContent = `
                 <div class="mb-6 border-b-2 border-slate-800 pb-2">
                     <h2 class="text-3xl font-bold text-slate-900">🚨 Dados de Emergência</h2>
@@ -12347,55 +12375,39 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 <div class="space-y-4">
             `;
 
-            // Flag para saber se achamos algo útil
-            let hasContent = false;
-
-            Object.values(trip.emergencyData).forEach(data => {
-                // CORREÇÃO: Tenta pegar o texto de várias propriedades possíveis
-                // O textarea tem id "detail-traveler-info", então provavelmente salvou como 'info' ou o valor direto.
-                let rawText = data.info || data.text || data.description || data.value || '';
+            allPeople.forEach(person => {
+                let rawText = person.info;
                 
-                // Se ainda estiver vazio, mas tiver nome, pode ser um dependente só com nome
-                if (!rawText && data.type === 'dependent') {
-                    rawText = "Dependente cadastrado (sem dados adicionais).";
+                // Em vez de pular quem está com dados vazios, colocamos um aviso amigável
+                if (!rawText || rawText.trim() === '') {
+                    rawText = person.type === 'dependent' 
+                        ? "Dependente cadastrado (sem dados adicionais)." 
+                        : "Nenhuma informação de emergência cadastrada.";
                 }
 
-                if (rawText) {
-                    hasContent = true;
-                    const infoText = rawText.replace(/\n/g, '<br>');
-                    const typeLabel = data.type === 'dependent' ? 'Dependente / Outro' : 'Viajante';
-                    
-                    htmlContent += `
-                        <div class="emergency-print-item bg-slate-50 p-4 rounded-lg border border-slate-200">
-                            <div class="flex justify-between items-center mb-2 border-b border-slate-200 pb-2">
-                                <h3 class="text-xl font-bold text-slate-800">${data.name}</h3>
-                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 bg-slate-200 px-2 py-1 rounded">${typeLabel}</span>
-                            </div>
-                            <div class="text-sm text-slate-800 leading-relaxed font-mono">
-                                ${infoText}
-                            </div>
+                const infoText = rawText.replace(/\n/g, '<br>');
+                const typeLabel = person.type === 'dependent' ? 'Dependente / Outro' : 'Viajante';
+
+                htmlContent += `
+                    <div class="emergency-print-item bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div class="flex justify-between items-center mb-2 border-b border-slate-200 pb-2">
+                            <h3 class="text-xl font-bold text-slate-800">${person.name}</h3>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 bg-slate-200 px-2 py-1 rounded">${typeLabel}</span>
                         </div>
-                    `;
-                }
+                        <div class="text-sm text-slate-800 leading-relaxed font-mono">
+                            ${infoText}
+                        </div>
+                    </div>
+                `;
             });
 
             htmlContent += `</div>`;
+            
+            // Injeta na tela e deixa o container pronto para impressão
+            container.innerHTML = htmlContent;
+            container.style.display = 'block';
 
-            if (hasContent) {
-                container.innerHTML = htmlContent;
-                // Força display block para impressão via style inline para garantir
-                container.style.display = 'block'; 
-            } else {
-                container.style.display = 'none';
-            }
-
-            // Pequeno delay para garantir que o navegador renderizou o DOM antes de imprimir
-            setTimeout(() => {
-                //window.print();
-                // Opcional: Esconder novamente após imprimir, se desejar limpar a tela
-                // container.style.display = 'none'; 
-            }, 100);
-
+            // Chama o modal de opções
             openModal('print-options-modal');
         };
 
