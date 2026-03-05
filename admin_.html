@@ -1882,40 +1882,71 @@ O link deve ser o link direto do Google Maps para o local."
 
             activities.forEach((activity, index) => {
                 const item = document.createElement('div');
-                item.className = 'flex items-center justify-between p-3 rounded-lg bg-slate-50 border';
+                // Mudamos a classe para flex-col para permitir empilhar o atalho embaixo
+                item.className = 'flex flex-col p-3 rounded-lg bg-slate-50 border gap-3';
                 
                 let thumbnailHtml = '';
                 if (activity.imageUrl) {
                     thumbnailHtml = `<img src="${activity.imageUrl}" alt="Miniatura" class="w-10 h-10 rounded object-cover mr-3 flex-shrink-0">`;
                 }
                 
-                // --- ALTERAÇÃO AQUI: ÍCONE CLICÁVEL NA LISTA PRINCIPAL ---
                 const iconContent = ICONS[activity.icon] || ICONS.passeio;
                 const iconHtml = activity.link 
-                    ? `<div onclick="window.open('${activity.link}', '_blank')" 
-                            class="text-slate-500 flex-shrink-0 cursor-pointer hover:text-blue-600 transition-colors" 
-                            title="Abrir no Google Maps">
-                            ${iconContent}
-                       </div>`
+                    ? `<div onclick="window.open('${activity.link}', '_blank')" class="text-slate-500 flex-shrink-0 cursor-pointer hover:text-blue-600 transition-colors" title="Abrir no Google Maps">${iconContent}</div>`
                     : `<div class="text-slate-500 flex-shrink-0">${iconContent}</div>`;
 
                 const linkIconHtml = activity.link ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="lucide lucide-link flex-shrink-0 text-blue-500 inline-block ml-1" title="Possui link externo"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>` : '';
 
+                // Resgatamos o nome da cidade para a pesquisa
+                const cityName = suggestedItinerariesData[cityId].cityName;
+
                 item.innerHTML = `
-                    <div class="flex items-center gap-3 min-w-0 flex-grow"> 
-                        ${thumbnailHtml} 
-                        ${iconHtml}
-                        <div class="min-w-0 flex-grow"> 
-                            <p class="font-semibold truncate flex items-center gap-1.5">
-                                <span>${activity.name}</span>
-                                ${linkIconHtml}   
-                            </p>
-                            <p class="text-xs text-slate-600 truncate">${activity.description}</p>
+                    <div class="flex items-center justify-between w-full">
+                        <div class="flex items-center gap-3 min-w-0 flex-grow"> 
+                            ${thumbnailHtml} 
+                            ${iconHtml}
+                            <div class="min-w-0 flex-grow"> 
+                                <p class="font-semibold truncate flex items-center gap-1.5">
+                                    <span>${activity.name}</span>
+                                    ${linkIconHtml}   
+                                </p>
+                                <p class="text-xs text-slate-600 truncate">${activity.description || ''}</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 flex-shrink-0 ml-4"> 
+                            <button onclick="openEditActivitySuggestionModal(${index})" class="text-blue-500 hover:text-blue-800 text-sm">Editar</button> 
+                            <button onclick="deleteActivitySuggestion(${index})" class="text-red-500 hover:text-red-800 text-sm">Excluir</button> 
                         </div>
                     </div>
-                    <div class="flex gap-2 flex-shrink-0 ml-4"> 
-                        <button onclick="openEditActivitySuggestionModal(${index})" class="text-blue-500 hover:text-blue-800 text-sm">Editar</button> 
-                        <button onclick="deleteActivitySuggestion(${index})" class="text-red-500 hover:text-red-800 text-sm">Excluir</button> 
+
+                    <div class="shortcut-container flex items-stretch gap-3 pt-3 border-t border-slate-200 mt-1">
+                        <div class="flex-1 flex flex-col gap-2">
+                            <div class="flex items-center gap-2">
+                                <input type="text" 
+                                    class="shortcut-maps-input flex-1 text-xs border border-slate-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-400" 
+                                    placeholder="Link do Google Maps" 
+                                    value="${activity.link || ''}">
+                                <button type="button" class="btn-open-maps text-[10px] bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded font-medium transition-colors">Abrir</button>
+                                <button type="button" class="btn-search-maps text-[10px] bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1 rounded font-medium transition-colors">Pesquisar</button>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <input type="text" 
+                                    class="shortcut-image-input flex-1 text-xs border border-slate-300 rounded px-2 py-1 focus:ring-1 focus:ring-blue-400" 
+                                    placeholder="Link da Imagem (JPG)" 
+                                    value="${activity.imageUrl || ''}">
+                                <button type="button" class="btn-open-image text-[10px] bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded font-medium transition-colors">Abrir</button>
+                                <button type="button" class="btn-search-image text-[10px] bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1 rounded font-medium transition-colors">Pesquisar</button>
+                            </div>
+                        </div>
+                        
+                        <button type="button" 
+                                class="btn-save-shortcuts flex-shrink-0 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold px-3 rounded text-xs transition-colors flex items-center justify-center text-center"
+                                data-city-id="${cityId}"
+                                data-activity-index="${index}"
+                                data-activity-name="${activity.name.replace(/"/g, '&quot;')}"
+                                data-city-name="${cityName.replace(/"/g, '&quot;')}">
+                            Salvar<br>Links
+                        </button>
                     </div>
                 `;
                 listContainer.appendChild(item);
@@ -2857,19 +2888,24 @@ O link deve ser o link direto do Google Maps para o local."
                     </div>`;
             }
 
+            // O escape de aspas é necessário caso a atividade tenha apóstrofos no nome (ex: "Sant'Ana")
+            const safeName = act.name ? act.name.replace(/'/g, "\\'") : '';
+
             return `
                 <div draggable="true" 
                     ondragstart="dragActivity(event, ${act.index})" 
                     class="flex items-center justify-between p-2 bg-white border rounded-lg shadow-sm cursor-move hover:border-blue-400 transition-colors group">
                     
-                    <div class="flex items-center gap-2 overflow-hidden flex-grow">
-                        <div class="text-blue-500 flex-shrink-0">
+                    <div onclick="copyActivityName('${safeName}', this)" 
+                         class="flex items-center gap-2 overflow-hidden flex-grow cursor-copy hover:bg-slate-50 rounded px-1 -ml-1 transition-colors"
+                         title="Clique para copiar o nome">
+                        <div class="text-blue-500 flex-shrink-0 pointer-events-none">
                             ${ICONS[act.icon] || ICONS.passeio}
                         </div>
-                        <span class="text-sm font-medium truncate" title="${act.name}">${act.name}</span>
+                        <span class="name-span text-sm font-medium truncate pointer-events-none">${act.name}</span>
                     </div>
                     
-                    <div class="flex items-center flex-shrink-0">
+                    <div class="flex items-center flex-shrink-0 ml-2">
                         ${timeInput}
                         ${actionButtons}
                     </div>
@@ -3150,10 +3186,126 @@ O link deve ser o link direto do Google Maps para o local."
                 console.error("Erro ao alterar status de revisão:", error);
                 alert("Erro ao salvar o status da cidade.");
             }
-        };        
+        };       
+
+        // --- LÓGICA DOS ATALHOS DE EDIÇÃO (EVENT DELEGATION) ---
+        document.addEventListener('click', async (e) => {
+            const shortcutContainer = e.target.closest('.shortcut-container');
+            if (!shortcutContainer) return;
+
+            const saveBtn = shortcutContainer.querySelector('.btn-save-shortcuts');
+            if (!saveBtn) return;
+
+            // Tratamento do dataset (HTML usa kebab-case, JS usa camelCase)
+            const ds = saveBtn.dataset;
+            const cityId = ds.cityId;
+            const activityIndex = ds.activityIndex;
+            const activityName = ds.activityName;
+            const cityName = ds.cityName;
+
+            const mapsInput = shortcutContainer.querySelector('.shortcut-maps-input');
+            const imageInput = shortcutContainer.querySelector('.shortcut-image-input');
+
+            // 1. Abrir Maps
+            if (e.target.closest('.btn-open-maps')) {
+                const url = mapsInput.value.trim();
+                if (url) window.open(url, '_blank');
+                else alert('O campo do Google Maps está vazio.');
+                return;
+            }
+
+            // 2. Pesquisar Maps
+            if (e.target.closest('.btn-search-maps')) {
+                const query = encodeURIComponent(`${activityName} ${cityName}`);
+                window.open(`https://www.google.com/maps/search/${query}`, '_blank');
+                return;
+            }
+
+            // 3. Abrir Imagem
+            if (e.target.closest('.btn-open-image')) {
+                const url = imageInput.value.trim();
+                if (url) window.open(url, '_blank');
+                else alert('O campo da Imagem está vazio.');
+                return;
+            }
+
+            // 4. Pesquisar Imagem
+            if (e.target.closest('.btn-search-image')) {
+                const query = encodeURIComponent(`${activityName} ${cityName}`);
+                window.open(`https://www.google.com/search?tbm=isch&q=${query}`, '_blank');
+                return;
+            }
+
+            // 5. Salvar Modificações
+            if (e.target.closest('.btn-save-shortcuts')) {
+                const targetBtn = e.target.closest('.btn-save-shortcuts');
+                const originalText = targetBtn.innerHTML;
+                
+                targetBtn.innerHTML = 'Salvando...';
+                targetBtn.disabled = true;
+
+                const newMapsUrl = mapsInput.value.trim();
+                const newImageUrl = imageInput.value.trim();
+
+                try {
+                    const updates = {};
+                    // No admin_.html, a URL do maps fica armazenada na propriedade 'link'
+                    updates[`suggestedItineraries/${cityId}/activities/${activityIndex}/link`] = newMapsUrl;
+                    updates[`suggestedItineraries/${cityId}/activities/${activityIndex}/imageUrl`] = newImageUrl;
+
+                    await update(ref(db), updates);
+
+                    // Feedback visual de sucesso
+                    targetBtn.innerHTML = 'Salvo!';
+                    targetBtn.classList.replace('text-indigo-700', 'text-green-700');
+                    targetBtn.classList.replace('bg-indigo-50', 'bg-green-50');
+                    targetBtn.classList.replace('border-indigo-200', 'border-green-200');
+                    
+                    setTimeout(() => {
+                        targetBtn.innerHTML = originalText;
+                        targetBtn.classList.replace('text-green-700', 'text-indigo-700');
+                        targetBtn.classList.replace('bg-green-50', 'bg-indigo-50');
+                        targetBtn.classList.replace('border-green-200', 'border-indigo-200');
+                        targetBtn.disabled = false;
+                    }, 2000);
+
+                } catch (error) {
+                    console.error("Erro ao salvar atalhos:", error);
+                    alert("Erro ao salvar. Verifique o console.");
+                    targetBtn.innerHTML = originalText;
+                    targetBtn.disabled = false;
+                }
+            }
+        }); 
+
+        // --- FUNÇÃO PARA COPIAR NOME DA ATIVIDADE NO MODAL DE ROTEIRO ---
+        window.copyActivityName = (name, element) => {
+            if (!name) return;
+            
+            navigator.clipboard.writeText(name).then(() => {
+                // Busca o span com o texto dentro do elemento clicado
+                const nameSpan = element.querySelector('.name-span');
+                if (nameSpan) {
+                    const originalText = nameSpan.textContent;
+                    
+                    // Feedback visual sutil (sem alert)
+                    nameSpan.textContent = 'Copiado!';
+                    nameSpan.classList.add('text-green-600', 'font-bold');
+                    nameSpan.classList.remove('text-slate-800'); // Caso tenha classe de cor padrão
+                    
+                    // Retorna ao normal após 1 segundo
+                    setTimeout(() => {
+                        nameSpan.textContent = originalText;
+                        nameSpan.classList.remove('text-green-600', 'font-bold');
+                    }, 1000);
+                }
+            }).catch(err => {
+                console.error('Erro ao copiar nome da atividade:', err);
+            });
+        };
 
     </script>
-<br><center><p>V. 1.2.11 - 05/03/2026 08:42</p></center><br>
+<br><center><p>V. 1.2.12 - 05/03/2026 08:42</p></center><br>
 
 <script>
       if ('serviceWorker' in navigator) {
