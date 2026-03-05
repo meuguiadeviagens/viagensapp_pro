@@ -212,7 +212,10 @@
                 <!-- Coluna da Direita: Atividades da cidade selecionada -->
                 <div id="activities-panel" class="md:col-span-2 hidden">
                     <div class="flex justify-between items-center mb-3">
-                         <h3 class="font-semibold">Atividades para <span id="selected-city-name" class="text-blue-700"></span></h3>
+                        <div class="flex items-center gap-3">
+                            <img id="selected-city-image" src="" alt="Miniatura da cidade" class="w-10 h-10 object-cover rounded-md hidden shadow-sm border border-slate-200" title="Verificando link da imagem...">
+                            <h3 class="font-semibold flex-grow">Atividades para <span id="selected-city-name" class="text-blue-700"></span></h3>
+                        </div>
                             <div class="flex gap-2">
                                 <button onclick="triggerJsonImport()" class="px-3 py-1.5 bg-purple-600 text-white text-sm font-semibold rounded-md hover:bg-purple-700 flex items-center gap-1">
                                     <span>📥</span> Importar JSON
@@ -1843,9 +1846,26 @@ O link deve ser o link direto do Google Maps para o local."
 
         window.selectCity = (cityId) => {
             selectedCityId = cityId;
+            const cityData = suggestedItinerariesData[cityId];
+            
             document.getElementById('activities-panel').classList.remove('hidden');
             document.getElementById('activities-placeholder').classList.add('hidden');
-            document.getElementById('selected-city-name').textContent = suggestedItinerariesData[cityId].cityName;
+            document.getElementById('selected-city-name').textContent = cityData.cityName;
+            
+            // --- INÍCIO: Atualiza a miniatura da cidade ---
+            const cityImgEl = document.getElementById('selected-city-image');
+            // Checa as duas propriedades possíveis por segurança (criação vs edição)
+            const imgUrl = cityData.imageUrl || cityData.cityImageUrl; 
+            
+            if (imgUrl) {
+                cityImgEl.src = imgUrl;
+                cityImgEl.classList.remove('hidden');
+            } else {
+                cityImgEl.src = '';
+                cityImgEl.classList.add('hidden');
+            }
+            // --- FIM: Atualiza a miniatura da cidade ---
+
             renderSuggestedCitiesList(); // Re-renderiza para destacar a seleção
             renderSuggestedActivities(cityId);
         }
@@ -3133,7 +3153,7 @@ O link deve ser o link direto do Google Maps para o local."
         };        
 
     </script>
-<br><center><p>V. 1.2.10 - 04/03/2026 08:42</p></center><br>
+<br><center><p>V. 1.2.11 - 05/03/2026 08:42</p></center><br>
 
 <script>
       if ('serviceWorker' in navigator) {
