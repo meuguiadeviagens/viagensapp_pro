@@ -1965,8 +1965,10 @@ O link deve ser o link direto do Google Maps para o local."
         document.getElementById('add-city-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const cityName = document.getElementById('city-name').value.trim();
-            const cityImageUrl = document.getElementById('city-image-url').value;      
+            // Pegamos o valor do input
+            const imageUrl = document.getElementById('city-image-url').value.trim();      
             const country = document.getElementById('city-country').value.trim();
+            
             if (!cityName || !country) return;
 
             const cityId = cityName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
@@ -1976,9 +1978,8 @@ O link deve ser o link direto do Google Maps para o local."
                 return;
             }
 
-            
-
-            const newCity = { cityName, country, cityImageUrl, activities: [] };
+            // CORREÇÃO AQUI: Padronizamos a variável para 'imageUrl' (antes estava cityImageUrl)
+            const newCity = { cityName, country, imageUrl, activities: [] };
             await set(ref(db, `suggestedItineraries/${cityId}`), newCity);
             closeModal('add-city-modal');
         });
