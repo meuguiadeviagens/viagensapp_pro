@@ -2798,12 +2798,12 @@ O link deve ser o link direto do Google Maps para o local."
         function renderMiniActivity(act, isInsideDay = false) {
             // Prepara o input de hora
             const timeInput = isInsideDay 
-                ? `<input type="time" 
-                        value="${act.time || ''}" 
-                        onchange="updateActivityTime(${act.index}, this.value)"
-                        onclick="event.stopPropagation()"
-                        class="ml-2 text-xs border rounded px-1 focus:ring-1 focus:ring-blue-500 w-20">`
-                : '';
+                    ? `<input type="time" 
+                            value="${act.time || ''}" 
+                            onblur="updateActivityTime(${act.index}, this.value)"
+                            onclick="event.stopPropagation()"
+                            class="ml-2 text-xs border rounded px-1 focus:ring-1 focus:ring-blue-500 w-20">`
+                    : '';
 
             // BOTÃO DE LINK (O segredo do sucesso)
             // Ele fica isolado dos eventos de arraste
@@ -3130,10 +3130,10 @@ O link deve ser o link direto do Google Maps para o local."
                 console.error("Erro ao alterar status de revisão:", error);
                 alert("Erro ao salvar o status da cidade.");
             }
-        };
+        };        
 
     </script>
-<br><center><p>V. 1.2.9 - 20/02/2026 08:42</p></center><br>
+<br><center><p>V. 1.2.10 - 04/03/2026 08:42</p></center><br>
 
 <script>
       if ('serviceWorker' in navigator) {
@@ -3151,5 +3151,4 @@ O link deve ser o link direto do Google Maps para o local."
 
 </body>
 </html>
-
 
