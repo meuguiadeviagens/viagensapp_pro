@@ -914,6 +914,7 @@
                             </a>
                             <a href="#" onclick="showChecklistView(event)" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Checklist de Viagem</a>
                             <a href="#" onclick="openLicenseModal()" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Minha licença</a>
+                            <a href="#" id="toggle-explore-card-btn" class="hidden block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 border-b" onclick="toggleExploreCardVisibility(event)">Mostrar 'Explorar o mundo'</a>
                             <a href="#" id="upgrade-plan-btn" class="hidden block px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-100" onclick="event.preventDefault(); openModal('upgrade-plan-modal'); userMenuDropdown.classList.add('hidden');">
                                 Adquirir um Plano
                             </a>
@@ -932,6 +933,26 @@
             <section id="featured-trips-panel" class="mb-10"></section>
 
             <main>
+                <section id="explore-world-section" class="mb-10 transition-all duration-500 hidden">
+                    <div class="relative bg-slate-900 rounded-2xl shadow-lg overflow-hidden cursor-pointer group" onclick="openExploreWorldModal()">
+                        
+                        <img src="https://images.unsplash.com/photo-1488085061387-422e29b40080?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Explorar o mundo" class="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:opacity-75 transition-all duration-500 group-hover:scale-105">
+                        
+                        <div class="absolute inset-0 bg-gradient-to-r from-slate-900/90 via-slate-900/50 to-transparent pointer-events-none"></div>
+
+                        <div class="relative p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div>
+                                <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2 flex items-center gap-2 drop-shadow-md">
+                                    🌍 Explorar o Mundo
+                                </h2>
+                                <p class="text-slate-200 text-sm sm:text-base max-w-lg drop-shadow">Descubra atividades sugeridas incríveis, explore cidades e encontre inspiração para a sua próxima aventura.</p>
+                            </div>
+                            <button onclick="hideExploreCard(event)" class="absolute top-4 right-4 sm:relative sm:top-0 sm:right-0 bg-white/20 hover:bg-white/30 text-white rounded-full p-2 backdrop-blur-sm transition-colors z-10 border border-white/10" title="Ocultar este card">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </section>
                 <div id="upcoming-trips-container">
                     <h2 class="text-2xl font-bold text-slate-800 mb-4">Próximas Viagens</h2>
                     <div id="upcoming-trips-content">
@@ -944,7 +965,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.14 | 27/02/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.15 | 05/03/2026, 07:55</p>
             </main>
         </div>
 
@@ -2970,6 +2991,33 @@
         </div>
     </div>
 
+    <div id="explore-world-modal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md m-4 overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="relative h-48 bg-slate-200 flex-shrink-0">
+                <img id="explore-modal-image" src="" alt="Explorar o mundo" class="w-full h-full object-cover">
+                <button onclick="closeModal('explore-world-modal')" class="absolute top-3 right-3 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition-colors backdrop-blur-sm" title="Fechar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+                <div class="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
+                    <span id="explore-modal-city" class="text-white text-sm font-semibold tracking-wide flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <span></span>
+                    </span>
+                </div>
+            </div>
+            <div class="p-6 flex-grow overflow-y-auto">
+                <h3 id="explore-modal-name" class="text-2xl font-bold text-slate-800 mb-3"></h3>
+                <p id="explore-modal-desc" class="text-slate-600 text-base leading-relaxed"></p>
+            </div>
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-center flex-shrink-0">
+                <button onclick="showRandomExploreActivity()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-transform hover:-translate-y-1 shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    Conhecer outro local
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <script type="module">
         // Importações do Firebase
@@ -4566,6 +4614,7 @@ window.addEventListener('popstate', (event) => {
             if (user) {
 
                 currentUserId = user.uid; // Guarda o ID do usuário logado
+                checkExploreCardVisibility(); //checa opção do card Explorar o Mundo
 
                 // --- VERIFICAÇÃO DE CONVITE PENDENTE PELO WHATSAPP ---
                 const pendingTripId = sessionStorage.getItem('pendingInviteTripId');
@@ -14077,6 +14126,120 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         }
 
+        // ==========================================
+        // INÍCIO: LÓGICA DO "EXPLORAR O MUNDO"
+        // ==========================================
+
+        window.openExploreWorldModal = () => {
+            showRandomExploreActivity();
+            openModal('explore-world-modal');
+        };
+
+        window.showRandomExploreActivity = () => {
+            if (!globalSuggestedCities || globalSuggestedCities.length === 0) {
+                alert("As atividades sugeridas ainda estão sendo carregadas ou estão vazias. Tente novamente em instantes.");
+                return;
+            }
+
+            let allActivities = [];
+            
+            // Coleta as atividades que tenham foto e descrição (prioridade para ficar mais bonito)
+            globalSuggestedCities.forEach(cityObj => {
+                if (cityObj.activities) {
+                    Object.values(cityObj.activities).forEach(act => {
+                        if (act.imageUrl && act.description) {
+                            allActivities.push({
+                                cityName: cityObj.cityName,
+                                country: cityObj.country || '',
+                                ...act
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Fallback: Se NENHUMA tiver foto e descrição, tenta pegar qualquer uma
+            if (allActivities.length === 0) {
+                globalSuggestedCities.forEach(cityObj => {
+                    if (cityObj.activities) {
+                        Object.values(cityObj.activities).forEach(act => {
+                            allActivities.push({
+                                cityName: cityObj.cityName,
+                                country: cityObj.country || '',
+                                ...act
+                            });
+                        });
+                    }
+                });
+            }
+
+            if (allActivities.length === 0) {
+                alert("Não encontramos atividades detalhadas no momento.");
+                return;
+            }
+
+            // Sorteia uma atividade aleatória
+            const randomIndex = Math.floor(Math.random() * allActivities.length);
+            const randomAct = allActivities[randomIndex];
+
+            // Atualiza a View do Modal
+            const imgEl = document.getElementById('explore-modal-image');
+            imgEl.src = randomAct.imageUrl || 'https://images.unsplash.com/photo-1488085061387-422e29b40080?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+            
+            const locationText = randomAct.country ? `${randomAct.cityName}, ${randomAct.country}` : randomAct.cityName;
+            document.querySelector('#explore-modal-city span:last-child').textContent = locationText;
+            
+            document.getElementById('explore-modal-name').textContent = randomAct.name;
+            document.getElementById('explore-modal-desc').textContent = randomAct.description || 'Uma experiência sugerida pela nossa curadoria para o seu próximo destino.';
+        };
+
+        window.hideExploreCard = (event) => {
+            if (event) event.stopPropagation();
+            if (!currentUserId) return;
+            localStorage.setItem(`hideExploreCard_${currentUserId}`, 'true');
+            checkExploreCardVisibility();
+        };
+
+        window.toggleExploreCardVisibility = (event) => {
+            if (event) event.preventDefault();
+            if (!currentUserId) return;
+            
+            const isHidden = localStorage.getItem(`hideExploreCard_${currentUserId}`) === 'true';
+            if (isHidden) {
+                localStorage.removeItem(`hideExploreCard_${currentUserId}`);
+            } else {
+                localStorage.setItem(`hideExploreCard_${currentUserId}`, 'true');
+            }
+            
+            checkExploreCardVisibility();
+            const userMenuDropdown = document.getElementById('user-menu-dropdown');
+            if(userMenuDropdown) userMenuDropdown.classList.add('hidden');
+        };
+
+        window.checkExploreCardVisibility = () => {
+            if (!currentUserId) return;
+            const isHidden = localStorage.getItem(`hideExploreCard_${currentUserId}`) === 'true';
+            const exploreSection = document.getElementById('explore-world-section');
+            const toggleBtn = document.getElementById('toggle-explore-card-btn');
+            
+            if (exploreSection) {
+                if (isHidden) {
+                    exploreSection.classList.add('hidden');
+                } else {
+                    exploreSection.classList.remove('hidden');
+                }
+            }
+            
+            if (toggleBtn) {
+                toggleBtn.textContent = isHidden ? "Mostrar 'Explorar o mundo'" : "Ocultar 'Explorar o mundo'";
+                toggleBtn.classList.remove('hidden'); // Garante que o botão apareça depois do login
+            }
+        };
+
+        // ==========================================
+        // FIM: LÓGICA DO "EXPLORAR O MUNDO"
+        // ==========================================
+
     </script>
 
 <button id="back-to-top-btn" onclick="scrollToTop()" class="hidden fixed bottom-8 left-8 z-40 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
@@ -14108,7 +14271,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 </button>
             </div>
             <div class="mr-12 w-2.5 h-2.5 bg-white border-r border-b border-slate-200 rotate-45 -mt-1.5 shadow-sm"></div>
-        </div>
+        </div>        
 
 </body>
 </html>
