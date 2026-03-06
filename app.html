@@ -965,7 +965,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.15 | 05/03/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.16 | 06/03/2026, 07:55</p>
             </main>
         </div>
 
@@ -2992,23 +2992,27 @@
     </div>
 
     <div id="explore-world-modal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md m-4 overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="relative h-48 bg-slate-200 flex-shrink-0">
-                <img id="explore-modal-image" src="" alt="Explorar o mundo" class="w-full h-full object-cover">
-                <button onclick="closeModal('explore-world-modal')" class="absolute top-3 right-3 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition-colors backdrop-blur-sm" title="Fechar">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md m-4 overflow-hidden flex flex-col h-[500px] max-h-[90vh]">
+            
+            <div id="explore-modal-img-container" class="relative h-48 bg-slate-200 flex-shrink-0 animate-pulse transition-colors duration-300">
+                <img id="explore-modal-image" src="" alt="Explorar o mundo" class="w-full h-full object-cover opacity-0 transition-opacity duration-300 ease-in-out">
+                
+                <button onclick="closeModal('explore-world-modal')" class="absolute top-3 right-3 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 transition-colors backdrop-blur-sm z-10" title="Fechar">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>
-                <div class="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20">
+                <div class="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1 rounded-full border border-white/20 z-10">
                     <span id="explore-modal-city" class="text-white text-sm font-semibold tracking-wide flex items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                         <span></span>
                     </span>
                 </div>
             </div>
+            
             <div class="p-6 flex-grow overflow-y-auto">
                 <h3 id="explore-modal-name" class="text-2xl font-bold text-slate-800 mb-3"></h3>
                 <p id="explore-modal-desc" class="text-slate-600 text-base leading-relaxed"></p>
             </div>
+            
             <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-center flex-shrink-0">
                 <button onclick="showRandomExploreActivity()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-transform hover:-translate-y-1 shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
@@ -14135,6 +14139,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             openModal('explore-world-modal');
         };
 
+        // Criamos um Set global para guardar as atividades já exibidas e não repeti-las
+        if (!window.shownExploreActivities) {
+            window.shownExploreActivities = new Set();
+        }
+
         window.showRandomExploreActivity = () => {
             if (!globalSuggestedCities || globalSuggestedCities.length === 0) {
                 alert("As atividades sugeridas ainda estão sendo carregadas ou estão vazias. Tente novamente em instantes.");
@@ -14143,7 +14152,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             let allActivities = [];
             
-            // Coleta as atividades que tenham foto e descrição (prioridade para ficar mais bonito)
+            // Coleta as atividades
             globalSuggestedCities.forEach(cityObj => {
                 if (cityObj.activities) {
                     Object.values(cityObj.activities).forEach(act => {
@@ -14151,6 +14160,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                             allActivities.push({
                                 cityName: cityObj.cityName,
                                 country: cityObj.country || '',
+                                uniqueId: `${cityObj.cityName}-${act.name}`, // Identificador único para evitar repetição
                                 ...act
                             });
                         }
@@ -14158,32 +14168,44 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
             });
 
-            // Fallback: Se NENHUMA tiver foto e descrição, tenta pegar qualquer uma
-            if (allActivities.length === 0) {
-                globalSuggestedCities.forEach(cityObj => {
-                    if (cityObj.activities) {
-                        Object.values(cityObj.activities).forEach(act => {
-                            allActivities.push({
-                                cityName: cityObj.cityName,
-                                country: cityObj.country || '',
-                                ...act
-                            });
-                        });
-                    }
-                });
-            }
-
             if (allActivities.length === 0) {
                 alert("Não encontramos atividades detalhadas no momento.");
                 return;
             }
 
-            // Sorteia uma atividade aleatória
-            const randomIndex = Math.floor(Math.random() * allActivities.length);
-            const randomAct = allActivities[randomIndex];
+            // Filtra apenas as atividades que ainda NÃO foram mostradas
+            let availableActivities = allActivities.filter(act => !window.shownExploreActivities.has(act.uniqueId));
 
-            // Atualiza a View do Modal
+            // Se o usuário já viu TODAS as opções, nós resetamos o ciclo
+            if (availableActivities.length === 0) {
+                window.shownExploreActivities.clear();
+                availableActivities = allActivities; // Volta a ter todas disponíveis
+            }
+
+            // Sorteia uma atividade dentre as disponíveis
+            const randomIndex = Math.floor(Math.random() * availableActivities.length);
+            const randomAct = availableActivities[randomIndex];
+
+            // Adiciona ao Set para não repetir nas próximas rodadas
+            window.shownExploreActivities.add(randomAct.uniqueId);
+
+            // ==========================================
+            // Lógica visual: Loading de Imagem e UI
+            // ==========================================
             const imgEl = document.getElementById('explore-modal-image');
+            const imgContainer = document.getElementById('explore-modal-img-container');
+            
+            // 1. Esconde a imagem atual e ativa o "esqueleto" piscante
+            imgEl.classList.add('opacity-0');
+            imgContainer.classList.add('animate-pulse');
+
+            // 2. Quando a nova imagem terminar de baixar da internet, nós a exibimos
+            imgEl.onload = () => {
+                imgEl.classList.remove('opacity-0');
+                imgContainer.classList.remove('animate-pulse');
+            };
+
+            // 3. Só depois de configurar o onload, injetamos a nova URL e os novos textos
             imgEl.src = randomAct.imageUrl || 'https://images.unsplash.com/photo-1488085061387-422e29b40080?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
             
             const locationText = randomAct.country ? `${randomAct.cityName}, ${randomAct.country}` : randomAct.cityName;
