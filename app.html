@@ -965,7 +965,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.16 | 06/03/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.17 | 07/03/2026, 07:55</p>
             </main>
         </div>
 
@@ -3499,11 +3499,18 @@ window.addEventListener('popstate', (event) => {
             });
         }
 
-        // --- INÍCIO: REPLICAR DATA DE INÍCIO NA DATA DE FIM ---
+        // --- INÍCIO: REPLICAR DATA DE INÍCIO NA DATA DE FIM E PRIMEIRA CIDADE ---
         document.getElementById('trip-start-date').addEventListener('change', function() {
             const startDate = this.value;
             if (startDate) {
+                // 1. Replica para a data de fim da viagem (comportamento original)
                 document.getElementById('trip-end-date').value = startDate;
+                
+                // 2. NOVO: Atualiza automaticamente a data de chegada da primeira cidade
+                const primeiraCidadeInput = document.querySelector('#trip-cities-container .city-arrival-date');
+                if (primeiraCidadeInput) {
+                    primeiraCidadeInput.value = startDate;
+                }
             }
         });
 
