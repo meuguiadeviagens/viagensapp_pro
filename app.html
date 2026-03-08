@@ -965,7 +965,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.17 | 07/03/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.18 | 08/03/2026, 07:55</p>
             </main>
         </div>
 
@@ -3008,7 +3008,7 @@
                 </div>
             </div>
             
-            <div class="p-6 flex-grow overflow-y-auto">
+            <div id="explore-modal-content" class="p-6 flex-grow overflow-y-auto">
                 <h3 id="explore-modal-name" class="text-2xl font-bold text-slate-800 mb-3"></h3>
                 <p id="explore-modal-desc" class="text-slate-600 text-base leading-relaxed"></p>
             </div>
@@ -14220,6 +14220,12 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             
             document.getElementById('explore-modal-name').textContent = randomAct.name;
             document.getElementById('explore-modal-desc').textContent = randomAct.description || 'Uma experiência sugerida pela nossa curadoria para o seu próximo destino.';
+      
+            // Retorna a barra de rolagem do texto para o topo
+            const modalContent = document.getElementById('explore-modal-content');
+            if (modalContent) {
+                modalContent.scrollTop = 0;
+            }
         };
 
         window.hideExploreCard = (event) => {
