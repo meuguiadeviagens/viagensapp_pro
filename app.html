@@ -965,7 +965,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.18 | 08/03/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.19 | 13/03/2026, 07:55</p>
             </main>
         </div>
 
@@ -9183,15 +9183,32 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 window.pendingImportTripId = newTripId; 
                 console.log("ID da viagem salvo para importação:", window.pendingImportTripId);
 
+                // --- INÍCIO: CRIAÇÃO DE ATIVIDADES INICIAIS COM BUSCA DE IMAGEM ---
                 const initialActivities = {};
-                citiesToInclude.forEach(city => {
+                
+                // Usando for...of em vez de forEach para podermos usar o await
+                for (const city of citiesToInclude) {
                     const activityId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    
+                    // Se a cidade não tem imagem cadastrada, usamos nossa nova função para buscar
+                    let finalActivityImageUrl = city.imageUrl;
+                    if (!finalActivityImageUrl) {
+                        finalActivityImageUrl = await fetchCityImageForActivity(city.name);
+                    }
+
                     initialActivities[activityId] = {
-                        id: activityId, name: city.name, date: city.date, time: "08:00",
-                        type: "Cidade", icon: "default", description: `Chegada em ${city.name}`,
-                        imageUrl: city.imageUrl || '', authorName: userProfile.fullName || 'Sistema'
+                        id: activityId, 
+                        name: city.name, 
+                        date: city.date, 
+                        time: "08:00",
+                        type: "Cidade", 
+                        icon: "default", 
+                        description: `Chegada em ${city.name}`,
+                        imageUrl: finalActivityImageUrl || '', // Aplica a imagem encontrada
+                        authorName: userProfile.fullName || 'Sistema'
                     };
-                });
+                }
+                // --- FIM: CRIAÇÃO DE ATIVIDADES INICIAIS COM BUSCA DE IMAGEM ---
 
                 await update(ref(db, `trips/${newTripId}`), { activities: initialActivities });
                 await set(ref(db, `users/${user.uid}/memberOf/${newTripId}`), true);
@@ -12856,46 +12873,70 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             console.log(`Cidade selecionada: ${cityName}, Imagem: ${imageUrl}`);
         };
 
-        async function autoFillCityImage(cityName, targetInputId) {
-            if (!cityName) return;
-            
+        // --- INÍCIO: BUSCA DE IMAGEM AUTOMÁTICA PARA ATIVIDADES TIPO 'CIDADE' ---
+        async function fetchCityImageForActivity(cityName) {
+            if (!cityName) return '';
             try {
-                // Busca no banco de sugestões que você já carrega no app
-                const suggestionsRef = ref(db, 'suggestedItineraries');
-                const snapshot = await get(suggestionsRef);
+                // Criamos um array falso para usar a sua função já existente getPriorityImageUrl
+                let imageUrl = await getPriorityImageUrl([{ name: cityName }]);
                 
-                if (snapshot.exists()) {
-                    const cities = snapshot.val();
-                    // Procura a cidade pelo nome (case insensitive)
-                    const foundCity = Object.values(cities).find(c => 
-                        c.cityName.toLowerCase().trim() === cityName.toLowerCase().trim()
-                    );
-
-                    if (foundCity && foundCity.imageUrl) {
-                        document.getElementById(targetInputId).value = foundCity.imageUrl;
-                        console.log("Imagem importada automaticamente para:", cityName);
-                    }
+                // Se não achou na base, usa o fallback nativo do Bing
+                if (!imageUrl) {
+                    imageUrl = `https://www.bing.com/th?id=OIP.static&q=${encodeURIComponent(cityName + " city landscape travel")}&w=1280&h=720&c=7&rs=1&p=0&qlt=90`;
                 }
+                return imageUrl;
             } catch (error) {
-                console.error("Erro ao buscar imagem da cidade:", error);
+                console.error("Erro ao buscar imagem da cidade para a atividade:", error);
+                return '';
             }
         }
 
-        // Adicione um listener no campo de nome da atividade
-        document.getElementById('activity-name').addEventListener('blur', function() {
-            const type = document.getElementById('activity-type').value;
-            if (type === 'Cidade') {
-                autoFillCityImage(this.value, 'activity-image-url');
-            }
-        });
+        async function autoFillActivityCityImage(nameInputId, typeInputId, imageInputId) {
+            const nameInput = document.getElementById(nameInputId);
+            const typeInput = document.getElementById(typeInputId);
+            const imageInput = document.getElementById(imageInputId);
 
-        // Faça o mesmo para o campo de tipo, caso o usuário mude o tipo após digitar o nome
-        document.getElementById('activity-type').addEventListener('change', function() {
-            if (this.value === 'Cidade') {
-                const name = document.getElementById('activity-name').value;
-                autoFillCityImage(name, 'activity-image-url');
+            if (!nameInput || !typeInput || !imageInput) return;
+
+            if (nameInput.value.trim() !== '' && typeInput.value === 'Cidade' && !imageInput.value) {
+                const placeholderOriginal = imageInput.placeholder;
+                imageInput.placeholder = "Buscando imagem automaticamente...";
+                
+                const urlEncontrada = await fetchCityImageForActivity(nameInput.value.trim());
+                
+                if (urlEncontrada) {
+                    imageInput.value = urlEncontrada;
+                }
+                
+                imageInput.placeholder = placeholderOriginal;
+            }
+        }
+
+        // Escutadores de Eventos (Protegidos)
+        document.addEventListener('DOMContentLoaded', () => {
+            // Escuta o modal de ADICIONAR ATIVIDADE
+            const addActivityName = document.getElementById('activity-name');
+            const addActivityType = document.getElementById('activity-type');
+            
+            if (addActivityName) {
+                addActivityName.addEventListener('blur', () => autoFillActivityCityImage('activity-name', 'activity-type', 'activity-image-url'));
+            }
+            if (addActivityType) {
+                addActivityType.addEventListener('change', () => autoFillActivityCityImage('activity-name', 'activity-type', 'activity-image-url'));
+            }
+
+            // Escuta o modal de EDITAR ATIVIDADE
+            const editActivityName = document.getElementById('edit-activity-name');
+            const editActivityType = document.getElementById('edit-activity-type');
+            
+            if (editActivityName) {
+                editActivityName.addEventListener('blur', () => autoFillActivityCityImage('edit-activity-name', 'edit-activity-type', 'edit-activity-image-url'));
+            }
+            if (editActivityType) {
+                editActivityType.addEventListener('change', () => autoFillActivityCityImage('edit-activity-name', 'edit-activity-type', 'edit-activity-image-url'));
             }
         });
+        // --- FIM: BUSCA DE IMAGEM AUTOMÁTICA ---
 
         //busca cidade na hora de criar viagem (para pegar imagem URL card)
         async function autoFillNewTripCityImage(cityName, imageInput) {
