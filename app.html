@@ -965,7 +965,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.19 | 13/03/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.20 | 23/03/2026, 07:55</p>
             </main>
         </div>
 
@@ -5630,14 +5630,13 @@ window.addEventListener('popstate', (event) => {
             // --- 2. LÓGICA NOVA: Faixa de Dias ---
             const status = getTripStatus(trip.startDate);
             let countdownHtml = '';
-            
             if (status) {
-                // ALTERAÇÃO: Removido 'absolute', 'bottom-0', 'z-20', etc.
-                // Adicionado 'py-0.5' para ficar uma faixa mais fina e elegante
+                // Mudamos de top-0 para bottom-0 para fixar na base da imagem
                 countdownHtml = `
-                <div class="w-full py-0.5 px-3 text-center ${status.classes}">
-                    <p class="text-[10px] font-bold uppercase tracking-wide">${status.text}</p>
-                </div>`;
+                    <div class="absolute bottom-0 left-0 w-full py-1 px-3 text-center z-10 ${status.classes}" 
+                        style="${status.style}">
+                        <p class="text-[10px] font-bold uppercase tracking-wide m-0">${status.text}</p>
+                    </div>`;
             }
 
             // ... (Lógica existente de papéis e badges) ...
@@ -5752,10 +5751,7 @@ window.addEventListener('popstate', (event) => {
                         <span class="text-[10px] font-bold text-slate-700">${travelersCount}</span>
                     </div>
 
-                    </div>
-
-                ${countdownHtml}
-                </div>
+                    ${countdownHtml} </div>
 
                 <div class="${textContainerClasses}">
                     <div class="flex items-center justify-between mb-1">
@@ -12733,37 +12729,40 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
         }
 
-        // Função para calcular os dias restantes e a cor da faixa
+        // Função para calcular os dias restantes e a cor da faixa (Versão com Transparência Garantida)
         function getTripStatus(dateString) {
             if (!dateString) return null;
-            
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            
             const tripDate = new Date(dateString);
             if (isNaN(tripDate.getTime())) return null;
 
             const diffTime = tripDate - today;
             const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
-            // Regra nova: 
-            // Se já passou (daysLeft < 0) OU falta mais de 90 dias, não mostra nada.
-            if (daysLeft < 0 || daysLeft > 90) return null;
+            if (daysLeft < 0) return null;
 
             let classes = "";
-            
-            if (daysLeft < 31) {
-                classes = "bg-red-600 text-white";       // Urgente (0-30)
+            let text = "";
+            let style = "";
+
+            if (daysLeft === 0) {
+                text = "É hoje!";
+                classes = "bg-red-600 text-white";
+            } else if (daysLeft < 31) {
+                text = `Faltam ${daysLeft} dias`;
+                classes = "bg-red-600 text-white";
             } else if (daysLeft < 61) {
-                classes = "bg-yellow-400 text-slate-900"; // Atenção (31-60)
+                text = `Faltam ${daysLeft} dias`;
+                classes = "bg-yellow-400 text-slate-900";
             } else {
-                classes = "bg-green-600 text-white";     // Destaque (61-90)
+                const months = Math.floor(daysLeft / 30);
+                text = `Faltam ${months} ${months === 1 ? 'mês' : 'meses'}`;
+                // Forçamos o background-color com !important para o Tailwind não sobrescrever
+                classes = "text-black font-bold"; 
+                style = "background-color: rgba(255, 255, 255, 0.6) !important; backdrop-filter: blur(4px);";
             }
 
-            return {
-                text: daysLeft === 0 ? "É hoje!" : `Faltam ${daysLeft} dias`,
-                classes: classes
-            };
+            return { text, classes, style };
         }
 
         // Função para adicionar uma nova linha de cidade com autocomplete
