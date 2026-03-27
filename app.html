@@ -965,7 +965,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.21 | 26/03/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.22 | 26/03/2026, 07:55</p>
             </main>
         </div>
 
@@ -7488,7 +7488,7 @@ let dividerHtml = '';
             }
             if(searchBtn) {
                 searchBtn.onclick = () => window.open(`https://www.google.com/search?q=${encodeURIComponent(ds.name)}`, '_blank');
-            }
+            }            
 
             // Z-INDEX (Força o modal de visualização a ficar na frente do Log)
             const logModal = document.getElementById('activity-log-modal');
@@ -7496,7 +7496,16 @@ let dividerHtml = '';
             if (logModal) logModal.style.zIndex = '1050';
             if (viewModal) viewModal.style.zIndex = '2000';
 
+            // 1. PRIMEIRO ABRE O MODAL (Remove o hidden)
             openModal('view-activity-modal');
+
+            // 2. DEPOIS ZERA O SCROLL (Com um pequeno atraso para o navegador renderizar)
+            setTimeout(() => {
+                const scrollContainer = document.getElementById('view-activity-scroll-content');
+                if (scrollContainer) {
+                    scrollContainer.scrollTop = 0;
+                }
+            }, 10);
         };
 
         // NOVO: Funções para abrir os modais de anotação
