@@ -965,7 +965,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.22 | 26/03/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.23 | 11/04/2026, 22:55</p>
             </main>
         </div>
 
@@ -1278,7 +1278,7 @@
                         <span>Despesas</span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
                     </button>                    
-                    <button onclick="scrollToItinerary()" class="flex items-center gap-2 text-sm bg-cyan-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-cyan-400 transition-colors">
+                    <button onclick="scrollToItinerary(); window.scrollToCurrentDay();" class="flex items-center gap-2 text-sm bg-cyan-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-cyan-400 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-collapse"><path d="m3 10 2.5-2.5L3 5"></path><path d="m3 19 2.5-2.5L3 14"></path><path d="M10 6h11"></path><path d="M10 12h11"></path><path d="M10 18h11"></path></svg>
                         <span>Roteiro</span>
                     </button>
@@ -1387,11 +1387,14 @@
                  <div class="flex justify-between items-center mb-4">
                     <h2 class="text-2xl font-semibold">Roteiro</h2>
                     <div class="flex items-center gap-2">
+                        <button id="toggle-all-days-btn" onclick="toggleAllDays()" class="text-sm bg-blue-100 text-blue-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-200 transition-colors">
+                            ▼ <!--Expandir Tudo-->
+                        </button>
+                        
                         <button onclick="openImportSuggestionsModal()" id="import-suggestions-btn" class="text-sm bg-indigo-600 text-white font-semibold px-3 py-1.5 rounded-lg hover:bg-indigo-700 transition-colors">
                             Sugestões
                         </button>                       
                         <button id="reorg-start-btn" onclick="toggleReorganizationMode()" class="text-sm bg-slate-600 text-white font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-700 transition-colors">Reordenar</button>
-                        
                     </div>
                 </div>
                 <div id="daily-itinerary-list">
@@ -1572,7 +1575,7 @@
                     </div>   
 
                     <button id="toggle-all-sections-btn" onclick="toggleAllChecklistSections()" class="w-full sm:w-auto py-3 sm:py-2 px-4 text-sm font-bold text-blue-600 border border-blue-200 bg-blue-50 sm:bg-transparent sm:border-transparent rounded-lg hover:bg-blue-100 transition-colors">
-                        Recolher Tudo
+                        ▲ <!-- Recolher Tudo -->
                     </button>             
                 </div>
 
@@ -6292,6 +6295,12 @@ window.addEventListener('popstate', (event) => {
             const endDate = new Date(trip.endDate);
             const totalTripDays = Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             let dayCounter = 1;
+
+            // Pegamos a data atual e isolamos o YYYY-MM-DD ajustado ao timezone
+            const todayObj = new Date();
+            todayObj.setMinutes(todayObj.getMinutes() - todayObj.getTimezoneOffset());
+            const todayStr = todayObj.toISOString().split('T')[0];
+
             let currentDate = new Date(trip.startDate);
             let currentCityColor = 'transparent';
 
@@ -6467,11 +6476,16 @@ window.addEventListener('popstate', (event) => {
                 
                 let buttonClasses = activeVariationId !== 'original' ? 'bg-blue-600 text-white shadow-md border border-blue-700' : (hasVariations ? 'bg-blue-500 text-white shadow-md border border-blue-600' : 'bg-slate-100 text-slate-600 border border-slate-200');
 
+                const isPastDay = dayKey < todayStr;
+                const listHiddenClass = isPastDay ? 'hidden' : '';
+                const chevronRotation = isPastDay ? '-rotate-90' : '';
+
                 dayPanel.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
-                        <div class="flex items-center gap-3">
-                            <svg class="drag-handle" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-                            <h3 class="font-bold text-lg text-slate-800">${newDateDisplay} | ${dayCounter}/${totalTripDays}</h3>
+                        <div class="flex items-center gap-3 cursor-pointer group select-none" onclick="toggleDay('${dayKey}')" title="Clique para expandir/recolher">
+                            <svg class="drag-handle" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" onclick="event.stopPropagation()"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                            <h3 class="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">${newDateDisplay} | ${dayCounter}/${totalTripDays}</h3>
+                            <svg id="chevron-${dayKey}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 transition-transform duration-300 ${chevronRotation}"><path d="m6 9 6 6 6-6"/></svg>
                         </div>
                         ${isReadOnly ? '' : `
                         <div class="flex items-center gap-2">
@@ -6481,7 +6495,8 @@ window.addEventListener('popstate', (event) => {
                                 <div id="popup-${dayKey}" class="variation-popup hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-2xl border border-slate-200 z-[60] py-2">
                                     <p class="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Roteiros do Dia</p>
                                     <button onclick="selectVariation('${dayKey}', 'original')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center gap-2">
-                                        <span class="w-2 h-2 rounded-full ${activeVariationId === 'original' ? 'bg-blue-500' : 'bg-slate-300'}"></span> 📌 Roteiro Original
+                                        <span class="w-2 h-2 rounded-full ${activeVariationId === 'original' ? 'bg-blue-500' : 'bg-slate-300'}"></span>
+                                        📌 Roteiro Original
                                     </button>
                                     ${extraVariationsHtml}
                                     <button onclick="createNewVariation('${dayKey}')" class="w-full text-left px-4 py-2 text-sm text-blue-600 font-semibold border-t mt-1 hover:bg-blue-50 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Nova Variação</button>
@@ -6490,7 +6505,7 @@ window.addEventListener('popstate', (event) => {
                             <button onclick="openAddActivityModal('${dayKey}')" oncontextmenu="openSuggestionsForDay(event, '${dayKey}')" class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full hover:bg-green-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
                         </div>`}
                     </div>
-                    <div class="activity-list border-l-2 border-slate-100 pl-2 space-y-1" data-date="${dayKey}">
+                    <div id="activity-list-${dayKey}" class="activity-list border-l-2 border-slate-100 pl-2 space-y-1 ${listHiddenClass}" data-date="${dayKey}">
                         ${eventsHtml}
                     </div>`;
 
@@ -6508,6 +6523,10 @@ window.addEventListener('popstate', (event) => {
                         initializeDaySorting();
                     }
                 }
+
+            // (Cole bem no final da função renderDailyItinerary)
+            updateToggleAllButtonState();
+            
         }
         
         function renderDetailList(elementId, items, itemTemplate, emptyMessage, isReadOnly) {
@@ -10572,7 +10591,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             });
 
             const toggleBtn = document.getElementById('toggle-all-sections-btn');
-            if(toggleBtn) toggleBtn.textContent = "Recolher Tudo";
+            if(toggleBtn) toggleBtn.textContent = "▲";
             
             // Reaplica o filtro se estiver ativo (isso mantém a lógica de 'mostrar somente pendentes')
             applyChecklistFilter();
@@ -10682,7 +10701,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 } else {
                     toggleBtn.classList.remove('hidden');
                     // Como o filtro expande tudo, ao sair dele, o botão deve estar pronto para "Recolher"
-                    toggleBtn.textContent = "Recolher Tudo"; 
+                    toggleBtn.textContent = "▲"; 
                 }
             }
 
@@ -11777,7 +11796,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             });
 
             // Atualiza o texto do botão
-            btn.textContent = isCurrentlyCollapsing ? "Expandir Tudo" : "Recolher Tudo";
+            btn.textContent = isCurrentlyCollapsing ? "▼" : "▲";
         };
 
         // CORREÇÃO: Força a reaplicação do filtro ao desbloquear o celular/voltar para a aba (voltar do Standby / Bloqueio de Tela / Suspensão)
@@ -14320,6 +14339,73 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         // ==========================================
         // FIM: LÓGICA DO "EXPLORAR O MUNDO"
         // ==========================================
+
+        // --- INÍCIO: CONTROLE DE EXPANDIR/RECOLHER DIAS ---
+        window.toggleDay = function(dayKey) {
+            const listElement = document.getElementById(`activity-list-${dayKey}`);
+            const chevronIcon = document.getElementById(`chevron-${dayKey}`);
+            if (!listElement) return;
+
+            if (listElement.classList.contains('hidden')) {
+                listElement.classList.remove('hidden');
+                if (chevronIcon) chevronIcon.classList.remove('-rotate-90');
+            } else {
+                listElement.classList.add('hidden');
+                if (chevronIcon) chevronIcon.classList.add('-rotate-90');
+            }
+            updateToggleAllButtonState();
+        };
+
+        window.toggleAllDays = function() {
+            const allLists = document.querySelectorAll('.activity-list[id^="activity-list-"]');
+            const toggleBtn = document.getElementById('toggle-all-days-btn');
+            
+            // ATUALIZADO: Agora verificamos se o texto contém a seta para baixo
+            const isExpanding = toggleBtn.innerText.includes('▼');
+
+            allLists.forEach(listElement => {
+                const dayKey = listElement.dataset.date;
+                const chevronIcon = document.getElementById(`chevron-${dayKey}`);
+                
+                if (isExpanding) {
+                    listElement.classList.remove('hidden');
+                    if (chevronIcon) chevronIcon.classList.remove('-rotate-90');
+                } else {
+                    listElement.classList.add('hidden');
+                    if (chevronIcon) chevronIcon.classList.add('-rotate-90');
+                }
+            });
+            
+            updateToggleAllButtonState();
+        };
+
+        window.updateToggleAllButtonState = function() {
+            const allLists = document.querySelectorAll('.activity-list[id^="activity-list-"]');
+            const toggleBtn = document.getElementById('toggle-all-days-btn');
+            if (!toggleBtn || allLists.length === 0) return;
+
+            const hasHidden = Array.from(allLists).some(list => list.classList.contains('hidden'));
+            
+            // ATUALIZADO: Define apenas os ícones (ou você pode colocar '▼ Expandir Tudo' se preferir)
+            toggleBtn.innerText = hasHidden ? '▼' : '▲';
+        };
+        // --- FIM: CONTROLE DE EXPANDIR/RECOLHER DIAS ---
+
+        window.scrollToCurrentDay = function() {
+            const todayObj = new Date();
+            todayObj.setMinutes(todayObj.getMinutes() - todayObj.getTimezoneOffset());
+            const todayStr = todayObj.toISOString().split('T')[0];
+
+            const todayList = document.getElementById(`activity-list-${todayStr}`);
+            if (todayList) {
+                const dayContainer = todayList.parentElement;
+                if (dayContainer) {
+                    setTimeout(() => {
+                        dayContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 300); 
+                }
+            }
+        };
 
     </script>
 
