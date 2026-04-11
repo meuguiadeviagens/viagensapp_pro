@@ -965,7 +965,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.26 | 11/04/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.27 | 11/04/2026, 07:55</p>
             </main>
         </div>
 
@@ -5669,38 +5669,42 @@ window.addEventListener('popstate', (event) => {
             tripCard.className = 'trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative';
             tripCard.onclick = () => showTripDetails(trip.id);
 
-            // --- 1. LÓGICA NOVA: Contagem de Viajantes ---
+            // --- NOVA LÓGICA: Verifica se é viagem passada logo no início ---
+            const today = new Date();
+            today.setUTCHours(0, 0, 0, 0);
+            const tripEndDate = new Date(trip.endDate);
+            const isPastTrip = tripEndDate < today;
+            // -----------------------------------------------------------------
+
+            // --- 1. LÓGICA DE Contagem de Viajantes ---
             const travelersCount = trip.travelers ? trip.travelers.length : 1;
 
-            // --- 2. LÓGICA NOVA: Faixa de Dias ---
+            // --- 2. LÓGICA DE Faixa de Dias ---
             const status = getTripStatus(trip.startDate);
             let countdownHtml = '';
             if (status) {
-                // Mudamos de top-0 para bottom-0 para fixar na base da imagem
                 countdownHtml = `
-                    <div class="absolute bottom-0 left-0 w-full py-1 px-3 text-center z-10 ${status.classes}" 
-                        style="${status.style}">
-                        <p class="text-[10px] font-bold uppercase tracking-wide m-0">${status.text}</p>
-                    </div>`;
+                <div class="absolute bottom-0 left-0 w-full py-1 px-3 text-center z-10 ${status.classes}" style="${status.style}">
+                    <p class="text-[10px] font-bold uppercase tracking-wide m-0">${status.text}</p>
+                </div>`;
             }
 
-            // ... (Lógica existente de papéis e badges) ...
             const userRole = (currentUserId && trip.members) ? trip.members[currentUserId] : null;
-            
+
             let notificationBadgeHtml = '';
-            if (checkTripHasNews(trip)) {
+            if (typeof checkTripHasNews === 'function' && checkTripHasNews(trip)) {
                 notificationBadgeHtml = `
-                <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-yellow-300 bg-green-700 rounded-full shadow-sm animate-pulse" title="Novas alterações nesta viagem">
-                    Novidades
-                </span>`;
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-yellow-300 bg-green-700 rounded-full shadow-sm animate-pulse" title="Novas alterações nesta viagem">
+                        Novidades
+                    </span>`;
             }
 
             let avulsaBadgeHtml = '';
-            if (currentUserLicense && currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[trip.id]) {
+            if (typeof currentUserLicense !== 'undefined' && currentUserLicense.purchasedTrips && currentUserLicense.purchasedTrips[trip.id]) {
                 avulsaBadgeHtml = `
-                <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-purple-700 bg-purple-100 border border-purple-200 rounded-full shadow-sm">
-                    Avulsa
-                </span>`;
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-[10px] sm:text-xs font-bold leading-none text-purple-700 bg-purple-100 border border-purple-200 rounded-full shadow-sm">
+                        Avulsa
+                    </span>`;
             }
 
             let ownerDisplayName = 'Carregando...';
@@ -5730,25 +5734,31 @@ window.addEventListener('popstate', (event) => {
                 `;
             }
 
+            // --- NOVA LÓGICA DE CORES PARA OS BOTÕES (Ficam cinza se a viagem já acabou) ---
+            const btnColorDeleteOwner = isPastTrip ? 'bg-slate-400 hover:bg-slate-500' : 'bg-red-500 hover:bg-red-600';
+            const btnColorDeleteGuest = isPastTrip ? 'bg-slate-400 hover:bg-slate-500' : 'bg-orange-500 hover:bg-orange-600';
+            const btnColorExpense   = isPastTrip ? 'bg-slate-400 hover:bg-slate-500' : 'bg-green-600 hover:bg-green-700';
+            const btnColorDuplicate = isPastTrip ? 'bg-slate-400 hover:bg-slate-500' : 'bg-blue-500 hover:bg-blue-600';
+
             let deleteButtonHtml = '';
             if (userRole === 'owner') {
                 deleteButtonHtml = `
-                <button onclick="deleteTrip(event, '${trip.id}')" title="Excluir Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-                </button>
+                    <button onclick="deleteTrip(event, '${trip.id}')" title="Excluir Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center ${btnColorDeleteOwner} text-white rounded-full transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    </button>
                 `;
             } else if (userRole === 'editor' || userRole === 'viewer') {
                 deleteButtonHtml = `
-                <button onclick="deleteTrip(event, '${trip.id}')" title="Sair da Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-                </button>
+                    <button onclick="deleteTrip(event, '${trip.id}')" title="Sair da Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center ${btnColorDeleteGuest} text-white rounded-full transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                    </button>
                 `;
             }
 
             const expenseShortcutHtml = `
-            <button onclick="openTripExpensesQuick(event, '${trip.id}')" title="Ver Despesas" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </button>
+                <button onclick="openTripExpensesQuick(event, '${trip.id}')" title="Ver Despesas" class="trip-card-action-button w-8 h-8 flex items-center justify-center ${btnColorExpense} text-white rounded-full transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </button>
             `;
 
             let imageContainerClasses = 'h-48';
@@ -5760,27 +5770,24 @@ window.addEventListener('popstate', (event) => {
                 textContainerClasses = 'p-4';
                 titleClasses = 'text-xl';
                 
-                const today = new Date();
-                today.setUTCHours(0,0,0,0);
-                const tripEndDate = new Date(trip.endDate);
-                if (tripEndDate < today) {
+                // Usa a verificação isPastTrip que subimos pro topo da função
+                if (isPastTrip) {
                     imageContainerClasses += ' grayscale';
                 }
             }
 
-            const isFavorite = userFavoriteTrips.has(trip.id);
+            const isFavorite = typeof userFavoriteTrips !== 'undefined' && userFavoriteTrips.has(trip.id);
             const starIcon = isFavorite ? 
                 `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>` : 
                 `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-star"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
 
-            // --- HTML MODIFICADO ABAIXO ---
             tripCard.innerHTML = `
                 <button onclick="toggleFeatured(event, '${trip.id}')" class="absolute top-3 left-3 z-30 w-8 h-8 flex items-center justify-center bg-white/70 backdrop-blur-sm text-yellow-500 rounded-full hover:bg-white transition-colors">
                     ${starIcon}
                 </button>
-
+                
                 <div class="absolute top-3 right-3 z-30 flex gap-2">
-                    <button onclick="duplicateTrip(event, '${trip.id}')" title="Duplicar Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors">
+                    <button onclick="duplicateTrip(event, '${trip.id}')" title="Duplicar Viagem" class="trip-card-action-button w-8 h-8 flex items-center justify-center ${btnColorDuplicate} text-white rounded-full transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
                     </button>
                     ${deleteButtonHtml}
@@ -5788,15 +5795,14 @@ window.addEventListener('popstate', (event) => {
                 </div>
 
                 <div class="${imageContainerClasses} bg-cover bg-center transition-all duration-300 relative" style="background-image: url('${trip.imageUrl}')">
-                    
                     <div class="absolute top-14 right-3 z-20 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 shadow-sm border border-slate-100">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                         </svg>
                         <span class="text-[10px] font-bold text-slate-700">${travelersCount}</span>
                     </div>
-
-                    ${countdownHtml} </div>
+                    ${countdownHtml}
+                </div>
 
                 <div class="${textContainerClasses}">
                     <div class="flex items-center justify-between mb-1">
