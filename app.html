@@ -965,7 +965,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.24 | 11/04/2026, 22:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.26 | 11/04/2026, 07:55</p>
             </main>
         </div>
 
@@ -5448,10 +5448,52 @@ window.addEventListener('popstate', (event) => {
 
             openModal('license-modal');
         };
+
+        // Função para verificar se há viagem em andamento e exibir o balão
+        window.checkOngoingTripStatus = () => {
+            const toast = document.getElementById('ongoing-trip-toast');
+            const nameEl = document.getElementById('ongoing-trip-name');
+            const clickArea = document.getElementById('ongoing-trip-click-area');
+            
+            if (!toast || tripsData.length === 0) return;
+
+            // Obtém data de hoje zerada (meia-noite local)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const ongoingTrip = tripsData.find(trip => {
+                const start = new Date(trip.startDate);
+                const end = new Date(trip.endDate);
+                // Garante comparação justa ignorando horas
+                start.setHours(0,0,0,0);
+                end.setHours(23,59,59,999);
+                return today >= start && today <= end;
+            });
+
+            if (ongoingTrip) {
+                nameEl.textContent = ongoingTrip.name;
+                toast.classList.remove('hidden');
+                
+                clickArea.onclick = () => {
+                    showTripDetails(ongoingTrip.id);
+                    // Tenta rolar para o dia atual se a função existir
+                    setTimeout(() => {
+                        if (typeof window.scrollToCurrentDay === 'function') {
+                            window.scrollToCurrentDay();
+                        }
+                    }, 600);
+                    toast.classList.add('hidden'); // Opcional: esconde após clicar
+                };
+            } else {
+                toast.classList.add('hidden');
+            }
+        };
         
         // --- FUNÇÕES DE RENDERIZAÇÃO ---
         // VERSÃO NOVA
         function renderTripLists() {
+
+            window.checkOngoingTripStatus();
 
             // --- INÍCIO DA LÓGICA DE VISIBILIDADE DO CHECKBOX ---
             // Verifica se existe ALGUMA viagem com novidade (usando sua função auxiliar checkTripHasNews)
@@ -11167,7 +11209,17 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             document.getElementById('my-expenses-trip-name').textContent = trip.name;
             document.getElementById('add-my-expense-form').reset();
-            populateMyExpenseCurrencySelect('my-expense-currency', 'BRL');
+            
+            // --- INÍCIO DA ALTERAÇÃO: Buscar última moeda do Firebase ---
+            get(ref(db, `${currentWalletPath}/lastCurrency`)).then((snapshot) => {
+                const savedCurrency = snapshot.exists() ? snapshot.val() : 'BRL';
+                populateMyExpenseCurrencySelect('my-expense-currency', savedCurrency);
+            }).catch(() => {
+                // Fallback de segurança para BRL
+                populateMyExpenseCurrencySelect('my-expense-currency', 'BRL');
+            });
+            // --- FIM DA ALTERAÇÃO ---
+
             populateMyExpenseCategorySelect('my-expense-category', 'geral');
 
             // Inicia listeners com o caminho calculado
@@ -11248,25 +11300,24 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             };
 
             try {
-                const newExpenseRef = push(myExpensesExpensesRef);
-                await set(newExpenseRef, newExpense);
+                await push(myExpensesExpensesRef, newExpense);
                 
+                // --- INÍCIO DA ALTERAÇÃO: Salvar preferência de moeda ---
+                // Salva a moeda usada na raiz da carteira atual
+                await update(ref(db, currentWalletPath), { lastCurrency: currency });
+
+                // Limpa o formulário
                 e.target.reset();
-                populateMyExpenseCurrencySelect('my-expense-currency', 'BRL');
-                populateMyExpenseCategorySelect('my-expense-category', 'geral'); 
-
-                // --- ADICIONE ESTE BLOCO ---
-                document.getElementById('info-modal-title').innerText = "Sucesso!";
-                document.getElementById('info-modal-message').innerText = "Despesa adicionada com sucesso!";
-                openModal('info-modal');
                 
-                // (Opcional) Fecha automaticamente após 1.5 segundos para não atrapalhar a digitação rápida
-                setTimeout(() => closeModal('info-modal'), 1500); 
-                // ---------------------------
+                // Repopula o select mantendo a moeda que acabou de ser inserida em vez de 'BRL'
+                populateMyExpenseCurrencySelect('my-expense-currency', currency);
+                // --- FIM DA ALTERAÇÃO ---
 
+                populateMyExpenseCategorySelect('my-expense-category', 'geral');
+                
             } catch (error) {
-                console.error("Erro ao adicionar despesa pessoal:", error);
-                alert("Não foi possível adicionar a despesa.");
+                console.error("Erro ao salvar despesa pessoal:", error);
+                alert("Não foi possível salvar a despesa.");
             }
         });
 
@@ -14478,7 +14529,34 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 </button>
             </div>
             <div class="mr-12 w-2.5 h-2.5 bg-white border-r border-b border-slate-200 rotate-45 -mt-1.5 shadow-sm"></div>
-        </div>        
+        </div>   
+        
+        <div id="ongoing-trip-toast" class="hidden fixed bottom-6 left-6 right-6 sm:left-auto sm:w-96 z-[5000] animate-bounce-slow">
+            <div class="bg-indigo-600 text-white p-4 rounded-2xl shadow-2xl border border-indigo-400 flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3 cursor-pointer flex-1" id="ongoing-trip-click-area">
+                    <div class="bg-white/20 p-2 rounded-full backdrop-blur-sm flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs font-bold uppercase tracking-wider text-indigo-200 leading-none mb-1">Viagem em andamento. Clique para ver o roteiro de hoje!</p>
+                        <h3 id="ongoing-trip-name" class="font-bold text-sm truncate leading-tight"></h3>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('ongoing-trip-toast').classList.add('hidden')" class="text-indigo-200 hover:text-white transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <style>
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-bounce-slow {
+            animation: bounce-slow 3s ease-in-out infinite;
+        }
+        </style>
 
 </body>
 </html>
