@@ -965,7 +965,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.23 | 11/04/2026, 22:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.24 | 11/04/2026, 22:55</p>
             </main>
         </div>
 
@@ -6526,6 +6526,11 @@ window.addEventListener('popstate', (event) => {
 
             // (Cole bem no final da função renderDailyItinerary)
             updateToggleAllButtonState();
+
+            // NOVA LINHA: Aplica o destaque visual no dia atual
+            if (typeof window.highlightCurrentDay === 'function') {
+                window.highlightCurrentDay();
+            }
             
         }
         
@@ -14406,6 +14411,41 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
             }
         };
+
+        // --- INÍCIO: DESTACAR O TÍTULO DO DIA ATUAL ---
+        window.highlightCurrentDay = function() {
+            // 1. Pega a data de hoje formatada (YYYY-MM-DD)
+            const todayObj = new Date();
+            todayObj.setMinutes(todayObj.getMinutes() - todayObj.getTimezoneOffset());
+            const todayStr = todayObj.toISOString().split('T')[0];
+
+            // 2. Procura a lista de atividades com a data de hoje
+            const todayList = document.getElementById(`activity-list-${todayStr}`);
+            
+            if (todayList) {
+                const dayContainer = todayList.parentElement;
+                if (dayContainer) {
+                    // 3. Busca o elemento <h3> (que é o título do dia)
+                    const titleElement = dayContainer.querySelector('h3');
+                    
+                    // Verifica se achou o título e se ele já não foi destacado antes
+                    if (titleElement && !titleElement.dataset.highlighted) {
+                        // Remove a cor escura padrão
+                        titleElement.classList.remove('text-slate-800');
+                        
+                        // Adiciona o destaque Tailwind (Fundo cyan claro, texto cyan escuro, borda e sombra)
+                        titleElement.classList.add('text-cyan-800', 'bg-cyan-100', 'px-3', 'py-1', 'rounded-lg', 'border', 'border-cyan-300', 'shadow-sm');
+                        
+                        // Adiciona um pin e a palavra "HOJE" antes do texto original
+                        titleElement.innerHTML = `📍 HOJE: ${titleElement.innerHTML}`;
+                        
+                        // Marca como destacado para não duplicar se a tela for re-renderizada
+                        titleElement.dataset.highlighted = "true";
+                    }
+                }
+            }
+        };
+        // --- FIM: DESTACAR O TÍTULO DO DIA ATUAL ---
 
     </script>
 
