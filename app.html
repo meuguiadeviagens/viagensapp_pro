@@ -965,7 +965,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.27 | 11/04/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.28 | 22/04/2026, 07:55</p>
             </main>
         </div>
 
@@ -1439,6 +1439,18 @@
                     </button>
                 </div>
                 <div class="panel-content mt-4">
+
+                    <div class="mt-6 pt-4 border-t flex flex-col items-center gap-3">
+                        <button onclick="calculateExpenseSummary()" class="w-full max-w-sm bg-blue-600 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-blue-700 transition-transform hover:scale-105">
+                            Calcular Resumo Final de Contas
+                        </button>
+                        <button onclick="showExpenseExplanation()" class="w-full max-w-sm bg-teal-500 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-teal-600 transition-transform hover:scale-105">
+                            Explicar Resumo de Contas
+                        </button>
+                        <button onclick="showSpendingPerPerson()" class="w-full max-w-sm bg-orange-500 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-orange-600 transition-transform hover:scale-105">
+                            Verificar despesas por pessoa
+                        </button>
+                    </div> <br>
    
                     <div id="add-expense-panel" class="bg-slate-50 border border-slate-200 rounded-lg mb-6 collapsed">
             <div class="flex justify-between items-center cursor-pointer p-4" onclick="toggleGenericPanel('add-expense-panel')">
@@ -1507,18 +1519,7 @@
 
     <div id="shared-expenses-list" class="space-y-3">
         </div>
-
-    <div class="mt-6 pt-4 border-t flex flex-col items-center gap-3">
-        <button onclick="calculateExpenseSummary()" class="w-full max-w-sm bg-blue-600 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-blue-700 transition-transform hover:scale-105">
-            Calcular Resumo Final de Contas
-        </button>
-        <button onclick="showExpenseExplanation()" class="w-full max-w-sm bg-teal-500 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-teal-600 transition-transform hover:scale-105">
-            Explicar Resumo de Contas
-        </button>
-        <button onclick="showSpendingPerPerson()" class="w-full max-w-sm bg-orange-500 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-orange-600 transition-transform hover:scale-105">
-            Verificar despesas por pessoa
-        </button>
-    </div>
+    
     </div>
    </section>
  </div>
