@@ -29,14 +29,23 @@
     <style>
 
         /* Força TODOS os modais a respeitarem a barra de navegação do celular */
+        /* Proteção Total para Modais: Topo (Notch) e Fundo (Menu) */
         div[id*="modal"] {
             box-sizing: border-box !important;
-            padding-bottom: calc(40px + env(safe-area-inset-bottom)) !important;
+            /* Empurra o conteúdo para baixo da barra de notificações/status */
+            padding-top: env(safe-area-inset-top) !important; 
+            /* Mantém a proteção que já tínhamos no fundo */
+            padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
         }
 
-        /* Se o modal tiver uma "caixa branca" interna que vai até o chão, damos uma margem a ela também */
+        /* Ajuste fino para a caixa branca interna do modal */
         div[id*="modal"] > div {
-            margin-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+            /* Dá uma margem extra para não grudar no limite da Safe Area */
+            margin-top: 15px !important;
+            margin-bottom: 15px !important;
+            /* Garante que modais muito grandes permitam scroll interno se necessário */
+            max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 40px) !important;
+            overflow-y: auto !important;
         }
 
         /* animação "Mais detalhes" ao adicionar atividades... */
@@ -950,6 +959,16 @@
                                 Abrir Viagem por ID (Admin)
                             </a>
                             <!--<a href="app.html" target="_self" class="block px-4 py-2 text-sm text-slate-700 border-t hover:bg-slate-100">Versão Beta</a>-->
+                            <a href="#" id="install-app-btn" onclick="event.preventDefault();" class="block px-4 py-2 text-sm text-slate-700 border-t border-slate-100 hover:bg-slate-100 transition-colors">
+                                <div class="flex items-center justify-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    <span>Instalar App</span>
+                                </div>
+                            </a>
                             <a href="contato.html" target="_blank" class="block px-4 py-2 text-sm text-slate-700 border-t hover:bg-slate-100">Contato</a>
                             <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-slate-100">Sair</a>
                         </div>
@@ -972,7 +991,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.29 | 25/04/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.32 | 25/04/2026, 07:55</p>
             </main>
         </div>
 
@@ -1177,8 +1196,8 @@
                     </button>
                 </div>
                 
-                <div class="flex-grow overflow-y-auto p-6 sm:px-8 pt-4">
-                    <h3 class="text-xl font-semibold mb-4">Importar Atividades Sugeridas</h3>
+                <div class="flex-grow overflow-y-auto p-6 sm:px-8 pt-4 pb-48">
+                    <h3 class="text-xl font-semibold mb-4">Importar Atividades</h3>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                         <div class="relative autocomplete-container">
@@ -1694,7 +1713,7 @@
 
                 <div class="border-t pt-4">
                     <label class="block text-sm font-bold text-slate-700 mb-2">Cidades a Visitar*</label>
-                    <div id="trip-cities-container" class="space-y-3">
+                    <div id="trip-cities-container" class="space-y-3" pb-48>
                         </div>
                     <button type="button" onclick="addCityRow()" class="mt-3 text-sm text-blue-600 font-semibold hover:underline flex items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -12865,6 +12884,13 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             return { text, classes, style };
         }
 
+        // O "Ouvinte Universal" para o container de cidades
+        document.getElementById('trip-cities-container').addEventListener('input', function(event) {
+            if (event.target && event.target.classList.contains('city-name-input')) {
+                handleCityAutocomplete(event.target);
+            }
+        });
+
         // Função para adicionar uma nova linha de cidade com autocomplete
         window.addCityRow = () => {
             const container = document.getElementById('trip-cities-container');
@@ -12875,9 +12901,9 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             row.innerHTML = `
                 <div class="flex-[2] relative">
                     <label class="block text-xs font-medium text-slate-500">Cidade</label>
-                    <input type="text" class="city-name-input mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm" placeholder="Digite o nome..." required oninput="handleCityAutocomplete(this)">
+                    <input type="text" class="city-name-input mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md text-sm" placeholder="Digite o nome..." required">
                     <input type="hidden" class="city-image-url-storage">
-                    <div class="city-suggestions-dropdown hidden absolute z-20 w-full bg-white border border-slate-300 rounded-md mt-1 shadow-lg max-h-40 overflow-y-auto"></div>
+                    <div class="city-suggestions-dropdown hidden absolute z-[60] w-full bg-white border border-slate-300 rounded-md shadow-2xl max-h-48 overflow-y-auto top-full mt-1"></div>
                 </div>
                 <div class="flex-1">
                     <label class="block text-xs font-medium text-slate-500">Chegada</label>
@@ -12933,7 +12959,13 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         // Autocomplete reutilizando a base de dados de sugestões existente
         window.handleCityAutocomplete = (input) => {
             const query = input.value.toLowerCase().trim();
-            const dropdown = input.nextElementSibling.nextElementSibling; // Localiza o .city-suggestions-dropdown
+            
+            // MUDANÇA CRUCIAL: Procura o dropdown pela classe dentro do mesmo "pai" do input.
+            // Isso ignora qualquer lixo que o Android injete no DOM.
+            const dropdown = input.parentElement.querySelector('.city-suggestions-dropdown');
+            
+            // Trava de segurança: Se não achar o dropdown, não faz nada para não quebrar o app
+            if (!dropdown) return;
             
             if (query.length < 1) {
                 dropdown.classList.add('hidden');
@@ -12946,7 +12978,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             if (filtered.length > 0) {
                 dropdown.innerHTML = filtered.map(city => `
-                    <div class="p-2 hover:bg-slate-100 cursor-pointer text-sm" 
+                    <div class="p-3 hover:bg-slate-100 cursor-pointer text-sm border-b border-slate-50 last:border-0" 
                         onclick="selectCitySuggestion(this, '${city.cityName.replace(/'/g, "\\'")}', '${city.imageUrl || ''}')">
                         ${city.cityName} <span class="text-xs text-slate-400">(${city.country})</span>
                     </div>
@@ -14516,6 +14548,57 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
         };
         // --- FIM: DESTACAR O TÍTULO DO DIA ATUAL ---
+
+        //instalar "app" (atalho na tela inicial para abrir pelo navegador)
+        document.addEventListener('DOMContentLoaded', () => {
+            const installBtn = document.getElementById('install-app-btn');
+            let deferredPrompt;
+
+            // Detecta se é um dispositivo Apple (iPhone/iPad)
+            const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+
+            // Captura o evento de instalação nativo do Android silenciosamente e guarda na gaveta
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+            });
+
+            if (installBtn) {
+                installBtn.addEventListener('click', async (event) => {
+                    event.preventDefault(); // Previne o pulo da página
+                    
+                    // 1. Verificamos se JÁ ESTÁ instalado exatamente na hora do clique
+                    const isAppInstalled = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+                    
+                    if (isAppInstalled) {
+                        // Se já tá no APK ou na tela inicial do celular, avisa com carinho
+                        alert('✨ O NãoVouSozinho já está instalado e rodando perfeitamente no seu dispositivo!');
+                        return; // Para o código aqui
+                    }
+
+                    // 2. Se não tá instalado e é iOS (iPhone)
+                    if (isIos) {
+                        alert('🍎 Para instalar no iPhone:\n\n1. Utilizando o Safari, toque no ícone de "Compartilhar" (quadrado com uma seta para cima) na barra inferior do Safari.\n2. Role um pouco para baixo e toque em "Adicionar à Tela de Início".');
+                        return;
+                    }
+
+                    // 3. Se não tá instalado, é Android, e o navegador liberou o prompt nativo
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        
+                        if (outcome === 'accepted') {
+                            console.log('Usuário aceitou a instalação');
+                        }
+                        deferredPrompt = null; // Limpa para não dar erro se clicar de novo
+                    } 
+                    // 4. Fallback (Se for Android/Navegador antigo que bloqueou o prompt automático)
+                    else {
+                        alert('📱 Para instalar o app:\n\nAbra o menu do seu navegador (geralmente nos três pontinhos no canto superior direito) e selecione "Compartilhar/Transmitir" e depois "Adicionar à Tela Inicial" ou "Instalar Aplicativo".');
+                    }
+                });
+            }
+        });
 
     </script>
 
