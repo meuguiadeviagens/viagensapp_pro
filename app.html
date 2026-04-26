@@ -991,7 +991,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.32 | 25/04/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.3.33 | 26/04/2026, 07:55</p>
             </main>
         </div>
 
@@ -1295,7 +1295,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
                         <span>Editar Viagem</span>
                     </button>
-                    <button onclick="openModal('index-modal')" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
+                    <button onclick="openModal('index-modal')" class="flex items-center gap-2 text-sm bg-green-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-green-400 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-marked"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path><polyline points="10 2 10 10 14 7 18 10 18 2"></polyline></svg>
                         <span>Índice</span>
                     </button>
@@ -3610,7 +3610,7 @@ window.addEventListener('popstate', (event) => {
        
         let tempInviteEmail = '';
         let tempInviteName = '';
-        // --- LÓGICA ATUALIZADA PARA OS BOTÕES DE CONVITE ---
+        // --- LÓGICA ATUALIZADA PARA O BOTÃO DE CONVITE POR E-MAIL ---
         document.getElementById('send-email-invite-btn').addEventListener('click', () => {
             const trip = tripsData.find(t => t.id === currentTripId);
             const tripName = trip ? trip.name : "uma viagem incrível";
@@ -3619,8 +3619,13 @@ window.addEventListener('popstate', (event) => {
             const recipientName = tempInviteName || 'amigo(a)';
             const greeting = tempInviteName ? `Olá, ${tempInviteName}!` : 'Olá!';
 
+            // 1. Gera a URL com o parâmetro invite (mesma lógica do WhatsApp)
+            const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${currentTripId}`;
+
             const subject = `Convite para participar da viagem "${tripName}"`;
-            const body = `${greeting}\n\nVocê foi convidado(a) por ${currentUserProfile.fullName} para participar da viagem "${tripName}" no app Meu Guia de Viagens.\n\nPara participar, primeiro crie sua conta gratuita acessando o link abaixo e depois peça para ser adicionado(a) à viagem novamente.\n\nLink do site: https://meuguiadeviagens.github.io/viagensapp_pro\n\nAté mais!`;
+            
+            // 2. Atualiza o corpo do e-mail incluindo o link direto para o convite
+            const body = `${greeting}\n\nVocê foi convidado(a) por ${currentUserProfile.fullName} para participar do planejamento da viagem "${tripName}" no app Não Vou Sozinho.\n\nBasta clicar no link abaixo para aceitar o convite e acessar o roteiro:\n${inviteUrl}\n\nAté mais!`;
 
             // O tempInviteEmail será vazio no caso genérico, abrindo o cliente de e-mail com o campo "Para:" em branco
             window.location.href = `mailto:${tempInviteEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -5881,12 +5886,45 @@ window.addEventListener('popstate', (event) => {
             header.style.backgroundImage = `url('${trip.imageUrl}')`;
 
             const citiesContainer = document.getElementById('details-cities-container');
-            citiesContainer.innerHTML = ''; 
-
+            citiesContainer.innerHTML = '';
+            
+            // 1. Agrupa as atividades originais e as variações (se existirem)
+            let allActivities = [];
             if (trip.activities) {
-                const cityActivities = Object.values(trip.activities).filter(activity => activity.type === 'Cidade');
-                
+                allActivities = [...Object.values(trip.activities)];
+            }
+            if (trip.variations) {
+                // Lida com a estrutura aninhada das variações, se houver cidades sugeridas nelas
+                Object.values(trip.variations).forEach(userOrDayVars => {
+                    if (typeof userOrDayVars === 'object') {
+                        Object.values(userOrDayVars).forEach(activities => {
+                            if (typeof activities === 'object' && activities.type) {
+                                allActivities.push(activities);
+                            } else if (typeof activities === 'object') {
+                                allActivities = [...allActivities, ...Object.values(activities)];
+                            }
+                        });
+                    }
+                });
+            }
+
+            if (allActivities.length > 0) {
+                // 2. Filtra apenas as marcações do tipo "Cidade"
+                let cityActivities = allActivities.filter(activity => activity.type === 'Cidade');
+
                 if (cityActivities.length > 0) {
+                    // 3. ORDENAÇÃO CRONOLÓGICA: Ordena por data e, em caso de empate, por horário
+                    cityActivities.sort((a, b) => {
+                        const dateA = a.date || '9999-12-31';
+                        const dateB = b.date || '9999-12-31';
+                        if (dateA !== dateB) return dateA.localeCompare(dateB);
+                        
+                        const timeA = a.time || '23:59';
+                        const timeB = b.time || '23:59';
+                        return timeA.localeCompare(timeB);
+                    });
+
+                    // 4. Extrai nomes únicos mantendo a ordem em que aparecem no roteiro recém-ordenado
                     const uniqueCities = [...new Set(cityActivities.map(activity => activity.name).filter(Boolean))];
                     
                     const cityIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-100"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`;
