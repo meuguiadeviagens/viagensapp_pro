@@ -991,7 +991,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.3.33 | 26/04/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.4.1 | 26/04/2026, 07:55</p>
             </main>
         </div>
 
@@ -1315,6 +1315,9 @@
                     <button onclick="printTripWithEmergency()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-printer"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
                         <span>PDF Offline</span>
+                    </button>
+                    <button id="btn-imersao" title="Mural de Imersão e Inspiração" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
+                        <span>⚡ Imersão</span>
                     </button>
                     <button onclick="openActivityLogModal()" class="relative flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-history"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M12 8v4l4 2"/></svg>
@@ -3048,6 +3051,60 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                     Conhecer outro local
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-imersao" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-2 md:p-4">
+        <div class="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-6xl h-[95vh] md:h-[85vh] flex flex-col overflow-hidden border border-slate-700 animate-in fade-in zoom-in duration-200">
+            
+            <div class="p-4 md:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/30">
+                <div>
+                    <h3 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                        <span class="animate-pulse">✨</span> Mural de Imersão
+                    </h3>
+                    <p class="text-xs md:text-sm text-slate-400">Inspirações e brainstorming para a viagem.</p>
+                </div>
+                <button onclick="closeModal('modal-imersao')" class="text-slate-400 hover:text-white transition-colors bg-slate-800 p-2 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="flex-grow flex flex-col md:flex-row overflow-hidden">
+                <div class="flex-grow p-4 md:p-6 overflow-y-auto custom-scrollbar bg-slate-950/50" id="imersao-container">
+                    <div class="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4" id="imersao-grid">
+                        </div>
+                </div>
+
+                <div class="w-full md:w-80 bg-slate-900 p-4 md:p-6 border-t md:border-t-0 md:border-l border-slate-800 flex-shrink-0">
+                    <h4 class="font-bold text-slate-200 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
+                        Nova Inspiração
+                    </h4>
+                    <form id="form-imersao" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Tipo de Mídia</label>
+                            <select id="imersao-type" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500">
+                                <option value="image">Foto (URL)</option>
+                                <option value="video">Vídeo (YouTube)</option>
+                                <option value="idea">Apenas Texto</option>
+                            </select>
+                        </div>
+
+                        <div id="wrapper-media-url">
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Link da Mídia</label>
+                            <input type="url" id="imersao-url" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500" placeholder="https://...">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">Comentário (Opcional)</label>
+                            <textarea id="imersao-comment" rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500 placeholder-slate-500" placeholder="Escreva algo sobre isso..."></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
+                            Adicionar ao Mural
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -11930,6 +11987,175 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             // Atualiza o texto do botão
             btn.textContent = isCurrentlyCollapsing ? "▼" : "▲";
         };
+
+        // ===================================================================
+        // INÍCIO: LÓGICA DO MURAL DE IMERSÃO / BRAINSTORMING
+        // ===================================================================
+
+        // 1. Ouvinte para abrir o modal e carregar os dados
+        document.getElementById('btn-imersao').onclick = () => {
+            if (!currentTripId) {
+                alert("Nenhuma viagem selecionada.");
+                return;
+            }
+            loadImersaoData(currentTripId); // Chama a função que busca no Firebase
+            openModal('modal-imersao');
+        };
+
+        // 2. Ouvinte de submissão do formulário
+        document.getElementById('form-imersao').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            // Captura os novos campos
+            const type = document.getElementById('imersao-type').value;
+            const mediaUrl = document.getElementById('imersao-url').value;
+            const comment = document.getElementById('imersao-comment').value;
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.innerText = "Salvando...";
+            submitBtn.disabled = true;
+
+            // Usa a variável global do seu app.html (pegando só o primeiro nome)
+            const author = (currentUserProfile && currentUserProfile.fullName) 
+                        ? currentUserProfile.fullName.split(' ')[0] 
+                        : "Viajante";
+
+            try {
+                const moodboardRef = ref(db, `trips/${currentTripId}/moodboard`);
+                
+                await push(moodboardRef, {
+                    type: type,
+                    mediaUrl: mediaUrl || "",
+                    content: comment || "", // O comentário agora vai aqui
+                    authorName: author,
+                    userId: currentUserId, // Guarda o ID para controle futuro, se precisar
+                    timestamp: serverTimestamp() // Usamos a função do Firebase que já está no seu app
+                });
+                
+                // Limpa o formulário após salvar
+                e.target.reset();
+                
+                // Dispara um log no seu histórico "Novidades" (Opcional, mas fica legal!)
+                if (typeof logTripActivity === 'function') {
+                    await logTripActivity(`adicionou uma nova inspiração no Mural de Imersão.`);
+                }
+                
+            } catch (error) {
+                console.error("Erro ao salvar no Mural:", error);
+                alert("Erro ao salvar. Tente novamente.");
+            } finally {
+                submitBtn.innerText = "Adicionar ao Mural";
+                submitBtn.disabled = false;
+            }
+        };
+
+        // 3. Função que "Lê" do Firebase e Desenha o Mural na tela
+        function loadImersaoData(tripId) {
+            const moodboardRef = ref(db, `trips/${tripId}/moodboard`);
+            
+            // onValue mantém o mural atualizado em tempo real para todo o grupo
+            onValue(moodboardRef, (snapshot) => {
+                const grid = document.getElementById('imersao-grid');
+                grid.innerHTML = ''; // Limpa antes de redesenhar
+
+                if (!snapshot.exists()) {
+                    grid.innerHTML = '<p class="text-slate-400 text-sm col-span-full text-center py-10">O mural está vazio. Adicione a primeira inspiração para a viagem!</p>';
+                    return;
+                }
+
+                const items = [];
+                snapshot.forEach(child => { items.push({ id: child.key, ...child.val() }) });
+                
+                // Inverte o array para o mais novo ficar no topo
+                items.reverse(); 
+
+                // Função auxiliar para extrair ID do YouTube
+                const getYoutubeId = (url) => {
+                    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                    const match = url.match(regExp);
+                    return (match && match[2].length == 11) ? match[2] : null;
+                };
+
+                items.forEach((item) => {
+                    const card = document.createElement('div');
+                    // Classes base do card (break-inside-avoid é crucial pro layout de "alvenaria")
+                    card.className = "break-inside-avoid bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg group mb-4 transition-all hover:-translate-y-1";
+                    
+                    let innerHTML = '';
+
+                    // Renderiza Imagem
+                    if (item.type === 'image' && item.mediaUrl) {
+                        innerHTML += `<img src="${item.mediaUrl}" class="w-full rounded-lg mb-3 object-cover shadow-sm" onerror="this.src='https://placehold.co/400x300?text=Imagem+Indisponível'">`;
+                    } 
+                    // Renderiza Vídeo do YouTube
+                    else if (item.type === 'video' && item.mediaUrl) {
+                        const videoId = getYoutubeId(item.mediaUrl);
+                        if (videoId) {
+                            innerHTML += `
+                                <div class="relative w-full pb-[56.25%] h-0 rounded-lg overflow-hidden mb-3 shadow-sm">
+                                    <iframe class="absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>
+                                </div>`;
+                        } else {
+                            innerHTML += `<div class="bg-slate-900 p-4 rounded-lg text-xs text-slate-500 mb-3 text-center border border-slate-700">Link de vídeo inválido</div>`;
+                        }
+                    }
+                    // Ajuste visual para card de "Apenas Ideia" (Sem mídia)
+                    else if (item.type === 'idea') {
+                        card.className = "break-inside-avoid bg-gradient-to-br from-indigo-900/40 to-purple-900/40 p-5 rounded-xl border border-indigo-500/20 shadow-lg mb-4";
+                        innerHTML += `<p class="text-indigo-300 font-bold mb-2 text-xs uppercase tracking-wider flex items-center gap-1">💡 Ideia</p>`;
+                    }
+
+                    // Renderiza o Comentário/Texto (se existir)
+                    if (item.content) {
+                        innerHTML += `<p class="text-sm text-slate-200 font-medium leading-relaxed whitespace-pre-line">${item.content}</p>`;
+                    }
+
+                    // Assinatura do autor e botão excluir (Opcional, mas útil)
+                    innerHTML += `
+                        <div class="flex justify-between items-center mt-3 border-t border-slate-700/50 pt-2">
+                            <p class="text-[10px] text-slate-500 italic">Por ${item.authorName}</p>
+                            ${item.userId === currentUserId || currentUserProfile.fullName.includes(item.authorName) ? 
+                                `<button onclick="deleteImersaoItem('${item.id}')" class="text-slate-500 hover:text-red-400 p-1 transition-colors" title="Excluir">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                </button>` : ''
+                            }
+                        </div>`;
+                    
+                    card.innerHTML = innerHTML;
+                    grid.appendChild(card);
+                });
+            });
+        }
+
+        // 4. Função auxiliar para Excluir item do Mural (Opcional)
+        window.deleteImersaoItem = async (itemId) => {
+            if (!confirm("Remover esta inspiração do mural?")) return;
+            try {
+                await remove(ref(db, `trips/${currentTripId}/moodboard/${itemId}`));
+            } catch (error) {
+                console.error("Erro ao excluir do mural:", error);
+            }
+        };
+
+        // Lógica UX: Mostrar/Esconder o campo de URL dependendo do tipo escolhido
+        document.getElementById('imersao-type').addEventListener('change', (e) => {
+            const urlWrapper = document.getElementById('wrapper-media-url');
+            const urlInput = document.getElementById('imersao-url');
+            
+            if (e.target.value === 'idea') {
+                urlWrapper.classList.add('hidden');
+                urlInput.removeAttribute('required');
+            } else {
+                urlWrapper.classList.remove('hidden');
+                urlInput.setAttribute('required', 'true');
+                // Muda o placeholder pra orientar o usuário
+                if(e.target.value === 'video') urlInput.placeholder = "Link do YouTube...";
+                if(e.target.value === 'image') urlInput.placeholder = "Link da Imagem (JPG, PNG)...";
+            }
+        });
+        // ===================================================================
+        // FIM: LÓGICA DO MURAL DE IMERSÃO
+        // ================
 
         // CORREÇÃO: Força a reaplicação do filtro ao desbloquear o celular/voltar para a aba (voltar do Standby / Bloqueio de Tela / Suspensão)
         document.addEventListener('visibilitychange', () => {
