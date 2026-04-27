@@ -991,7 +991,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.4.2 | 26/04/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.4.3 | 26/04/2026, 07:55</p>
             </main>
         </div>
 
@@ -3097,6 +3097,7 @@
                             <select id="imersao-type" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500">
                                 <option value="image">Foto (URL)</option>
                                 <option value="video">Vídeo (YouTube)</option>
+                                <option value="link">Link (Site, Instagram, etc)</option>
                                 <option value="idea">Apenas Texto</option>
                             </select>
                         </div>
@@ -12008,6 +12009,9 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         // INÍCIO: LÓGICA DO MURAL DE IMERSÃO / BRAINSTORMING
         // ===================================================================
 
+        // Variável para guardar os itens e o estado de edição
+        window.currentImersaoItems = [];
+
         // 1. Ouvinte para abrir o modal e carregar os dados
         document.getElementById('btn-imersao').onclick = () => {
             if (!currentTripId) {
@@ -12049,46 +12053,56 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         document.getElementById('form-imersao').onsubmit = async (e) => {
             e.preventDefault();
             
-            // Captura os novos campos
+            const form = e.target;
             const type = document.getElementById('imersao-type').value;
             const mediaUrl = document.getElementById('imersao-url').value;
             const comment = document.getElementById('imersao-comment').value;
             
-            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerText;
             submitBtn.innerText = "Salvando...";
             submitBtn.disabled = true;
 
-            // Usa a variável global do seu app.html (pegando só o primeiro nome)
             const author = (currentUserProfile && currentUserProfile.fullName) 
-                        ? currentUserProfile.fullName.split(' ')[0] 
-                        : "Viajante";
+                        ? currentUserProfile.fullName.split(' ')[0] : "Viajante";
+
+            // Verifica se estamos editando um item ou criando um novo
+            const editingId = form.dataset.editingId;
 
             try {
-                const moodboardRef = ref(db, `trips/${currentTripId}/moodboard`);
-                
-                await push(moodboardRef, {
-                    type: type,
-                    mediaUrl: mediaUrl || "",
-                    content: comment || "", // O comentário agora vai aqui
-                    authorName: author,
-                    userId: currentUserId, // Guarda o ID para controle futuro, se precisar
-                    timestamp: serverTimestamp() // Usamos a função do Firebase que já está no seu app
-                });
-                
-                // Limpa o formulário após salvar
-                e.target.reset();
-                toggleImersaoForm(false);
-                
-                // Dispara um log no seu histórico "Novidades" (Opcional, mas fica legal!)
-                if (typeof logTripActivity === 'function') {
-                    await logTripActivity(`adicionou uma nova inspiração no Mural de Imersão.`);
+                if (editingId) {
+                    // EDITA ITEM EXISTENTE
+                    const itemRef = ref(db, `trips/${currentTripId}/moodboard/${editingId}`);
+                    await update(itemRef, {
+                        type: type,
+                        mediaUrl: mediaUrl || "",
+                        content: comment || ""
+                    });
+                    delete form.dataset.editingId; // Limpa o estado de edição
+                    submitBtn.innerText = "Postar no Mural";
+                } else {
+                    // CRIA NOVO ITEM
+                    const moodboardRef = ref(db, `trips/${currentTripId}/moodboard`);
+                    await push(moodboardRef, {
+                        type: type,
+                        mediaUrl: mediaUrl || "",
+                        content: comment || "",
+                        authorName: author,
+                        userId: currentUserId,
+                        timestamp: serverTimestamp()
+                    });
+                    if (typeof logTripActivity === 'function') await logTripActivity(`adicionou uma nova inspiração no Mural.`);
                 }
                 
+                form.reset();
+                document.getElementById('imersao-type').dispatchEvent(new Event('change')); // Reseta o layout dos campos
+                toggleImersaoForm(false);
+                
             } catch (error) {
-                console.error("Erro ao salvar no Mural:", error);
+                console.error("Erro ao salvar:", error);
                 alert("Erro ao salvar. Tente novamente.");
+                submitBtn.innerText = originalBtnText;
             } finally {
-                submitBtn.innerText = "Adicionar ao Mural";
                 submitBtn.disabled = false;
             }
         };
@@ -12097,23 +12111,23 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         function loadImersaoData(tripId) {
             const moodboardRef = ref(db, `trips/${tripId}/moodboard`);
             
-            // onValue mantém o mural atualizado em tempo real para todo o grupo
             onValue(moodboardRef, (snapshot) => {
                 const grid = document.getElementById('imersao-grid');
-                grid.innerHTML = ''; // Limpa antes de redesenhar
+                grid.innerHTML = '';
 
                 if (!snapshot.exists()) {
-                    grid.innerHTML = '<p class="text-slate-400 text-sm col-span-full text-center py-10">O mural está vazio. Adicione a primeira inspiração para a viagem!</p>';
+                    grid.innerHTML = '<p class="text-slate-400 text-sm col-span-full text-center py-10">O mural está vazio. Adicione a primeira inspiração!</p>';
+                    window.currentImersaoItems = [];
                     return;
                 }
 
                 const items = [];
                 snapshot.forEach(child => { items.push({ id: child.key, ...child.val() }) });
-                
-                // Inverte o array para o mais novo ficar no topo
                 items.reverse(); 
+                
+                // Guarda na janela para a função de edição conseguir acessar
+                window.currentImersaoItems = items;
 
-                // Função auxiliar para extrair ID do YouTube
                 const getYoutubeId = (url) => {
                     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
                     const match = url.match(regExp);
@@ -12122,16 +12136,13 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
                 items.forEach((item) => {
                     const card = document.createElement('div');
-                    // Classes base do card (break-inside-avoid é crucial pro layout de "alvenaria")
                     card.className = "break-inside-avoid bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg group mb-4 transition-all hover:-translate-y-1";
                     
                     let innerHTML = '';
 
-                    // Renderiza Imagem
                     if (item.type === 'image' && item.mediaUrl) {
                         innerHTML += `<img src="${item.mediaUrl}" class="w-full rounded-lg mb-3 object-cover shadow-sm" onerror="this.src='https://placehold.co/400x300?text=Imagem+Indisponível'">`;
                     } 
-                    // Renderiza Vídeo do YouTube
                     else if (item.type === 'video' && item.mediaUrl) {
                         const videoId = getYoutubeId(item.mediaUrl);
                         if (videoId) {
@@ -12143,25 +12154,34 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                             innerHTML += `<div class="bg-slate-900 p-4 rounded-lg text-xs text-slate-500 mb-3 text-center border border-slate-700">Link de vídeo inválido</div>`;
                         }
                     }
-                    // Ajuste visual para card de "Apenas Ideia" (Sem mídia)
+                    // NOVO: Renderiza Links Externos (Sites, Insta, etc)
+                    else if (item.type === 'link' && item.mediaUrl) {
+                        card.className = "break-inside-avoid bg-slate-900 p-4 rounded-xl border border-sky-500/30 shadow-lg mb-4";
+                        innerHTML += `<p class="text-sky-400 font-bold mb-2 text-xs uppercase tracking-wider flex items-center gap-1">🔗 Acesso Rápido</p>`;
+                        innerHTML += `<a href="${item.mediaUrl}" target="_blank" class="text-sm text-sky-300 hover:text-white hover:underline break-all mb-3 block">${item.mediaUrl}</a>`;
+                    }
                     else if (item.type === 'idea') {
                         card.className = "break-inside-avoid bg-gradient-to-br from-indigo-900/40 to-purple-900/40 p-5 rounded-xl border border-indigo-500/20 shadow-lg mb-4";
                         innerHTML += `<p class="text-indigo-300 font-bold mb-2 text-xs uppercase tracking-wider flex items-center gap-1">💡 Ideia</p>`;
                     }
 
-                    // Renderiza o Comentário/Texto (se existir)
                     if (item.content) {
                         innerHTML += `<p class="text-sm text-slate-200 font-medium leading-relaxed whitespace-pre-line">${item.content}</p>`;
                     }
 
-                    // Assinatura do autor e botão excluir (Opcional, mas útil)
+                    // Assinatura e Botões (Editar e Excluir)
                     innerHTML += `
                         <div class="flex justify-between items-center mt-3 border-t border-slate-700/50 pt-2">
                             <p class="text-[10px] text-slate-500 italic">Por ${item.authorName}</p>
-                            ${item.userId === currentUserId || currentUserProfile.fullName.includes(item.authorName) ? 
-                                `<button onclick="deleteImersaoItem('${item.id}')" class="text-slate-500 hover:text-red-400 p-1 transition-colors" title="Excluir">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                </button>` : ''
+                            ${(item.userId === currentUserId || currentUserProfile.fullName.includes(item.authorName)) ? 
+                                `<div class="flex gap-2">
+                                    <button onclick="editImersaoItem('${item.id}')" class="text-slate-500 hover:text-blue-400 p-1 transition-colors" title="Editar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                                    </button>
+                                    <button onclick="deleteImersaoItem('${item.id}')" class="text-slate-500 hover:text-red-400 p-1 transition-colors" title="Excluir">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                    </button>
+                                </div>` : ''
                             }
                         </div>`;
                     
@@ -12170,6 +12190,30 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 });
             });
         }
+
+        // 3. Nova Função Global de Edição
+        window.editImersaoItem = (itemId) => {
+            // Busca o item no array local que salvamos no loadImersaoData
+            const item = window.currentImersaoItems.find(i => i.id === itemId);
+            if (!item) return;
+
+            // Preenche o formulário
+            document.getElementById('imersao-type').value = item.type;
+            document.getElementById('imersao-url').value = item.mediaUrl || '';
+            document.getElementById('imersao-comment').value = item.content || '';
+
+            // Dispara o evento 'change' para esconder/mostrar o campo de URL conforme o tipo
+            document.getElementById('imersao-type').dispatchEvent(new Event('change'));
+
+            // Adiciona o ID no dataset do formulário para sabermos que é uma edição e muda o botão
+            const form = document.getElementById('form-imersao');
+            form.dataset.editingId = itemId;
+            form.querySelector('button[type="submit"]').innerText = "Atualizar Inspiração";
+
+            // Abre o formulário (útil no celular) e sobe o scroll suavemente
+            toggleImersaoForm(true);
+            document.getElementById('painel-form-imersao').scrollIntoView({ behavior: 'smooth' });
+        };
 
         // 4. Função auxiliar para Excluir item do Mural (Opcional)
         window.deleteImersaoItem = async (itemId) => {
