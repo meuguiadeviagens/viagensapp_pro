@@ -991,7 +991,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.4.3 | 26/04/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.4.4 | 27/04/2026, 07:55</p>
             </main>
         </div>
 
@@ -3122,6 +3122,38 @@
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ios-install-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-lg shadow-2xl w-full max-w-sm m-4 flex flex-col overflow-hidden">
+            
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-600"><path d="M16 2v4"/><path d="M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><path d="M8 2h8a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"/><circle cx="12" cy="14" r="1"/></svg>
+                    Instalar no iPhone
+                </h3>
+                <button onclick="closeModal('ios-install-modal')" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-4">
+                <p class="text-sm text-slate-600 text-center">Para adicionar o NãoVouSozinho à sua tela inicial, siga os passos abaixo no Safari:</p>
+                
+                <div class="flex justify-center my-4">
+                    <img src="ios_appSafari.png" alt="Instruções Safari" class="rounded-xl shadow-md border border-slate-200 max-h-48 object-contain">
+                </div>
+                
+                <ol class="text-sm text-slate-700 text-left list-decimal list-inside space-y-2 font-medium">
+                    <li>Toque no ícone de <strong>Compartilhar</strong> na barra inferior do Safari.</li>
+                    <li>Role um pouco para baixo e toque em <strong>Adicionar à Tela de Início</strong>.</li>
+                </ol>
+            </div>
+            
+            <div class="p-4 border-t bg-slate-50 flex justify-end">
+                <button onclick="closeModal('ios-install-modal')" class="w-full py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors">Entendi</button>
             </div>
         </div>
     </div>
@@ -14929,8 +14961,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     }
 
                     // 2. Se não tá instalado e é iOS (iPhone)
+                    // 1. A MUDANÇA AQUI: Se for iOS, abre o modal em vez de dar alert
                     if (isIos) {
-                        alert('🍎 Para instalar no iPhone:\n\n1. Utilizando o Safari, toque no ícone de "Compartilhar" (quadrado com uma seta para cima) na barra inferior do Safari.\n2. Role um pouco para baixo e toque em "Adicionar à Tela de Início".');
+                        openModal('ios-install-modal');
+                        // Adicionamos esta linha para fechar o dropdown de usuário ao abrir o modal
+                        document.getElementById('user-menu-dropdown').classList.add('hidden');
                         return;
                     }
 
