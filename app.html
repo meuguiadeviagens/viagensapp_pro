@@ -991,7 +991,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.4.1 | 26/04/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.4.2 | 26/04/2026, 07:55</p>
             </main>
         </div>
 
@@ -1310,7 +1310,7 @@
                     </button>
                     <button id="header-notes-btn" onclick="scrollToNotes()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sticky-note"><path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></svg>
-                        <span>Anotações</span>
+                        <span>Anot.</span>
                     </button>
                     <button onclick="printTripWithEmergency()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-printer"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
@@ -3070,20 +3070,31 @@
                 </button>
             </div>
 
-            <div class="flex-grow flex flex-col md:flex-row overflow-hidden">
+            <div class="flex-grow flex flex-col md:flex-row overflow-hidden relative">
                 <div class="flex-grow p-4 md:p-6 overflow-y-auto custom-scrollbar bg-slate-950/50" id="imersao-container">
-                    <div class="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4" id="imersao-grid">
+                    <div class="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4 pb-24 md:pb-0" id="imersao-grid">
                         </div>
                 </div>
 
-                <div class="w-full md:w-80 bg-slate-900 p-4 md:p-6 border-t md:border-t-0 md:border-l border-slate-800 flex-shrink-0">
-                    <h4 class="font-bold text-slate-200 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
-                        Nova Inspiração
-                    </h4>
-                    <form id="form-imersao" class="space-y-4">
+                <div id="trigger-imersao-mobile" class="md:hidden absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent z-10">
+                    <button onclick="toggleImersaoForm(true)" class="w-full bg-pink-600 text-white font-bold py-4 rounded-2xl shadow-2xl flex items-center justify-center gap-2 active:scale-95 transition-transform border border-pink-400/30">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                        Adicionar ao Mural
+                    </button>
+                </div>
+
+                <div id="painel-form-imersao" class="md:flex flex-col hidden w-full md:w-80 bg-slate-900 p-4 md:p-6 border-t md:border-t-0 md:border-l border-slate-800 flex-shrink-0 z-20 overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wider">Nova Inspiração</h4>
+                        <button onclick="toggleImersaoForm(false)" class="md:hidden text-slate-400 hover:text-white p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </button>
+                    </div>
+                    
+                    <form id="form-imersao" class="space-y-5">
                         <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Tipo de Mídia</label>
-                            <select id="imersao-type" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500">
+                            <label class="block text-xs font-medium text-slate-400 mb-2 uppercase">Tipo de Mídia</label>
+                            <select id="imersao-type" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500">
                                 <option value="image">Foto (URL)</option>
                                 <option value="video">Vídeo (YouTube)</option>
                                 <option value="idea">Apenas Texto</option>
@@ -3091,18 +3102,23 @@
                         </div>
 
                         <div id="wrapper-media-url">
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Link da Mídia</label>
-                            <input type="url" id="imersao-url" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500" placeholder="https://...">
+                            <label class="block text-xs font-medium text-slate-400 mb-2 uppercase">Link da Mídia</label>
+                            <input type="url" id="imersao-url" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500" placeholder="https://...">
                         </div>
                         
                         <div>
-                            <label class="block text-xs font-medium text-slate-400 mb-1">Comentário (Opcional)</label>
-                            <textarea id="imersao-comment" rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500 placeholder-slate-500" placeholder="Escreva algo sobre isso..."></textarea>
+                            <label class="block text-xs font-medium text-slate-400 mb-2 uppercase">Comentário</label>
+                            <textarea id="imersao-comment" rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500 placeholder-slate-500" placeholder="Escreva algo sobre isso..."></textarea>
                         </div>
 
-                        <button type="submit" class="w-full bg-gradient-to-r from-pink-600 to-purple-600 text-white font-bold py-3 rounded-xl hover:opacity-90 transition-opacity shadow-lg">
-                            Adicionar ao Mural
-                        </button>
+                        <div class="flex flex-col gap-3 pt-2">
+                            <button type="submit" class="w-full bg-gradient-to-r from-pink-600 to-purple-600 text-white font-extrabold py-4 rounded-2xl hover:opacity-90 transition-opacity shadow-lg">
+                                Postar no Mural
+                            </button>
+                            <button type="button" onclick="toggleImersaoForm(false)" class="md:hidden w-full bg-slate-800 text-slate-400 font-bold py-3 rounded-2xl border border-slate-700">
+                                Cancelar
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -11998,8 +12014,35 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 alert("Nenhuma viagem selecionada.");
                 return;
             }
-            loadImersaoData(currentTripId); // Chama a função que busca no Firebase
+            loadImersaoData(currentTripId);
             openModal('modal-imersao');
+            
+            // Executa a lógica de alternância para configurar a visibilidade correta conforme a tela
+            toggleImersaoForm(false); 
+        };
+
+        // Função para alternar o formulário no Mobile
+        window.toggleImersaoForm = (show) => {
+            const painel = document.getElementById('painel-form-imersao');
+            const trigger = document.getElementById('trigger-imersao-mobile');
+            
+            // Verifica se é mobile (Tailwind md é 768px)
+            const isMobile = window.innerWidth < 768;
+
+            if (isMobile) {
+                if (show) {
+                    painel.classList.remove('hidden');
+                    trigger.classList.add('hidden');
+                    setTimeout(() => document.getElementById('imersao-url').focus(), 100);
+                } else {
+                    painel.classList.add('hidden');
+                    trigger.classList.remove('hidden');
+                }
+            } else {
+                // No Desktop, garantimos que o painel esteja SEMPRE visível e o botão mobile SEMPRE oculto
+                painel.classList.remove('hidden');
+                trigger.classList.add('hidden');
+            }
         };
 
         // 2. Ouvinte de submissão do formulário
@@ -12034,6 +12077,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 
                 // Limpa o formulário após salvar
                 e.target.reset();
+                toggleImersaoForm(false);
                 
                 // Dispara um log no seu histórico "Novidades" (Opcional, mas fica legal!)
                 if (typeof logTripActivity === 'function') {
