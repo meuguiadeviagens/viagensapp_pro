@@ -991,7 +991,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.4.4 | 27/04/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.4.5 | 28/04/2026, 07:55</p>
             </main>
         </div>
 
@@ -1316,7 +1316,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-printer"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
                         <span>PDF Offline</span>
                     </button>
-                    <button id="btn-imersao" title="Mural de Imersão e Inspiração" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
+                    <button id="btn-imersao" title="Mural de Imersão e Inspiração" class="flex items-center gap-2 text-sm bg-blue-500/50 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-500/80 transition-colors">
                         <span>⚡ Imersão</span>
                     </button>
                     <button onclick="openActivityLogModal()" class="relative flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
@@ -5760,7 +5760,7 @@ window.addEventListener('popstate', (event) => {
                     yearGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
                     
                     groupedUpcoming[year].forEach(trip => {
-                        yearGrid.appendChild(createTripCard(trip, false));
+                        yearGrid.appendChild(createTripCard(trip, true));
                     });
                     upcomingContent.appendChild(yearGrid);
                 });
