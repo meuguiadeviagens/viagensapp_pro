@@ -1,6 +1,6 @@
 {
   "name": "Não Vou Sozinho",
-  "short_name": "Viagens",
+  "short_name": "Não Vou Sozinho",
   "description": "Seu planejador de roteiros de viagem.",
   "start_url": "/app.html",
   "display": "standalone",
