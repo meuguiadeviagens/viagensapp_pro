@@ -924,18 +924,14 @@
                 <h1 class="text-4xl font-bold text-slate-900 justify-center flex"><a href="index.html"><img src="logo_meuguiadeviagens.png" class="w-[300px] h-[50px] object-contain"></a></h1>
                 <p class="text-slate-500 mt-1"></p>
             </div>
-            <div class="flex flex-wrap justify-center items-center gap-4">
-                    <label id="filter-news-label" class="hidden flex items-center gap-2 cursor-pointer bg-white px-3 py-3 rounded-lg shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors h-[48px]">
-                        <input type="checkbox" id="filter-news-checkbox" onchange="renderTripLists()" class="h-4 w-4 rounded text-green-600 focus:ring-green-500 border-gray-300">
-                        <span class="text-sm font-semibold text-slate-700 select-none"></span><!-- Checkbox Novidades -->
-                        <span class="flex h-2 w-2 relative">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                        </span>
-                    </label>
+            <!-- Início da substituição: Container dos botões reorganizados -->
+            <div class="flex flex-col w-full max-w-md mx-auto gap-4">
+                
+                <!-- Primeira Linha: Botões "Bora viajar?" e Menu do Usuário -->
+                <div class="flex justify-center items-center gap-4">
                     <button onclick="openModal('add-trip-modal')" class="flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-5 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-300">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus-circle"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="8" y2="16"></line><line x1="8" x2="16" y1="12" y2="12"></line></svg>
-                        <!-- <span>Nova Viagem</span> -->
+                        <span>Bora viajar?</span>
                     </button>
 
                     <div class="relative" id="user-menu-container">
@@ -960,7 +956,6 @@
                             <a href="#" id="admin-open-trip-btn" onclick="adminOpenTripById()" class="hidden block px-4 py-2 text-sm text-yellow-600 font-bold border-t hover:bg-slate-100">
                                 Abrir Viagem por ID (Admin)
                             </a>
-                            <!--<a href="app.html" target="_self" class="block px-4 py-2 text-sm text-slate-700 border-t hover:bg-slate-100">Versão Beta</a>-->
                             <a href="#" id="install-app-btn" onclick="event.preventDefault();" class="block px-4 py-2 text-sm text-slate-700 border-t border-slate-100 hover:bg-slate-100 transition-colors">
                                 <div class="flex items-center justify-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500">
@@ -976,6 +971,18 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Segunda Linha: Botão Filtrar Novidades (linha própria, esticado e com texto visível) -->
+                <label id="filter-news-label" class="hidden flex justify-center items-center gap-2 cursor-pointer bg-white px-4 py-3 w-full max-w-[300px] mx-auto rounded-lg shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors">
+                    <input type="checkbox" id="filter-news-checkbox" onchange="renderTripLists()" class="h-4 w-4 rounded text-green-600 focus:ring-green-500 border-gray-300">
+                    <span class="flex h-2 w-2 relative">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    <span class="text-sm font-semibold text-slate-700 select-none">Filtrar novidades e alterações</span>
+                </label>
+                
+            </div>
             </header>
 
             <section id="featured-trips-panel" class="mb-10"></section>
@@ -993,7 +1000,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.4.6 | 29/04/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.4.7 | 01/05/2026, 07:55</p>
             </main>
         </div>
 
@@ -1267,6 +1274,40 @@
                 </div>
                 <div class="pt-8 flex justify-end">
                     <button type="button" onclick="closeModal('license-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Fechar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOVO MODAL: Convite pós-criação de viagem -->
+        <div id="new-trip-invite-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-sm m-4 flex flex-col text-center">
+                
+                <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+                </div>
+                
+                <h3 class="text-xl font-bold text-slate-800 mb-2">Viagem Criada!</h3>
+                <p class="text-slate-600 mb-6 text-sm">
+                    Sua viagem foi criada com sucesso. Gostaria de convidar outros viajantes para fazerem parte dela?
+                </p>
+                
+                <div class="space-y-3">
+                    <!-- Simula o clique no botão do WhatsApp já existente -->
+                    <button onclick="document.getElementById('send-whatsapp-invite-btn').click(); closeModal('new-trip-invite-modal');" class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+                        <span>Sim, pelo WhatsApp</span>
+                    </button>
+                    
+                    <!-- Simula o clique no botão de E-mail já existente -->
+                    <button onclick="document.getElementById('send-email-invite-btn').click(); closeModal('new-trip-invite-modal');" class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        <span>Sim, por E-mail</span>
+                    </button>
+                    
+                    <!-- Fecha apenas o modal -->
+                    <button onclick="closeModal('new-trip-invite-modal')" class="w-full px-4 py-3 bg-slate-100 text-slate-600 font-semibold rounded-lg hover:bg-slate-200 transition-colors mt-2">
+                        Não, por enquanto quero viajar sozinho
+                    </button>
                 </div>
             </div>
         </div>
@@ -9526,7 +9567,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
                 tripIdPendingUpgrade = null; 
                 closeModal('add-trip-modal');
-                e.target.reset();
+                e.target.reset();  
+                
+                // 2. Chama o novo modal de convites que criamos
+                window.showNewTripInviteModal();
+                // --- FIM DA ALTERAÇÃO ---
 
             } catch (error) {
                 console.error("Erro ao salvar:", error);
@@ -14988,6 +15033,14 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 });
             }
         });
+
+        // NOVO: Função para exibir o modal de convite de nova viagem
+        window.showNewTripInviteModal = () => {
+            // Limpa as variáveis temporárias para garantir que o link gerado seja o genérico
+            tempInviteEmail = '';
+            tempInviteName = '';
+            openModal('new-trip-invite-modal');
+        };
 
     </script>
 
