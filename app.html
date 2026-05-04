@@ -994,13 +994,34 @@
                         </div>
                 </div>
 
+                <!-- INÍCIO: Seção de Sugestões de Roteiros -->
+                <div id="suggested-trips-container" class="bg-slate-200 border border-slate-300 rounded-2xl p-6 md:p-8 mt-12 mb-8">
+                    <div class="flex items-center gap-2 mb-6">
+                        <span class="text-2xl"><!--💡--></span>
+                        <h2 class="text-2xl font-bold text-slate-800">Sugestões de Roteiros</h2>
+                    </div>
+                    
+                    <div id="suggested-trips-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Preenchido via JavaScript -->
+                    </div>
+                    
+                    <!-- Botão discreto alinhado à direita -->
+                    <div class="mt-6 flex justify-end">
+                        <button onclick="alert('Em breve você conseguirá acessar o painel completo de roteiros.')" class="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1 group">
+                            Ver mais roteiros
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transform transition-transform group-hover:translate-x-1"><path d="m9 18 6-6-6-6"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <!-- FIM: Seção de Sugestões de Roteiros -->
+
                 <div id="past-trips-container" class="mt-10">
                     <h2 class="text-2xl font-bold text-slate-800 mb-4">Viagens Já Realizadas</h2>
                     <div id="past-trips-content">
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.4.7 | 01/05/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.4.8 | 04/05/2026, 07:55</p>
             </main>
         </div>
 
@@ -3146,7 +3167,7 @@
                         </div>
 
                         <div id="wrapper-media-url">
-                            <label class="block text-xs font-medium text-slate-400 mb-2 uppercase">Link da Mídia</label>
+                            <label class="block text-xs font-medium text-slate-400 mb-2 uppercase">Link da Mídia (Opcional)</label>
                             <input type="url" id="imersao-url" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500" placeholder="https://...">
                         </div>
                         
@@ -3200,6 +3221,51 @@
             </div>
         </div>
     </div>
+
+    <!-- INÍCIO: MODAL DE ROTEIROS DA CIDADE -->
+    <div id="city-inspirations-modal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl m-4 flex flex-col max-h-[80vh]">
+            
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <div>
+                    <h3 id="city-inspirations-modal-title" class="text-2xl font-bold text-slate-800">Roteiros</h3>
+                    <p id="city-inspirations-modal-desc" class="text-sm text-slate-500 mt-1"></p>
+                </div>
+                <button onclick="closeModal('city-inspirations-modal')" class="text-slate-400 hover:text-slate-600 transition-colors self-start p-1" title="Fechar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            
+            <!-- Container onde a futura lista de roteiros da cidade será injetada -->
+            <div id="city-inspirations-list" class="flex-grow overflow-y-auto p-6 space-y-4">
+                <div class="flex flex-col items-center justify-center py-10 text-center">
+                    <span class="text-4xl mb-4">🚀</span>
+                    <p class="text-slate-700 font-medium">Painel em construção!</p>
+                    <p class="text-slate-500 text-sm mt-2 max-w-sm">Estamos preparando uma seleção incrível de roteiros para esta cidade. Volte em breve para conferir.</p>
+                </div>
+            </div>
+
+            <!-- Rodapé Dinâmico: Input de Data + Botões de Ação -->
+            <div id="city-inspirations-cta" class="p-4 md:p-5 border-t border-slate-200 bg-slate-50 rounded-b-2xl flex flex-col md:flex-row justify-between items-center gap-4 hidden">
+                
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <label for="inspiration-start-date" class="text-sm font-bold text-slate-700 whitespace-nowrap">Iniciar em:</label>
+                    <input type="date" id="inspiration-start-date" class="px-3 py-2 border border-slate-300 rounded-lg shadow-sm focus:ring-green-500 focus:border-green-500 w-full md:w-auto outline-none text-slate-700">
+                </div>
+                
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button type="button" onclick="closeModal('city-inspirations-modal')" class="px-4 py-2.5 bg-slate-200 text-slate-800 rounded-lg font-bold hover:bg-slate-300 transition-colors w-full md:w-auto text-sm md:text-base">
+                        Cancelar
+                    </button>
+                    <button type="button" onclick="createTripFromInspiration()" class="px-5 py-2.5 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition-colors shadow-md w-full md:w-auto flex items-center justify-center gap-2 text-sm md:text-base">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                        Criar essa viagem!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- FIM: MODAL DE ROTEIROS DA CIDADE -->
 
 
     <script type="module">
@@ -5638,17 +5704,21 @@ window.addEventListener('popstate', (event) => {
             
             if (!toast || tripsData.length === 0) return;
 
-            // Obtém data de hoje zerada (meia-noite local)
+            // Obtém data de hoje zerada no fuso local (meia-noite)
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
             const ongoingTrip = tripsData.find(trip => {
-                const start = new Date(trip.startDate);
-                const end = new Date(trip.endDate);
-                // Garante comparação justa ignorando horas
-                start.setHours(0,0,0,0);
-                end.setHours(23,59,59,999);
-                return today >= start && today <= end;
+                // CORREÇÃO DE FUSO: As datas no Firebase estão salvas como meia-noite UTC.
+                // Extraímos os componentes em UTC para evitar que o fuso local (-3h) jogue pro dia anterior.
+                const startUTC = new Date(trip.startDate);
+                const startLocal = new Date(startUTC.getUTCFullYear(), startUTC.getUTCMonth(), startUTC.getUTCDate());
+
+                const endUTC = new Date(trip.endDate);
+                // endDate vai até o final do último dia (23:59:59)
+                const endLocal = new Date(endUTC.getUTCFullYear(), endUTC.getUTCMonth(), endUTC.getUTCDate(), 23, 59, 59, 999);
+
+                return today >= startLocal && today <= endLocal;
             });
 
             if (ongoingTrip) {
@@ -5710,6 +5780,40 @@ window.addEventListener('popstate', (event) => {
             upcomingContent.innerHTML = '';
             pastContent.innerHTML = '';
 
+            // Array de Inspirações 
+            const featuredInspirations = [
+                {
+                    title: "Nova York em 5 dias",
+                    cityName: "Nova York",
+                    image: "https://cdn.panrotas.com.br/portal-panrotas-statics/media-files-cache/427785/67553ba6ea2af76dcfb165e6bde137danye2023michaelhullphoto768/0,180,2560,1528/1206,720,0.33/0/default.jpg"                 
+                },
+                {
+                    title: "Cancún em 6 dias",
+                    cityName: "Cancún",
+                    image: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/10/bc/2c/39/hyatt-ziva-cancun.jpg?w=900&h=500&s=1"
+                },
+                {
+                    title: "Explorar o mundo",
+                    cityName: "Global",
+                    image: "https://asset-prod.france.fr/louvre_piramide_paris_bf55d3e8b3.jpg"
+                }
+            ];          
+
+            // Retornamos ao formato original com apenas 1 card de vídeo
+            const getWelcomeCardHtml = (isFirstTrip) => `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <a href="https://youtu.be/b-NpcyDpmNI" target="_blank" rel="noopener noreferrer" class="trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative border-2 border-dashed border-blue-400 hover:border-blue-600">
+                        <div class="h-48 bg-cover bg-center flex items-center justify-center relative" style="background-image: url('https://midias-turismo.eurodicas.com.br/wp-content/uploads/2025/02/paris_na_primavera-2-1200x800.jpg.webp');">
+                            <div class="absolute inset-0 bg-black opacity-40"></div>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play-circle text-white z-10 opacity-80"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                        </div>
+                        <div class="p-6 text-center">
+                            <h3 class="text-2xl font-bold text-slate-900">Crie sua ${isFirstTrip ? 'primeira' : 'nova'} viagem</h3>
+                            <p class="text-slate-500 mt-2">Clique aqui para ver um vídeo rápido.</p>
+                        </div>
+                    </a>
+                </div>`;
+
             // --- INÍCIO DA LÓGICA DO FILTRO ---
             const isNewsFilterActive = document.getElementById('filter-news-checkbox')?.checked || false;
             
@@ -5738,21 +5842,8 @@ window.addEventListener('popstate', (event) => {
                 let emptyMsg = '';
                 
                 if (tripsData.length === 0) {
-                    // Caso 1: O usuário realmente não tem viagens (Código original do card de boas-vindas)
-                    const welcomeCardHtml = `
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <a href="https://youtu.be/b-NpcyDpmNI" target="_blank" rel="noopener noreferrer" class="trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative border-2 border-dashed border-blue-400 hover:border-blue-600">
-                                <div class="h-48 bg-cover bg-center flex items-center justify-center relative" style="background-image: url('https://midias-turismo.eurodicas.com.br/wp-content/uploads/2025/02/paris_na_primavera-2-1200x800.jpg.webp');">
-                                    <div class="absolute inset-0 bg-black opacity-40"></div>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play-circle text-white z-10 opacity-80"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-                                </div>
-                                <div class="p-6 text-center">
-                                    <h3 class="text-2xl font-bold text-slate-900">Crie sua primeira viagem</h3>
-                                    <p class="text-slate-500 mt-2">Clique aqui para ver um vídeo rápido.</p>
-                                </div>
-                            </a>
-                        </div>`;
-                    upcomingContent.innerHTML = welcomeCardHtml;
+                    // Caso 1: O usuário realmente não tem viagens
+                    upcomingContent.innerHTML = getWelcomeCardHtml(true);
                     pastContent.innerHTML = `<p class="col-span-full text-center text-sm text-slate-500 py-4">Nenhuma viagem realizada ainda.</p>`;
                 } else {
                     // Caso 2: O filtro "Novidades" está ativo, mas nenhuma viagem tem novidade
@@ -5809,7 +5900,7 @@ window.addEventListener('popstate', (event) => {
                 });
             } else if (!isNewsFilterActive) {
                 // Só mostra mensagem vazia se não for culpa do filtro (já tratado acima)
-                upcomingContent.innerHTML = `<p class="text-center text-sm text-slate-500 py-4">Nenhuma viagem futura planejada.</p>`;
+                upcomingContent.innerHTML = getWelcomeCardHtml(false);
             }
 
             // --- Renderiza Viagens Passadas (Código Mantido/Adaptado) ---
@@ -5841,6 +5932,32 @@ window.addEventListener('popstate', (event) => {
             } else if (!isNewsFilterActive) {
                 pastContent.innerHTML = `<p class="text-center text-sm text-slate-500 py-4">Nenhuma viagem realizada ainda.</p>`;
             }
+
+            // INÍCIO: Renderiza os cards de Sugestões de Roteiros
+            const suggestionsContent = document.getElementById('suggested-trips-content');
+            if (suggestionsContent) {
+                suggestionsContent.innerHTML = featuredInspirations.map(inspiration => {
+                    // Se for "Explorar o mundo", abre o modal existente, senão, abre o novo modal da cidade
+                    const clickAction = inspiration.title === "Explorar o mundo" 
+                        ? "openExploreWorldModal()" 
+                        : `openCityInspirations('${inspiration.cityName}')`;
+
+                    return `
+                        <div onclick="${clickAction}" class="trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative border border-slate-200">
+                            <div class="h-48 bg-cover bg-center relative" style="background-image: url('${inspiration.image}');">
+                                <div class="absolute top-3 left-3 z-20 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full shadow-md">
+                                    ✨ Inspiração
+                                </div>
+                            </div>
+                            <div class="p-6 text-center flex flex-col justify-center h-[calc(100%-12rem)]">
+                                <h3 class="text-xl font-bold text-slate-900 line-clamp-2" title="${inspiration.title}">${inspiration.title}</h3>
+                                <p class="text-slate-500 mt-2 text-sm">Explorar roteiro sugerido</p>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            // FIM: Renderiza os cards de Sugestões de Roteiros
         }
 
         window.renderTripLists = renderTripLists;
@@ -6572,8 +6689,21 @@ window.addEventListener('popstate', (event) => {
                 <span>Inserir Novo Dia</span>
             </div>`);
 
-            // Loop principal pelos dias
-            // Loop principal pelos dias
+            // ==========================================
+            // INÍCIO: Verifica se a viagem inteira já acabou
+            // ==========================================
+            const todayMidnight = new Date();
+            todayMidnight.setHours(0, 0, 0, 0);
+            
+            const endUTCForCheck = new Date(trip.endDate);
+            const endLocalForCheck = new Date(endUTCForCheck.getUTCFullYear(), endUTCForCheck.getUTCMonth(), endUTCForCheck.getUTCDate(), 23, 59, 59, 999);
+            
+            const isTripFinished = todayMidnight > endLocalForCheck;
+            // ==========================================
+            // FIM
+            // ==========================================
+
+            // Loop principal pelos dias            
             while(currentDate <= endDate) {
                 const dayKey = currentDate.toISOString().split('T')[0];
                 
@@ -6737,9 +6867,12 @@ window.addEventListener('popstate', (event) => {
                 
                 let buttonClasses = activeVariationId !== 'original' ? 'bg-blue-600 text-white shadow-md border border-blue-700' : (hasVariations ? 'bg-blue-500 text-white shadow-md border border-blue-600' : 'bg-slate-100 text-slate-600 border border-slate-200');
 
+                // Se a viagem já terminou, não recolhe nada. Se ainda está rolando, recolhe apenas os dias individuais que já passaram.
                 const isPastDay = dayKey < todayStr;
-                const listHiddenClass = isPastDay ? 'hidden' : '';
-                const chevronRotation = isPastDay ? '-rotate-90' : '';
+                const shouldCollapse = isPastDay && !isTripFinished;
+
+                const listHiddenClass = shouldCollapse ? 'hidden' : '';
+                const chevronRotation = shouldCollapse ? '-rotate-90' : '';
 
                 dayPanel.innerHTML = `
                     <div class="flex justify-between items-center mb-2">
@@ -15040,6 +15173,259 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             tempInviteEmail = '';
             tempInviteName = '';
             openModal('new-trip-invite-modal');
+        };
+
+        window.openCityInspirations = async (cityName) => {
+            document.getElementById('city-inspirations-modal-title').textContent = `Roteiro: ${cityName}`;
+            document.getElementById('city-inspirations-modal-desc').textContent = "Buscando as melhores sugestões...";
+            
+            const listContainer = document.getElementById('city-inspirations-list');
+            listContainer.innerHTML = `
+                <div class="flex justify-center items-center py-12">
+                    <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </div>
+            `;
+            openModal('city-inspirations-modal');
+
+            const limparTexto = (texto) => texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            const cityToFind = limparTexto(cityName);
+
+            try {
+                // INÍCIO: Importação modular do Firebase Realtime DB
+                const { get, ref } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js");
+                const snapshot = await get(ref(db, 'suggestedItineraries'));
+                const todasSugestoes = snapshot.val() || {};
+
+                let roteiroEncontrado = null;
+
+                for (const idBanco in todasSugestoes) {
+                    const sugestao = todasSugestoes[idBanco];
+                    if (sugestao.cityName && (limparTexto(sugestao.cityName) === cityToFind || limparTexto(sugestao.cityName).includes(cityToFind))) {
+                        roteiroEncontrado = sugestao;
+                        break;
+                    }
+                }
+
+                if (roteiroEncontrado && roteiroEncontrado.activities) {
+                    // SALVA GLOBALMENTE PARA A CRIAÇÃO DA VIAGEM
+                    window.currentInspirationItinerary = roteiroEncontrado;
+                    window.currentInspirationCity = cityName;
+
+                    document.getElementById('city-inspirations-modal-desc').textContent = `Inspire-se com este roteiro sugerido para ${cityName}.`;
+                    
+                    const atividadesArray = Object.values(roteiroEncontrado.activities);
+                    const agrupadoPorDia = atividadesArray.reduce((acc, act) => {
+                        const dia = act.day || 1;
+                        if (!acc[dia]) acc[dia] = [];
+                        acc[dia].push(act);
+                        return acc;
+                    }, {});
+
+                    let html = '';
+                    
+                    Object.keys(agrupadoPorDia).sort((a, b) => parseInt(a) - parseInt(b)).forEach(dia => {
+                        html += `<div class="mb-6">
+                                    <h4 class="text-lg font-bold text-blue-800 bg-blue-100 px-4 py-2 rounded-lg mb-3 flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                                        Dia ${dia}
+                                    </h4>
+                                    <div class="space-y-3">`;
+                        
+                        const atividadesDoDia = agrupadoPorDia[dia].sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
+                        
+                        atividadesDoDia.forEach(act => {
+                            // LÓGICA DA IMAGEM: Usa a foto real ou um fallback com ícone
+                            let midiaVisual = '';
+                            if (act.imageUrl) {
+                                midiaVisual = `<img src="${act.imageUrl}" alt="${act.name}" class="w-12 h-12 rounded-lg object-cover shadow-sm border border-slate-200">`;
+                            } else {
+                                const quickIcon = act.type === 'Restaurante' ? '🍽️' : (act.type === 'Passeio' ? '📍' : '🗺️');
+                                midiaVisual = `<span class="inline-flex items-center justify-center w-12 h-12 bg-slate-50 border border-slate-100 rounded-lg text-xl shadow-sm">${quickIcon}</span>`;
+                            }
+
+                            html += `
+                                <div class="flex items-start gap-3 p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-blue-300 transition-colors">
+                                    <div class="flex-shrink-0 mt-0.5">
+                                        ${midiaVisual}
+                                    </div>
+                                    <div class="flex-grow min-w-0">
+                                        <div class="flex items-start justify-between gap-2 mb-1">
+                                            <p class="font-bold text-slate-800 text-base leading-tight">${act.name}</p>
+                                            <span class="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full whitespace-nowrap border border-slate-200 flex items-center gap-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                                ${act.time || '--:--'}
+                                            </span>
+                                        </div>
+                                        ${act.description ? `<p class="text-sm text-slate-500 line-clamp-2 mt-1">${act.description}</p>` : ''}
+                                        <div class="flex gap-2 mt-2.5">
+                                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-md">${act.type || 'Geral'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        html += `</div></div>`;
+                    });
+
+                    listContainer.innerHTML = html;
+                    
+                    // Exibe a área de input de data do modal (criada no passo 2)
+                    const ctaSection = document.getElementById('city-inspirations-cta');
+                    if(ctaSection) ctaSection.classList.remove('hidden');
+
+                } else {
+                    document.getElementById('city-inspirations-modal-desc').textContent = `Em breve mais detalhes para esta cidade.`;
+                    listContainer.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-10 text-center">
+                            <span class="text-4xl mb-4">🚀</span>
+                            <p class="text-slate-700 font-medium">Painel em construção para ${cityName}!</p>
+                            <p class="text-slate-500 text-sm mt-2 max-w-sm">Estamos preparando uma seleção incrível de atividades. Volte em breve.</p>
+                        </div>
+                    `;
+                    // Esconde a área de input se não achar roteiro
+                    const ctaSection = document.getElementById('city-inspirations-cta');
+                    if(ctaSection) ctaSection.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error("Erro ao buscar roteiro da cidade:", error);
+                listContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-8 text-center text-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-80"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                        <p class="font-semibold">Erro ao carregar roteiros.</p>
+                        <p class="text-sm opacity-80">Verifique sua conexão e tente novamente.</p>
+                    </div>`;
+            }
+        };
+
+        window.createTripFromInspiration = async () => {
+            const startDateInput = document.getElementById('inspiration-start-date').value;
+            
+            if(!startDateInput) {
+                alert("Por favor, selecione uma data de início para a sua viagem.");
+                document.getElementById('inspiration-start-date').focus();
+                return;
+            }
+
+            if (!window.currentInspirationItinerary || !window.currentInspirationCity) {
+                alert("Erro ao carregar os dados do roteiro.");
+                return;
+            }
+
+            // 1. Valida Limite do Plano Gratuito (Mesma lógica do App)
+            if (currentUserLicense.type === 'gratuito') {
+                const existingTripsCount = tripsData.filter(t => t.members && t.members[currentUserId] === 'owner').length;
+                if (existingTripsCount >= 1) {
+                    alert("Você atingiu o limite de viagens do plano gratuito. Faça um upgrade ou exclua uma viagem para criar outra.");
+                    closeModal('city-inspirations-modal');
+                    openModal('upgrade-plan-modal');
+                    return;
+                }
+            }
+
+            const roteiro = window.currentInspirationItinerary;
+            const cityName = window.currentInspirationCity;
+
+            // 2. Cálculos de Datas
+            // Usamos UTC para evitar problemas de fuso horário ao converter a string do input
+            const startDate = new Date(startDateInput + 'T00:00:00Z'); 
+            
+            let maxDay = 1;
+            const atividadesArray = Object.values(roteiro.activities || {});
+            
+            // Descobre qual é o último dia do roteiro (para definir o endDate)
+            atividadesArray.forEach(act => {
+                if (parseInt(act.day) > maxDay) maxDay = parseInt(act.day);
+            });
+            
+            // endDate = Data de início + (número máximo de dias - 1) em milissegundos
+            const endDate = new Date(startDate.getTime() + (maxDay - 1) * 86400000);
+
+            try {
+                // Importa métodos do Firebase necessários
+                const { ref, push, update } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js");
+
+                // 3. Gera a Chave (ID) da nova viagem
+                const newTripRef = push(ref(db, 'trips'));
+                const newTripId = newTripRef.key;
+
+                // 4. Processa as Atividades mapeando `day` para `date` (YYYY-MM-DD)
+                const processedActivities = {};
+                atividadesArray.forEach(act => {
+                    // Calcula a data específica desta atividade
+                    const actDate = new Date(startDate.getTime() + (parseInt(act.day || 1) - 1) * 86400000);
+                    const actDateString = actDate.toISOString().split('T')[0];
+                    
+                    // Gera um ID único para a atividade dentro da nova viagem
+                    const newActId = push(ref(db, `trips/${newTripId}/activities`)).key;
+                    
+                    processedActivities[newActId] = {
+                        ...act,
+                        id: newActId,
+                        date: actDateString,
+                        // Limpa o 'day' original pois no banco oficial do usuário trabalhamos com 'date' real
+                        day: null 
+                    };
+                });
+
+                // ==========================================
+                // INÍCIO DA INSERÇÃO: Atividade "Cidade" Padrão
+                // ==========================================
+                const cityActId = push(ref(db, `trips/${newTripId}/activities`)).key;
+                const firstDayString = startDate.toISOString().split('T')[0]; // Dia 1 no formato YYYY-MM-DD
+                
+                processedActivities[cityActId] = {
+                    id: cityActId,
+                    name: cityName,
+                    type: "Cidade",
+                    time: "07:00",
+                    date: firstDayString,
+                    icon: "passeio" // Ícone fallback padrão
+                };
+                // ==========================================
+                // FIM DA INSERÇÃO
+                // ==========================================
+
+                // 5. Monta o Objeto da Viagem
+                const newTrip = {
+                    id: newTripId,
+                    name: `Roteiro: ${cityName}`,
+                    startDate: startDate.getTime(),
+                    endDate: endDate.getTime(),
+                    imageUrl: roteiro.imageUrl || "https://midias-turismo.eurodicas.com.br/wp-content/uploads/2025/02/paris_na_primavera-2-1200x800.jpg.webp",
+                    travelers: [{
+                        uid: currentUserId,
+                        name: currentUserProfile.fullName || "Viajante",
+                        email: currentUserProfile.email || ""
+                    }],
+                    members: {
+                        [currentUserId]: 'owner'
+                    },
+                    activities: processedActivities
+                };
+
+                // 6. Prepara o lote de atualizações simultâneas (Transação Segura)
+                const updates = {};
+                updates[`trips/${newTripId}`] = newTrip;
+                updates[`users/${currentUserId}/memberOf/${newTripId}`] = true;
+
+                // Salva tudo no banco
+                await update(ref(db), updates);
+                
+                // Finaliza a interface
+                closeModal('city-inspirations-modal');
+                alert("Sua viagem foi criada com sucesso!");
+                
+                // Redireciona o usuário direto para dentro do roteiro recém-criado
+                showTripDetails(newTripId);
+                
+                // Opcional: Registrar a atividade no log
+                logTripActivity("criou uma viagem a partir de um roteiro sugerido da comunidade.");
+
+            } catch(e) {
+                console.error("Erro Crítico ao clonar viagem inspiracional:", e);
+                alert("Houve um erro ao processar e criar sua viagem. Tente novamente.");
+            }
         };
 
     </script>
