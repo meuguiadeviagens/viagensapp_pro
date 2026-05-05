@@ -1007,7 +1007,7 @@
                     
                     <!-- Botão discreto alinhado à direita -->
                     <div class="mt-6 flex justify-end">
-                        <button onclick="alert('Em breve você conseguirá acessar o painel completo de roteiros.')" class="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1 group">
+                        <button onclick="openAllInspirationsModal()" class="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1 group">
                             Ver mais roteiros
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transform transition-transform group-hover:translate-x-1"><path d="m9 18 6-6-6-6"/></svg>
                         </button>
@@ -1021,7 +1021,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v1.4.9 | 04/05/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v1.4.10 | 05/05/2026, 07:55</p>
             </main>
         </div>
 
@@ -3271,6 +3271,29 @@
         </div>
     </div>
     <!-- FIM: MODAL DE ROTEIROS DA CIDADE -->
+
+    <!-- INÍCIO: MODAL TODOS OS ROTEIROS -->
+    <div id="all-inspirations-modal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl m-4 flex flex-col max-h-[85vh]">
+            
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800">Destinos Disponíveis</h3>
+                    <p class="text-sm text-slate-500 mt-1">Escolha uma cidade e descubra o roteiro sugerido para a sua viagem.</p>
+                </div>
+                <button onclick="closeModal('all-inspirations-modal')" class="text-slate-400 hover:text-slate-600 transition-colors self-start p-1" title="Fechar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            
+            <!-- Container onde a grade de cidades será injetada -->
+            <div id="all-inspirations-grid" class="flex-grow overflow-y-auto p-6">
+                <!-- Preenchido via JavaScript -->
+            </div>
+            
+        </div>
+    </div>
+    <!-- FIM: MODAL TODOS OS ROTEIROS -->
 
 
     <script type="module">
@@ -5785,12 +5808,12 @@ window.addEventListener('popstate', (event) => {
             upcomingContent.innerHTML = '';
             pastContent.innerHTML = '';
 
-            // Array de Inspirações 
-            const featuredInspirations = [
+            // Array base com todas as opções de inspiração
+            const baseInspirations = [
                 {
                     title: "Nova York em 5 dias",
                     cityName: "Nova York",
-                    image: "https://cdn.panrotas.com.br/portal-panrotas-statics/media-files-cache/427785/67553ba6ea2af76dcfb165e6bde137danye2023michaelhullphoto768/0,180,2560,1528/1206,720,0.33/0/default.jpg"                 
+                    image: "https://cdn.panrotas.com.br/portal-panrotas-statics/media-files-cache/427785/67553ba6ea2af76dcfb165e6bde137danye2023michaelhullphoto768/0,180,2560,1528/1206,720,0.33/0/default.jpg"                
                 },
                 {
                     title: "Cancún em 6 dias",
@@ -5798,11 +5821,27 @@ window.addEventListener('popstate', (event) => {
                     image: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/10/bc/2c/39/hyatt-ziva-cancun.jpg?w=900&h=500&s=1"
                 },
                 {
-                    title: "Explorar o mundo",
-                    cityName: "Global",
-                    image: "https://asset-prod.france.fr/louvre_piramide_paris_bf55d3e8b3.jpg"
+                    title: "Brasília em 3 dias",
+                    cityName: "Brasília",
+                    image: "https://www.zapimoveis.com.br/blog/wp-content/uploads/2025/08/o-que-fazer-em-brasilia-capa.jpg"
+                },
+                {
+                    title: "Amsterdã em 4 dias",
+                    cityName: "Amsterdã",
+                    image: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/06/a4/78/c5/de-negen-straatjes.jpg"
                 }
-            ];          
+            ];
+
+            // 1. Embaralha o array base e pega apenas os 2 primeiros
+            const shuffledInspirations = [...baseInspirations].sort(() => 0.5 - Math.random());
+            const selectedInspirations = shuffledInspirations.slice(0, 2);
+
+            // 2. Adiciona o card fixo "Explorar o mundo" na última posição
+            selectedInspirations.push({
+                title: "Explorar o mundo",
+                cityName: "Global",
+                image: "https://asset-prod.france.fr/louvre_piramide_paris_bf55d3e8b3.jpg"
+            });        
 
             // Retornamos ao formato original com apenas 1 card de vídeo
             const getWelcomeCardHtml = (isFirstTrip) => `
@@ -5941,7 +5980,8 @@ window.addEventListener('popstate', (event) => {
             // INÍCIO: Renderiza os cards de Sugestões de Roteiros
             const suggestionsContent = document.getElementById('suggested-trips-content');
             if (suggestionsContent) {
-                suggestionsContent.innerHTML = featuredInspirations.map(inspiration => {
+                // Iteramos sobre o novo array 'selectedInspirations' (que sempre terá 3 itens)
+                suggestionsContent.innerHTML = selectedInspirations.map(inspiration => {
                     // Se for "Explorar o mundo", abre o modal existente, senão, abre o novo modal da cidade
                     const clickAction = inspiration.title === "Explorar o mundo" 
                         ? "openExploreWorldModal()" 
@@ -15430,6 +15470,101 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             } catch(e) {
                 console.error("Erro Crítico ao clonar viagem inspiracional:", e);
                 alert("Houve um erro ao processar e criar sua viagem. Tente novamente.");
+            }
+        };
+
+        window.openAllInspirationsModal = async () => {
+            const gridContainer = document.getElementById('all-inspirations-grid');
+            
+            // Exibe o spinner de carregamento enquanto busca
+            gridContainer.innerHTML = `
+                <div class="flex justify-center items-center py-12 col-span-full">
+                    <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </div>
+            `;
+            openModal('all-inspirations-modal');
+
+            try {
+                // Busca de Roteiros
+                const { get, ref } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js");
+                const snapshot = await get(ref(db, 'suggestedItineraries'));
+                const todasSugestoes = snapshot.val() || {};
+
+                const cidadesUnicas = [];
+                const controleDuplicidade = new Set();
+
+                // Mapeia e consolida cidades únicas encontradas nos roteiros
+                for (const idBanco in todasSugestoes) {
+                    const sugestao = todasSugestoes[idBanco];
+                    if (sugestao.cityName) {
+                        const cityNameClean = sugestao.cityName.trim();
+                        const cityKey = cityNameClean.toLowerCase();
+                        
+                        // Garante que a cidade não entre duplicada na vitrine
+                        if (!controleDuplicidade.has(cityKey)) {
+                            controleDuplicidade.add(cityKey);
+                            
+                            // Calcula quantos dias o roteiro tem (baseado no maior dia das atividades)
+                            let daysCount = 0;
+                            if (sugestao.activities) {
+                                const days = Object.values(sugestao.activities).map(act => parseInt(act.day || 1));
+                                daysCount = Math.max(...days);
+                            }
+
+                            cidadesUnicas.push({
+                                name: cityNameClean,
+                                image: sugestao.imageUrl || "https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&q=80&w=600", // Fallback seguro
+                                days: daysCount
+                            });
+                        }
+                    }
+                }
+
+                if (cidadesUnicas.length > 0) {
+                    // Ordena as cidades por ordem alfabética para facilitar a navegação
+                    cidadesUnicas.sort((a, b) => a.name.localeCompare(b.name));
+
+                    // Cria o layout em grade (grid)
+                    let html = `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">`;
+                    
+                    cidadesUnicas.forEach(city => {
+                        html += `
+                            <div onclick="closeModal('all-inspirations-modal'); openCityInspirations('${city.name}')" 
+                                 class="group cursor-pointer rounded-xl overflow-hidden shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-400 transition-all bg-white relative">
+                                <div class="h-32 bg-slate-200 relative overflow-hidden">
+                                    <img src="${city.image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="${city.name}">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                                    <h4 class="absolute bottom-3 left-3 text-white font-bold text-lg leading-tight line-clamp-2 pr-2">${city.name}</h4>
+                                    
+                                    ${city.days > 0 ? `
+                                        <span class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-slate-800 text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
+                                            ${city.days} dia${city.days > 1 ? 's' : ''}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `</div>`;
+                    gridContainer.innerHTML = html;
+                } else {
+                    gridContainer.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-10 text-center">
+                            <span class="text-4xl mb-4">🧳</span>
+                            <p class="text-slate-700 font-medium">Nenhum roteiro disponível ainda.</p>
+                            <p class="text-slate-500 text-sm mt-1">A comunidade ainda está montando os roteiros.</p>
+                        </div>`;
+                }
+
+            } catch (error) {
+                console.error("Erro ao buscar cidades com roteiro:", error);
+                gridContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-10 text-center text-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-3 opacity-80"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+                        <p class="font-semibold">Erro ao carregar roteiros.</p>
+                        <p class="text-sm opacity-80">Verifique sua conexão e tente novamente.</p>
+                    </div>`;
             }
         };
 
