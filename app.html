@@ -1021,7 +1021,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.0.0 | 06/05/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.0.1 | 06/05/2026, 19:55</p>
             </main>
         </div>
 
@@ -3741,6 +3741,7 @@ window.addEventListener('popstate', (event) => {
                 specificText.classList.add('hidden');
                 genericText.classList.remove('hidden');
             }
+
             openModal('invitation-choice-modal');
         }
 
@@ -3841,27 +3842,32 @@ window.addEventListener('popstate', (event) => {
        
         let tempInviteEmail = '';
         let tempInviteName = '';
-        // --- LÓGICA ATUALIZADA PARA O BOTÃO DE CONVITE POR E-MAIL ---
+        
         document.getElementById('send-email-invite-btn').addEventListener('click', () => {
-            const trip = tripsData.find(t => t.id === currentTripId);
+            // Puxa o ID global que acabamos de atualizar no Passo 1
+            const tripId = window.currentTripId || currentTripId;
+            
+            if (!tripId || tripId === 'null') {
+                alert("Erro: ID da viagem não encontrado.");
+                return;
+            }
+
+            const trip = tripsData.find(t => t.id === tripId);
             const tripName = trip ? trip.name : "uma viagem incrível";
 
-            // Define um nome genérico se nenhum foi fornecido
             const recipientName = tempInviteName || 'amigo(a)';
             const greeting = tempInviteName ? `Olá, ${tempInviteName}!` : 'Olá!';
 
-            // 1. Gera a URL com o parâmetro invite (mesma lógica do WhatsApp)
-            const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${currentTripId}`;
+            // Gera a URL com o parâmetro invite usando o ID correto
+            const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${tripId}`;
 
             const subject = `Convite para participar da viagem "${tripName}"`;
             
-            // 2. Atualiza o corpo do e-mail incluindo o link direto para o convite
-            const body = `${greeting}\n\nVocê foi convidado(a) por ${currentUserProfile.fullName} para participar do planejamento da viagem "${tripName}" no app Não Vou Sozinho.\n\nBasta clicar no link abaixo para aceitar o convite e acessar o roteiro:\n${inviteUrl}\n\nAté mais!`;
+            const body = `${greeting}\n\nVocê foi convidado(a) por ${currentUserProfile.fullName || 'um amigo'} para participar do planejamento da viagem "${tripName}" no app Não Vou Sozinho.\n\nBasta clicar no link abaixo para aceitar o convite e acessar o roteiro:\n${inviteUrl}\n\nAté mais!`;
 
-            // O tempInviteEmail será vazio no caso genérico, abrindo o cliente de e-mail com o campo "Para:" em branco
             window.location.href = `mailto:${tempInviteEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
             closeModal('invitation-choice-modal');
-        });      
+        });    
         
 
         // Função para mostrar as sugestões filtradas na tela
@@ -9736,9 +9742,25 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 closeModal('add-trip-modal');
                 e.target.reset();  
                 
-                // 2. Chama o novo modal de convites que criamos
+                // --- INÍCIO DA INJEÇÃO CORRIGIDA ---
+                // 1. Atualiza o ID global para os links de WhatsApp/E-mail funcionarem
+                currentTripId = newTripId;
+                window.currentTripId = newTripId;
+
+                // 2. Coloca o ID dentro do objeto da viagem que acabamos de criar
+                newTripData.id = newTripId;
+                
+                // 3. Adiciona a viagem na memória local do navegador (no topo da lista)
+                tripsData.push(newTripData);
+                
+                // 4. Manda desenhar a tela novamente! Agora a viagem está na memória.
+                if (typeof renderTripLists === 'function') {
+                    renderTripLists();
+                }
+                // --- FIM DA INJEÇÃO ---
+
+                // Chama o novo modal de convites que criamos
                 window.showNewTripInviteModal();
-                // --- FIM DA ALTERAÇÃO ---
 
             } catch (error) {
                 console.error("Erro ao salvar:", error);
@@ -14725,11 +14747,19 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         //whatsapp
         document.getElementById('send-whatsapp-invite-btn').addEventListener('click', () => {
-            const trip = tripsData.find(t => t.id === currentTripId);
+            // Puxa o ID global que acabamos de atualizar no Passo 1
+            const tripId = window.currentTripId || currentTripId;
+            
+            if (!tripId || tripId === 'null') {
+                alert("Erro: ID da viagem não encontrado. Feche este modal e tente compartilhar a partir do painel da viagem.");
+                return;
+            }
+
+            const trip = tripsData.find(t => t.id === tripId);
             const tripName = trip ? trip.name : "uma viagem";
             
-            // Gera a URL com o parâmetro invite
-            const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${currentTripId}`;
+            // Gera a URL com o parâmetro invite usando o ID correto
+            const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${tripId}`;
 
             const body = `Olá! Bora viajar? ✈️\n\n Queria te convidar para editar o roteiro: *${tripName}*.\n\n Basta clicar no link para aceitar o convite e participar do planejamento:\n${inviteUrl}`;
 
