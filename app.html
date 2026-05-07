@@ -1021,7 +1021,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.0.2 | 07/05/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.0.3 | 07/05/2026, 07:55</p>
             </main>
         </div>
 
@@ -3147,14 +3147,14 @@
                         <div>
                             <label class="block text-xs font-medium text-slate-400 mb-2 uppercase">Tipo de Mídia</label>
                             <select id="imersao-type" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500">
+                                <option value="idea" selected>Apenas Texto</option>
                                 <option value="image">Foto (URL)</option>
                                 <option value="video">Vídeo (YouTube)</option>
                                 <option value="link">Link (Site, Instagram, etc)</option>
-                                <option value="idea">Apenas Texto</option>
                             </select>
                         </div>
 
-                        <div id="wrapper-media-url">
+                        <div id="wrapper-media-url" class="hidden">
                             <label class="block text-xs font-medium text-slate-400 mb-2 uppercase">Link da Mídia (Opcional)</label>
                             <input type="url" id="imersao-url" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-sm outline-none focus:ring-2 focus:ring-pink-500" placeholder="https://...">
                         </div>
@@ -12344,7 +12344,6 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                         content: comment || ""
                     });
                     delete form.dataset.editingId; // Limpa o estado de edição
-                    submitBtn.innerText = "Postar no Mural";
                 } else {
                     // CRIA NOVO ITEM
                     const moodboardRef = ref(db, `trips/${currentTripId}/moodboard`);
@@ -12359,16 +12358,24 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     if (typeof logTripActivity === 'function') await logTripActivity(`adicionou uma nova inspiração no Mural.`);
                 }
                 
+                // === INÍCIO DA LIMPEZA DO FORMULÁRIO ===
                 form.reset();
-                document.getElementById('imersao-type').dispatchEvent(new Event('change')); // Reseta o layout dos campos
+                document.getElementById('imersao-type').value = 'idea';
+                document.getElementById('imersao-type').dispatchEvent(new Event('change')); 
+                
+                // CORREÇÃO: Devolve o texto padrão para o botão aqui!
+                submitBtn.innerText = "Postar no Mural"; 
+                
                 toggleImersaoForm(false);
                 
             } catch (error) {
                 console.error("Erro ao salvar:", error);
                 alert("Erro ao salvar. Tente novamente.");
-                submitBtn.innerText = originalBtnText;
+                // Se der erro, devolve o texto que estava antes (útil se estiver editando)
+                submitBtn.innerText = originalBtnText; 
             } finally {
-                submitBtn.disabled = false;
+                // Sempre destrava o botão, dando erro ou não
+                submitBtn.disabled = false; 
             }
         };
 
