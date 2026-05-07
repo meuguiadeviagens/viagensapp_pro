@@ -1021,7 +1021,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.0.1 | 06/05/2026, 19:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.0.2 | 07/05/2026, 07:55</p>
             </main>
         </div>
 
@@ -4903,12 +4903,9 @@ window.addEventListener('popstate', (event) => {
                 const pendingTripId = sessionStorage.getItem('pendingInviteTripId');
                 if (pendingTripId) {
                     sessionStorage.removeItem('pendingInviteTripId'); // Limpa para não repetir
-                    
-                    // Pergunta ao usuário. 
-                    // Dica: Se quiser algo mais bonito, use o seu 'info-modal' depois.
-                    if (confirm("Você acessou um link de convite! Deseja se juntar a esta viagem agora?")) {
-                        joinTripViaLink(pendingTripId, user);
-                    }
+                                        
+                    // CHAMA DIRETO! A função vai cuidar de exibir o modal bonitão
+                    joinTripViaLink(pendingTripId, user);
                 }
               
                 // 1. USUÁRIO ESTÁ LOGADO
@@ -14768,7 +14765,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             closeModal('invitation-choice-modal');
         });
 
-        async function joinTripViaLink(tripId, user) {
+        window.joinTripViaLink = async (tripId, user) => {
             try {
                 const tripRef = ref(db, `trips/${tripId}`);
                 const snapshot = await get(tripRef);
@@ -14780,7 +14777,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
                 const trip = snapshot.val();
                 const tripName = trip.name || "viagem incrível";
-                const userName = (currentUserProfile && currentUserProfile.fullName) || user.displayName || user.email.split('@')[0];
+                
+                // CORREÇÃO: Busca o nome direto no banco para o caso de ser uma conta recém-criada!
+                const profileSnap = await get(ref(db, `users/${user.uid}/profile`));
+                const profileData = profileSnap.val() || {};
+                const userName = profileData.fullName || user.displayName || (user.email ? user.email.split('@')[0] : "Novo Viajante");
 
                 // Se já for membro, avisa e abre a viagem direto
                 if (trip.members && trip.members[user.uid]) {
@@ -14788,15 +14789,16 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     return;
                 }
 
-                // CHAMA O MODAL BONITÃO
+                // CHAMA O SEU MODAL BONITÃO
                 const confirmJoin = await showInviteModal(userName, tripName);
                 
+                // Se o usuário clicou em "Aceitar" no seu modal
                 if (confirmJoin) {
                     const updates = {};
                     updates[`/trips/${tripId}/members/${user.uid}`] = 'editor';
                     
                     const currentTravelers = Array.isArray(trip.travelers) ? trip.travelers : [];
-                    const newTraveler = { uid: user.uid, name: userName, email: user.email };
+                    const newTraveler = { uid: user.uid, name: userName, email: user.email || "" };
                     
                     if (!currentTravelers.some(t => t.uid === user.uid)) {
                         updates[`/trips/${tripId}/travelers`] = [...currentTravelers, newTraveler];
@@ -14804,16 +14806,18 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     
                     updates[`/users/${user.uid}/memberOf/${tripId}`] = true;
 
+                    // Salva no banco
                     await update(ref(db), updates);
                     
-                    // Aqui você pode usar uma notificação toast se tiver, ou manter um aviso discreto
+                    // Abre a viagem direto pra pessoa ver!
                     showTripDetails(tripId); 
                 }
 
             } catch (error) {
                 console.error("Erro no convite:", error);
+                showToast("Erro ao processar convite.", "error");
             }
-        }
+        };
 
         function showInviteModal(userName, tripName) {
             return new Promise((resolve) => {
