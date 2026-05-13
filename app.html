@@ -1021,7 +1021,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.0.3 | 07/05/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.0.4 | 12/05/2026, 07:55</p>
             </main>
         </div>
 
@@ -2222,13 +2222,26 @@
                         <div class="flex items-center gap-2 mb-4">
                             <h4 class="text-sm font-bold text-slate-800">Convide seus amigos</h4>                            
                         </div>
+                        
                         <p class="text-xs text-slate-500 mb-4">Envie o link da viagem por WhatsApp ou por E-mail. Quem acessar poderá colaborar com o roteiro junto com você!</p>
                         
+                        <p class="text-xs font-semibold text-blue-600 mb-4 cursor-pointer hover:underline transition-colors" onclick="document.getElementById('manual-invite-container').classList.toggle('hidden')">
+                            Se preferir, inclua diretamente o e-mail dos demais viajantes (caso eles já possuam cadastro no App).
+                        </p>
 
-                    </div>
+                        <div id="manual-invite-container" class="hidden flex flex-col gap-2 mb-4 p-4 bg-slate-100 border border-slate-200 rounded-lg shadow-inner">
+                            <label for="traveler-email-manual" class="text-xs font-bold text-slate-700 uppercase tracking-wider">E-mail do Viajante</label>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input type="email" id="traveler-email-manual" placeholder="email@exemplo.com" class="flex-1 px-3 py-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                <button type="button" onclick="addTravelerByEmailOnly()" class="bg-blue-600 text-white font-semibold px-4 py-2 text-sm rounded-md shadow-sm hover:bg-blue-700 transition-colors whitespace-nowrap">
+                                    Incluir Viajante
+                                </button>
+                            </div>
+                        </div>
+                        </div>
                     <div class="text-right mt-2">
                         <button type="button" onclick="addTraveler()" class="bg-green-600 text-white font-semibold px-4 h-10 rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300">Adicionar Viajantes</button>
-                    </div>                    
+                    </div>                   
                     
                 </div>
                 </div>                
@@ -6835,8 +6848,8 @@ window.addEventListener('popstate', (event) => {
                                 <img src="${imageUrl}" class="w-full h-full object-cover">
                                 ${(isEditable && !isReadOnly) ? `
                                 <div class="absolute top-2 right-2 flex gap-1.5 z-10 print:hidden">
-                                    <button onclick="event.stopPropagation(); openEditActivityModal('${eventData.id}')" class="bg-white/90 text-blue-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
-                                    <button onclick="event.stopPropagation(); deleteActivity('${eventData.id}')" class="bg-white/90 text-red-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
+                                    <button onpointerdown="event.stopPropagation(); openEditActivityModal('${eventData.id}')" class="bg-white/90 text-blue-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+                                    <button onpointerdown="event.stopPropagation(); deleteActivity('${eventData.id}')" class="bg-white/90 text-red-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
                                 </div>` : ''}
                             </div>
                             <div class="p-3 rounded-b-xl flex items-center gap-3 border-x border-b border-gray-100/50" style="${bgColorStyle}">
@@ -15595,6 +15608,103 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                         <p class="font-semibold">Erro ao carregar roteiros.</p>
                         <p class="text-sm opacity-80">Verifique sua conexão e tente novamente.</p>
                     </div>`;
+            }
+        };
+
+        window.addTravelerByEmailOnly = async () => {
+            const emailInput = document.getElementById('traveler-email-manual');
+            if (!emailInput) return;
+            
+            const email = emailInput.value.trim().toLowerCase();
+            if (!email) {
+                alert("Por favor, digite o e-mail do viajante.");
+                return;
+            }
+            
+            try {
+                // Altera o estado do botão para dar feedback visual
+                const btn = emailInput.nextElementSibling;
+                const originalBtnText = btn.innerHTML;
+                btn.innerHTML = "Buscando...";
+                btn.disabled = true;
+
+                // Busca o UID do usuário no Firebase a partir do e-mail em Base64
+                const encodedEmail = btoa(email);
+                const emailToUidRef = ref(db, `emailToUid/${encodedEmail}`);
+                const snapshot = await get(emailToUidRef);
+                
+                if (!snapshot.exists()) {
+                    alert("Este e-mail não possui cadastro no sistema. Envie o link da viagem para que ele se cadastre.");
+                    btn.innerHTML = originalBtnText;
+                    btn.disabled = false;
+                    return;
+                }
+                
+                const newTravelerUid = snapshot.val();
+                
+                // Verifica se a viagem e o usuário atual existem
+                const trip = tripsData.find(t => t.id === currentTripId);
+                if (!trip) return;
+
+                // Verifica se o usuário já faz parte da viagem
+                if (trip.members && trip.members[newTravelerUid]) {
+                    alert('Este usuário já faz parte da viagem.');
+                    btn.innerHTML = originalBtnText;
+                    btn.disabled = false;
+                    return;
+                }
+
+                // Tenta buscar o nome do usuário no profile para salvar bonito na array 'travelers'
+                const profileRef = ref(db, `users/${newTravelerUid}/profile`);
+                const profileSnap = await get(profileRef);
+                let travelerName = "Viajante";
+                if (profileSnap.exists() && profileSnap.val().fullName) {
+                    travelerName = profileSnap.val().fullName;
+                }
+
+                // Prepara os dados para salvar de forma atômica
+                const updates = {};
+                const currentTravelers = trip.travelers || [];
+                const newTraveler = { uid: newTravelerUid, name: travelerName, email: email };
+                const updatedTravelers = [...currentTravelers, newTraveler];
+
+                // Atualiza a viagem
+                updates[`/trips/${currentTripId}/travelers`] = updatedTravelers;
+                updates[`/trips/${currentTripId}/members/${newTravelerUid}`] = 'editor'; // Por padrão entra como editor
+                
+                // Atualiza o perfil do usuário convidado
+                updates[`/users/${newTravelerUid}/memberOf/${currentTripId}`] = true;
+
+                // Envia notificação caso não seja você mesmo
+                if (newTravelerUid !== currentUserId) {
+                    const newNotificationKey = push(ref(db, `users/${newTravelerUid}/notifications`)).key;
+                    const newNotification = {
+                        message: `${currentUserProfile.fullName} incluiu você diretamente na viagem "${trip.name}".`,
+                        tripId: currentTripId,
+                        isRead: false,
+                        timestamp: serverTimestamp()
+                    };
+                    updates[`/users/${newTravelerUid}/notifications/${newNotificationKey}`] = newNotification;
+                }
+
+                // Executa a atualização no Firebase
+                await update(ref(db), updates);
+                
+                // Feedback de sucesso
+                emailInput.value = '';
+                renderTravelersList(currentTripId); // Atualiza a lista na tela instantaneamente
+                alert(`Sucesso! ${travelerName} foi adicionado(a) à viagem.`);
+                
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+                
+            } catch (error) {
+                console.error("Erro ao incluir viajante por e-mail:", error);
+                alert("Ocorreu um erro ao verificar o e-mail. Verifique a conexão e tente novamente.");
+                
+                const btn = emailInput.nextElementSibling;
+                btn.innerHTML = "Incluir Viajante";
+                btn.disabled = false;
             }
         };
 
