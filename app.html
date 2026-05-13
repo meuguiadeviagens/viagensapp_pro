@@ -12451,7 +12451,8 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     }
 
                     if (item.content) {
-                        innerHTML += `<p class="text-sm text-slate-200 font-medium leading-relaxed whitespace-pre-line">${item.content}</p>`;
+                        // O 'break-words' garante que o texto e os links não escapem do card
+                        innerHTML += `<p class="text-sm text-slate-200 font-medium leading-relaxed whitespace-pre-line break-words">${window.formatPostText(item.content)}</p>`;
                     }
 
                     // Assinatura e Botões (Editar e Excluir)
@@ -15706,6 +15707,27 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 btn.innerHTML = "Incluir Viajante";
                 btn.disabled = false;
             }
+        };
+
+        // Função auxiliar para transformar links em texto clicável e evitar vazamento de borda (Mural de Imersão)
+        window.formatPostText = (text) => {
+            if (!text) return '';
+            
+            // 1. Escapa o texto para segurança
+            let safeText = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+
+            // 2. Expressão regular para encontrar URLs
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            
+            // 3. Substitui a URL por uma tag <a> clicável com cores combinando com o tema escuro
+            return safeText.replace(urlRegex, function(url) {
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-sky-300 underline font-medium break-all transition-colors" onclick="event.stopPropagation()">${url}</a>`;
+            });
         };
 
     </script>
