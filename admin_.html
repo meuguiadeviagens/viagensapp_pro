@@ -504,6 +504,19 @@ O link deve ser o link direto do Google Maps para o local."
                     <div id="user-trips-list-container" class="hidden mt-2 border rounded bg-slate-50 p-3 max-h-40 overflow-y-auto">
                         {/* Lista de viagens do usuário será inserida aqui */}
                     </div>
+                    <div class="border-t pt-4 mt-4">
+                        <label class="block text-sm font-medium text-slate-600 mb-2 font-semibold">Créditos de Viagem Avulsa</label>
+                        <div class="flex items-center gap-3">
+                            <button type="button" onclick="adjustCredits(-1)" class="w-10 h-10 flex items-center justify-center bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-bold text-xl transition-colors">-</button>
+                            
+                            <input type="number" id="edit-license-credits" 
+                                class="w-24 px-3 py-2 bg-white border border-slate-300 rounded-md text-center text-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none" 
+                                value="0" min="0">
+                            
+                            <button type="button" onclick="adjustCredits(1)" class="w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-bold text-xl transition-colors">+</button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2">Ajuste o saldo total de créditos disponíveis para este usuário.</p>
+                    </div>
 
                 </div>
 
@@ -1115,6 +1128,9 @@ O link deve ser o link direto do Google Maps para o local."
             toggleExpiresField(); 
 
             tempPurchasedTrips = user.licenseData.purchasedTrips || {}; 
+            // Carrega o saldo de créditos atual do banco de dados
+            document.getElementById('edit-license-credits').value = user.licenseData.credits || 0;
+            
             renderPurchasedTripsList(); 
 
             const userTripsContainer = document.getElementById('user-trips-list-container');
@@ -1280,7 +1296,8 @@ O link deve ser o link direto do Google Maps para o local."
                 type: type,
                 expires: expiresTimestamp,
                 purchasedTrips: tempPurchasedTrips, 
-                dataAquisicao: aquisicaoTimestamp 
+                dataAquisicao: aquisicaoTimestamp,
+                credits: parseInt(document.getElementById('edit-license-credits').value) || 0
             };
 
             try {
@@ -1398,7 +1415,7 @@ O link deve ser o link direto do Google Maps para o local."
 
             } catch (error) {
                 console.error("Erro ao buscar viagens do usuário:", error);
-                listContainer.innerHTML = '<p class="text-xs text-red-500 text-center">Erro ao buscar viagens. Verifique as permissões.</p>';
+                listContainer.innerHTML = '<p class="text-xs text-red-500 text-center">Erro ao buscar viagens. Verifique as permissões ou se o usuário já criou alguma viagem.</p>';
             }
         }
 
@@ -2292,7 +2309,6 @@ O link deve ser o link direto do Google Maps para o local."
          * Atualiza a licença do usuário e apaga a solicitação.
          */
         window.approveUpgrade = async (uid, request) => {
-            // Extraímos actionType também
             const { plano, tripId, actionType } = request;
             
             if (!uid || !plano) {
@@ -2302,25 +2318,29 @@ O link deve ser o link direto do Google Maps para o local."
 
             // 1. Obter a licença ATUAL do usuário
             const userLicenseRef = ref(db, `users/${uid}/license`);
-            let currentLicenseData = { type: 'gratuito', purchasedTrips: {}, credits: 0 }; // Padrão com créditos
+            let currentLicenseData = { type: 'gratuito', purchasedTrips: {}, credits: 0 }; 
             try {
                 const snapshot = await get(userLicenseRef);
                 if (snapshot.exists()) {
                     currentLicenseData = snapshot.val();
                 }
             } catch (error) {
-                alert("Erro ao ler a licença atual do usuário. A aprovação falhou.");
+                alert("Erro ao ler a licença atual do usuário.");
                 return;
             }
 
-            // 2. Preparar a NOVA licença
-            let newLicenseData = { ...currentLicenseData }; // Copia a licença atual
+            // 2. Preparar variáveis base
+            let newLicenseData = { ...currentLicenseData }; 
             const today = new Date();
             const todayTimestamp = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
             const adminEmail = auth.currentUser ? auth.currentUser.email : 'unknown_admin';
 
+            // DECLARAÇÃO DAS VARIÁVEIS DE NOTIFICAÇÃO (Aqui resolve o erro de initialization)
+            let notificationTitle = "Plano Aprovado!";
+            let notificationMessage = `Sua solicitação foi aprovada com sucesso.`;
+
+            // 3. Lógica de Upgrade/Crédito
             if (plano === 'anual' || plano === 'bianual') {
-                // Define a data de expiração
                 const expirationDate = new Date(today);
                 const yearsToAdd = (plano === 'anual') ? 1 : 2;
                 expirationDate.setFullYear(expirationDate.getFullYear() + yearsToAdd);
@@ -2328,70 +2348,49 @@ O link deve ser o link direto do Google Maps para o local."
                 newLicenseData.type = 'anual';
                 newLicenseData.dataAquisicao = todayTimestamp;
                 newLicenseData.expires = expirationDate.getTime();
-                // Garante que os campos existam
-                newLicenseData.purchasedTrips = newLicenseData.purchasedTrips || {}; 
-                newLicenseData.credits = newLicenseData.credits || 0;
+                
+                notificationTitle = "Plano Aprovado!";
+                notificationMessage = `Sua solicitação do ${plano === 'anual' ? 'Plano Anual' : 'Plano Bianual'} foi aprovada e já está ativa.`;
 
             } else if (plano === 'avulsa') {
-                
-                // CORREÇÃO: Se for store_credit OU se não tiver ID de viagem, é crédito.
-                if (actionType === 'store_credit' || !tripId) {
-                    // --- LÓGICA DE CRÉDITO ---
-                    const currentCredits = parseInt(newLicenseData.credits || 0);
+                if (actionType === 'store_credit') {
+                    // Incrementa o saldo de créditos (garante que seja número)
+                    const currentCredits = Number(currentLicenseData.credits || 0);
                     newLicenseData.credits = currentCredits + 1;
-                    
-                    // Define mensagem correta para o log/notificação
-                    if (!request.tripName) request.tripName = "Crédito Avulso";
-                    
+
+                    if (request.isReferral) {
+                        notificationTitle = "Bônus de Indicação Liberado! 🎁";
+                        notificationMessage = `Seu crédito avulso por indicar um amigo foi aprovado e já está na sua conta!`;
+                    } else {
+                        notificationTitle = "Crédito Adicionado!";
+                        notificationMessage = `Sua compra de 1 Crédito de Viagem Avulsa foi aprovada.`;
+                    }
                 } else {
-                    // --- LÓGICA DE VIAGEM ESPECÍFICA ---
-                    if (!tripId) {
-                        alert("Erro crítico: ID da viagem não encontrado.");
-                        return;
-                    }
-                    if (!newLicenseData.purchasedTrips) {
-                        newLicenseData.purchasedTrips = {};
-                    }
+                    // Liberação de viagem específica
+                    newLicenseData.purchasedTrips = newLicenseData.purchasedTrips || {};
                     newLicenseData.purchasedTrips[tripId] = true;
+                    notificationTitle = "Viagem Liberada!";
+                    notificationMessage = `Sua compra da viagem '${request.tripName || 'viagem'}' foi aprovada.`;
                 }
-            
-            } else {
-                alert("Erro: Tipo de plano desconhecido: " + plano);
-                return;
             }
 
-            // 3. Preparar as atualizações (Atomicamente)
+            // 4. Preparar atualizações atômicas
             const updates = {};
-            updates[`/users/${uid}/license`] = newLicenseData; // Atualiza a licença
-            updates[`/solicitacoes_upgrade/${uid}`] = null; // Remove a solicitação
+            updates[`/users/${uid}/license`] = newLicenseData;
+            updates[`/solicitacoes_upgrade/${uid}`] = null;
 
-            // 4. Salvar log de admin
-            const logEntry = {
+            // Log de Histórico
+            const logRef = push(ref(db, `users/${uid}/adminHistory`));
+            updates[`/users/${uid}/adminHistory/${logRef.key}`] = {
                 timestamp: serverTimestamp(),
                 admin: adminEmail,
                 action: "Aprovação de Pagamento (Automática)",
                 oldValue: currentLicenseData,
                 newValue: newLicenseData
             };
-            const logRef = push(ref(db, `users/${uid}/adminHistory`));
-            updates[`/users/${uid}/adminHistory/${logRef.key}`] = logEntry;
 
-            
-            // 5. Criar a notificação para o usuário
+            // Notificação para o usuário
             const notificationRef = push(ref(db, `users/${uid}/notifications`));
-            let notificationTitle = "Plano Aprovado!";
-            let notificationMessage = `Sua solicitação do ${plano === 'anual' ? 'Plano Anual' : 'Plano Bianual'} foi aprovada e já está ativa. Aproveite!`;
-
-            if (plano === 'avulsa') {
-                if (actionType === 'store_credit') {
-                    notificationTitle = "Crédito Adicionado!";
-                    notificationMessage = `Sua compra de 1 Crédito de Viagem Avulsa foi aprovada. Você pode usá-lo para desbloquear qualquer viagem futura.`;
-                } else {
-                    notificationTitle = "Viagem Liberada!";
-                    notificationMessage = `Sua compra da viagem '${request.tripName || 'viagem'}' foi aprovada. Você já pode acessá-la.`;
-                }
-            }
-
             updates[`/users/${uid}/notifications/${notificationRef.key}`] = {
                 timestamp: serverTimestamp(),
                 type: "success",
@@ -2400,15 +2399,15 @@ O link deve ser o link direto do Google Maps para o local."
                 isRead: false
             };   
             
-            // 6. Executar a transação
+            // 5. Executar no banco
             try {
                 await update(ref(db), updates);
-                alert(`Licença '${plano}' para ${request.email} foi aprovada com sucesso!`);
+                alert(`Sucesso! A licença/crédito foi processada para o usuário.`);
             } catch (error) {
-                console.error("Erro ao aprovar licença:", error);
-                alert("Ocorreu um erro ao salvar as alterações. Verifique o console.");
+                console.error("Erro ao aprovar:", error);
+                alert("Erro ao salvar as alterações no banco de dados.");
             }
-        }
+        };
 
         /**
          * NOVO: Função chamada pelo botão "Rejeitar".
@@ -3307,6 +3306,14 @@ O link deve ser o link direto do Google Maps para o local."
             }).catch(err => {
                 console.error('Erro ao copiar nome da atividade:', err);
             });
+        };
+
+        window.adjustCredits = (amount) => {
+            const input = document.getElementById('edit-license-credits');
+            let currentValue = parseInt(input.value) || 0;
+            let newValue = currentValue + amount;
+            if (newValue < 0) newValue = 0; // Impede créditos negativos
+            input.value = newValue;
         };
 
     </script>
