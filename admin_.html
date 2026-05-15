@@ -1840,7 +1840,10 @@ O link deve ser o link direto do Google Maps para o local."
                 const dotTitle = isReviewed ? 'Cidade revisada (Clique para desmarcar)' : 'Pendente de revisão (Clique para marcar)';
 
                 // Calcula a quantidade de atividades, se a lista não existir, retorna 0
-                const activitiesCount = city.activities ? city.activities.length : 0;
+                // Verifica se é array ou objeto e pega a contagem correta
+                const activitiesCount = city.activities 
+                    ? (Array.isArray(city.activities) ? city.activities.length : Object.keys(city.activities).length) 
+                    : 0;
 
                 item.innerHTML = `
                     <div class="flex items-center gap-2 overflow-hidden flex-grow">
@@ -1893,7 +1896,18 @@ O link deve ser o link direto do Google Maps para o local."
 
         function renderSuggestedActivities(cityId) {
             const listContainer = document.getElementById('suggested-activities-list');
-            const activities = suggestedItinerariesData[cityId]?.activities || [];
+            
+            // 1. Pega os dados brutos
+            const rawActivities = suggestedItinerariesData[cityId]?.activities || [];
+            
+            // 2. Converte para Array se o Firebase tiver transformado em Objeto
+            const activitiesArray = Array.isArray(rawActivities) 
+                ? rawActivities 
+                : (rawActivities ? Object.values(rawActivities) : []);
+
+            // 3. Filtra itens nulos, vazios ou fantasmas (sem nome)
+            const activities = activitiesArray.filter(a => a !== null && a !== undefined && a.name && a.name.trim() !== "");
+
             listContainer.innerHTML = '';
 
             if (activities.length === 0) {
@@ -2726,14 +2740,34 @@ O link deve ser o link direto do Google Maps para o local."
         });
 
         window.openManageItineraryModal = async () => {
-            // selectedCityId é a variável que você já usa no admin_.html para saber qual cidade está aberta
+            // selectedCityId é a variável que você já usa no admin_.html
             if (!selectedCityId) return;
             
             currentItineraryCityId = selectedCityId;
             const cityData = (await get(ref(db, `suggestedItineraries/${selectedCityId}`))).val();
             
             document.getElementById('itinerary-city-title').textContent = cityData.cityName;
-            renderItineraryDays(cityData.activities || []);
+
+            // --- INÍCIO DA FAXINA AUTOMÁTICA (SELF-HEAL) ---
+            const rawActivities = cityData.activities || [];
+            
+            // Converte para array se o Firebase tiver bagunçado
+            const activitiesArray = Array.isArray(rawActivities) 
+                ? rawActivities 
+                : Object.values(rawActivities);
+
+            // FILTRO ANTI-FANTASMA: Filtra nulos, undefined e itens sem 'name'
+            const cleanActivities = activitiesArray.filter(a => a !== null && a !== undefined && a.name && a.name.trim() !== "");
+
+            // Se o tamanho da lista limpa for diferente da bruta, significa que havia lixo (fantasmas).
+            // Nós salvamos a lista limpa no Firebase na mesma hora para consertar os índices permanentemente!
+            if (Object.keys(rawActivities).length !== cleanActivities.length) {
+                await set(ref(db, `suggestedItineraries/${selectedCityId}/activities`), cleanActivities);
+                console.log("Lixo detectado. Banco de dados limpo e índices corrigidos automaticamente!");
+            }
+            // --- FIM DA FAXINA AUTOMÁTICA ---
+
+            renderItineraryDays(cleanActivities);
             openModal('manage-itinerary-modal');
         };
 
@@ -2742,10 +2776,13 @@ O link deve ser o link direto do Google Maps para o local."
             const container = document.getElementById('itinerary-days-container');
             container.innerHTML = '';
 
-            // 1. Sanitização: Garante que é array e remove lixo
-            const activities = Array.isArray(rawActivities) 
-                ? rawActivities.filter(a => a !== null && a !== undefined) 
-                : [];
+            // 1. Sanitização: Garante que é array, lida com objetos e remove lixo
+            const activitiesArray = Array.isArray(rawActivities) 
+                ? rawActivities 
+                : (rawActivities ? Object.values(rawActivities) : []);
+
+            // FILTRO ANTI-FANTASMA: Remove itens que não tenham um 'name' válido
+            const activities = activitiesArray.filter(a => a !== null && a !== undefined && a.name && a.name.trim() !== "");
 
             const days = {};
             const unassigned = [];
@@ -2825,7 +2862,12 @@ O link deve ser o link direto do Google Maps para o local."
         }  
         
         window.deleteActivitySuggestion = (index) => {
-            if (!suggestedItinerariesData[selectedCityId]?.activities?.[index]) return;
+            // Converte para array antes de tentar acessar pelo index
+            const currentActivities = Array.isArray(suggestedItinerariesData[selectedCityId]?.activities) 
+                ? suggestedItinerariesData[selectedCityId].activities 
+                : Object.values(suggestedItinerariesData[selectedCityId]?.activities || {});
+
+            if (!currentActivities[index]) return;
 
             const activityName = suggestedItinerariesData[selectedCityId].activities[index].name;
              showConfirmDelete(`Tem certeza que deseja excluir a atividade "${activityName}"?`, async () => {
@@ -3317,7 +3359,7 @@ O link deve ser o link direto do Google Maps para o local."
         };
 
     </script>
-<br><center><p>V. 1.3.0 - 15/05/2026 08:42</p></center><br>
+<br><center><p>V. 1.3.1 - 15/05/2026 08:42</p></center><br>
 
 <script>
       if ('serviceWorker' in navigator) {
