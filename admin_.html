@@ -3362,18 +3362,17 @@ O link deve ser o link direto do Google Maps para o local."
 <br><center><p>V. 1.3.1 - 15/05/2026 08:42</p></center><br>
 
 <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw_admin.js')
-            .then(registration => {
-              console.log('Service Worker registrado com sucesso:', registration);
-            })
-            .catch(error => {
-              console.log('Falha ao registrar o Service Worker:', error);
-            });
+    // Força a desinstalação de qualquer Service Worker antigo que tenha ficado em cache
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for (let registration of registrations) {
+                registration.unregister().then(function(boolean) {
+                    console.log('Service Worker antigo desregistrado com sucesso:', boolean);
+                });
+            }
         });
-      }
-    </script>
+    }
+</script>
 
 </body>
 </html>
