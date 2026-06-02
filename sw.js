@@ -1,6 +1,6 @@
 // Define um nome e versão para o seu cache
 // IMPORTANTE: Mude este nome (ex: v1.0.2) toda vez que atualizar seus arquivos
-const CACHE_NAME = 'meu-guia-de-viagens-v2.0.7';
+const CACHE_NAME = 'meu-guia-de-viagens-v2.0.8';
 
 // Lista de arquivos principais do seu "App Shell"
 const APP_SHELL_URLS = [
