@@ -1021,7 +1021,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.0.7 | 15/05/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.0.8 | 02/06/2026, 07:55</p>
             </main>
         </div>
 
@@ -2232,7 +2232,8 @@
                         <div id="manual-invite-container" class="hidden flex flex-col gap-2 mb-4 p-4 bg-slate-100 border border-slate-200 rounded-lg shadow-inner">
                             <label for="traveler-email-manual" class="text-xs font-bold text-slate-700 uppercase tracking-wider">E-mail do Viajante</label>
                             <div class="flex flex-col sm:flex-row gap-2">
-                                <input type="email" id="traveler-email-manual" placeholder="email@exemplo.com" class="flex-1 px-3 py-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                <input type="email" id="traveler-email-manual" list="frequent-travelers-list" placeholder="email@exemplo.com" class="flex-1 px-3 py-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                <datalist id="frequent-travelers-list"></datalist>
                                 <button type="button" onclick="addTravelerByEmailOnly()" class="bg-blue-600 text-white font-semibold px-4 py-2 text-sm rounded-md shadow-sm hover:bg-blue-700 transition-colors whitespace-nowrap">
                                     Incluir Viajante
                                 </button>
@@ -2240,7 +2241,7 @@
                         </div>
                         </div>
                     <div class="text-right mt-2">
-                        <button type="button" onclick="addTraveler()" class="bg-green-600 text-white font-semibold px-4 h-10 rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300">Adicionar Viajantes</button>
+                        <button type="button" onclick="addTraveler()" class="bg-green-600 text-white font-semibold px-4 h-10 rounded-lg shadow-md hover:bg-green-700 transition-colors duration-300">Enviar convite aos viajantes</button>
                     </div>                   
                     
                 </div>
@@ -4006,6 +4007,9 @@ window.addEventListener('popstate', (event) => {
             const nameInput = document.getElementById('traveler-name');
             const emailInput = document.getElementById('traveler-email');
 
+            // ---> COLE ESTA LINHA AQUI (TRAVA DE SEGURANÇA) <---
+            if (!nameInput || !emailInput) return;
+
             // 2. Adiciona o listener de digitação
             const handleInput = (e) => {
                 const query = e.target.value.toLowerCase();
@@ -4952,6 +4956,11 @@ window.addEventListener('popstate', (event) => {
 
                 currentUserId = user.uid; // Guarda o ID do usuário logado
                 checkExploreCardVisibility(); //checa opção do card Explorar o Mundo
+
+                // Carrega o datalist dos e-mails de viajantes já cadastrados anteriormente silenciosamente
+                if (typeof window.loadFrequentTravelers === 'function') {
+                    window.loadFrequentTravelers();
+                }
 
                 // --- VERIFICAÇÃO DE CONVITE PENDENTE PELO WHATSAPP ---
                 const pendingTripId = sessionStorage.getItem('pendingInviteTripId');
@@ -15763,6 +15772,9 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
                 // Executa a atualização no Firebase
                 await update(ref(db), updates);
+
+                //salvar o e-mail e caso de sucesso para poder sugerir posteriormente ao incluir viajantes em outras viagens
+                window.saveFrequentTraveler(email);
                 
                 // Feedback de sucesso
                 emailInput.value = '';
@@ -15833,7 +15845,60 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             copyText.innerText = "Copiado!";
             setTimeout(() => { copyText.innerText = "Copiar Link"; }, 2000);
         };
-        // --- FIM: FUNÇÕES DO INDIQUE E GANHE ---        
+        // --- FIM: FUNÇÕES DO INDIQUE E GANHE ---       
+        
+        // Função corrigida para ler do caminho exato e extrair o email do objeto antigo
+        window.loadFrequentTravelers = () => {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            // CAMINHO CORRIGIDO: Puxando de dentro de "users/uid/frequentTravelers"
+            const frequentTravelersRef = ref(db, `users/${user.uid}/frequentTravelers`);
+            
+            onValue(frequentTravelersRef, (snapshot) => {
+                const datalist = document.getElementById('frequent-travelers-list');
+                if (!datalist) return;
+                
+                datalist.innerHTML = ''; // Limpa as opções atuais
+                if (snapshot.exists()) {
+                    const travelers = snapshot.val();
+                    
+                    // Itera sobre os viajantes (que são objetos com {name, email})
+                    Object.values(travelers).forEach(travelerData => {
+                        // Extrai apenas o email da estrutura antiga
+                        const emailToSuggest = travelerData.email; 
+                        
+                        if (emailToSuggest && typeof emailToSuggest === 'string') {
+                            const option = document.createElement('option');
+                            option.value = emailToSuggest;
+                            datalist.appendChild(option);
+                        }
+                    });
+                }
+            });
+        };
+
+        // Função corrigida para salvar no caminho exato e no formato de objeto
+        window.saveFrequentTraveler = async (email) => {
+            const user = auth.currentUser;
+            if (!user || !email) return;
+
+            // Transforma o e-mail em uma chave válida para o Firebase (substituindo pontos)
+            const safeEmailKey = email.replace(/\./g, ',');
+            
+            // CAMINHO CORRIGIDO
+            const frequentTravelersRef = ref(db, `users/${user.uid}/frequentTravelers/${safeEmailKey}`);
+            
+            try {
+                // Salvamos no mesmo formato de objeto para não quebrar a arquitetura do seu banco
+                await set(frequentTravelersRef, { 
+                    name: email.split('@')[0], // Usa o começo do e-mail como "nome" provisório
+                    email: email 
+                });
+            } catch (error) {
+                console.error("Erro ao salvar viajante frequente: ", error);
+            }
+        };
 
     </script>
 
