@@ -972,11 +972,11 @@
                     </div>
                 </div>
 
-                <div id="pwa-custom-container" class="relative flex items-center justify-center mt-2 mx-auto bg-blue-900 text-white text-xs py-1 rounded-full w-[300px] shadow-sm transition-all">
-                    <button onclick="event.preventDefault(); document.getElementById('install-app-btn')?.click();" class="font-medium hover:text-blue-200 focus:outline-none text-center w-full py-0.5">
+                <div id="pwa-custom-container" class="relative flex items-center justify-center mt-2 mx-auto bg-blue-900 text-white text-xs py-1 rounded-full w-[300px] shadow-sm transition-all z-40">
+                    <button type="button" onclick="event.preventDefault(); document.getElementById('install-app-btn')?.click();" class="font-medium hover:text-blue-200 focus:outline-none text-center w-full py-1.5">
                         Instalar aplicativo
                     </button>
-                    <button onclick="dismissInstallBanner(event)" class="absolute right-3 text-blue-300 hover:text-white font-bold focus:outline-none text-sm leading-none" title="Não mostrar novamente">
+                    <button type="button" onclick="window.dismissInstallBanner(event)" class="absolute right-0 top-0 bottom-0 px-4 text-blue-300 hover:text-white font-bold focus:outline-none text-lg leading-none z-10 flex items-center justify-center" title="Não mostrar novamente">
                         &times;
                     </button>
                 </div>
@@ -1030,7 +1030,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.0.10 | 03/06/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.0.11 | 03/06/2026, 07:55</p>
             </main>
         </div>
 
