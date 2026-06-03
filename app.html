@@ -971,6 +971,15 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="pwa-custom-container" class="relative flex items-center justify-center mt-2 mx-auto bg-blue-900 text-white text-xs py-1 rounded-full w-[300px] shadow-sm transition-all">
+                    <button onclick="event.preventDefault(); document.getElementById('install-app-btn')?.click();" class="font-medium hover:text-blue-200 focus:outline-none text-center w-full py-0.5">
+                        Instalar aplicativo
+                    </button>
+                    <button onclick="dismissInstallBanner(event)" class="absolute right-3 text-blue-300 hover:text-white font-bold focus:outline-none text-sm leading-none" title="Não mostrar novamente">
+                        &times;
+                    </button>
+                </div>
                 
                 <!-- Segunda Linha: Botão Filtrar Novidades (linha própria, esticado e com texto visível) -->
                 <label id="filter-news-label" class="hidden flex justify-center items-center gap-2 cursor-pointer bg-white px-4 py-3 w-full max-w-[300px] mx-auto rounded-lg shadow-sm border border-slate-200 hover:bg-slate-50 transition-colors">
@@ -1021,7 +1030,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.0.8 | 02/06/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.0.9 | 03/06/2026, 07:55</p>
             </main>
         </div>
 
@@ -5982,6 +5991,16 @@ window.addEventListener('popstate', (event) => {
                 tripsToDisplay = tripsData.filter(trip => checkTripHasNews(trip));
             }
             // --- FIM DA LÓGICA DO FILTRO ---
+
+            // Ocultar Sugestões de Roteiros se o filtro estiver ativo
+            const suggestedContainer = document.getElementById('suggested-trips-container');
+            if (suggestedContainer) {
+                if (isNewsFilterActive) {
+                    suggestedContainer.classList.add('hidden');
+                } else {
+                    suggestedContainer.classList.remove('hidden');
+                }
+            }
 
             // Lógica para viagens destacadas (Favoritos)
             // Nota: O filtro de novidades também se aplica aqui se estiver ativo
@@ -15899,6 +15918,32 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 console.error("Erro ao salvar viajante frequente: ", error);
             }
         };
+
+        // --- LÓGICA DE PREFERÊNCIA DO BOTÃO DE INSTALAÇÃO ---
+        function checkPwaBannerPreference() {
+            const isDismissed = localStorage.getItem("pwa-install-dismissed");
+            const container = document.getElementById("pwa-custom-container");
+            if (isDismissed === "true" && container) {
+                container.classList.add("hidden");
+            }
+        }
+
+        function dismissInstallBanner(event) {
+            if (event) event.preventDefault();
+            const container = document.getElementById("pwa-custom-container");
+            if (container) {
+                container.classList.add("hidden");
+            }
+            // Salva de forma persistente no navegador para nunca mais incomodar
+            localStorage.setItem("pwa-install-dismissed", "true");
+        }
+
+        // Executa a checagem assim que a página terminar de carregar
+        document.addEventListener("DOMContentLoaded", checkPwaBannerPreference);
+        // Execução imediata caso o DOMContentLoaded já tenha passado
+        if (document.readyState === "interactive" || document.readyState === "complete") {
+            checkPwaBannerPreference();
+        }
 
     </script>
 
