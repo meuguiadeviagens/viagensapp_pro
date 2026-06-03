@@ -1030,7 +1030,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.0.9 | 03/06/2026, 07:55</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.0.10 | 03/06/2026, 07:55</p>
             </main>
         </div>
 
@@ -15920,15 +15920,16 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         };
 
         // --- LÓGICA DE PREFERÊNCIA DO BOTÃO DE INSTALAÇÃO ---
-        function checkPwaBannerPreference() {
+        // Usamos window. para garantir que a função fique acessível globalmente para o onclick no HTML
+        window.checkPwaBannerPreference = function() {
             const isDismissed = localStorage.getItem("pwa-install-dismissed");
             const container = document.getElementById("pwa-custom-container");
             if (isDismissed === "true" && container) {
                 container.classList.add("hidden");
             }
-        }
+        };
 
-        function dismissInstallBanner(event) {
+        window.dismissInstallBanner = function(event) {
             if (event) event.preventDefault();
             const container = document.getElementById("pwa-custom-container");
             if (container) {
@@ -15936,13 +15937,13 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
             // Salva de forma persistente no navegador para nunca mais incomodar
             localStorage.setItem("pwa-install-dismissed", "true");
-        }
+        };
 
         // Executa a checagem assim que a página terminar de carregar
-        document.addEventListener("DOMContentLoaded", checkPwaBannerPreference);
+        document.addEventListener("DOMContentLoaded", window.checkPwaBannerPreference);
         // Execução imediata caso o DOMContentLoaded já tenha passado
         if (document.readyState === "interactive" || document.readyState === "complete") {
-            checkPwaBannerPreference();
+            window.checkPwaBannerPreference();
         }
 
     </script>
