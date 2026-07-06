@@ -1046,7 +1046,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.1.3 | 05/07/2026, 09:19</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.1.4 | 06/07/2026, 09:19</p>
             </main>
         </div>
 
@@ -5883,22 +5883,17 @@ window.addEventListener('popstate', (event) => {
         // --- FUNÇÕES DE RENDERIZAÇÃO ---
         // VERSÃO NOVA
         function renderTripLists() {
-
             window.checkOngoingTripStatus();
 
             // --- INÍCIO DA LÓGICA DE VISIBILIDADE DO CHECKBOX ---
-            // Verifica se existe ALGUMA viagem com novidade (usando sua função auxiliar checkTripHasNews)
             const hasAnyNews = tripsData.some(trip => checkTripHasNews(trip));
-            
             const newsLabel = document.getElementById('filter-news-label');
             const newsCheckbox = document.getElementById('filter-news-checkbox');
 
             if (newsLabel) {
                 if (hasAnyNews) {
-                    // Se tem novidade, mostra o botão (remove o hidden)
                     newsLabel.classList.remove('hidden');
                 } else {
-                    // Se não tem, esconde e desmarca
                     newsLabel.classList.add('hidden');
                     if (newsCheckbox && newsCheckbox.checked) {
                         newsCheckbox.checked = false;
@@ -5908,54 +5903,16 @@ window.addEventListener('popstate', (event) => {
             // --- FIM DA LÓGICA DE VISIBILIDADE DO CHECKBOX ---
 
             const featuredTripsPanel = document.getElementById('featured-trips-panel');
-            const featuredTripsList = document.createElement('div');
-            featuredTripsList.id = 'featured-trips-list';
-            featuredTripsList.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
-
             const upcomingContent = document.getElementById('upcoming-trips-content');
             const pastContent = document.getElementById('past-trips-content');
-            
-            // Limpa containers
+            const suggestionsContent = document.getElementById('suggested-trips-content');
+
+            // Limpa containers principais e deixa um "Loading" silencioso nos menos prioritários
             featuredTripsPanel.innerHTML = '';
             upcomingContent.innerHTML = '';
-            pastContent.innerHTML = '';
+            if (pastContent) pastContent.innerHTML = '<p class="text-center text-sm text-slate-400 py-4 animate-pulse">Carregando histórico...</p>';
+            if (suggestionsContent) suggestionsContent.innerHTML = '';
 
-            // Array base com todas as opções de inspiração
-            const baseInspirations = [
-                {
-                    title: "Nova York em 5 dias",
-                    cityName: "Nova York",
-                    image: "https://cdn.panrotas.com.br/portal-panrotas-statics/media-files-cache/427785/67553ba6ea2af76dcfb165e6bde137danye2023michaelhullphoto768/0,180,2560,1528/1206,720,0.33/0/default.jpg"                
-                },
-                {
-                    title: "Cancún em 6 dias",
-                    cityName: "Cancún",
-                    image: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/10/bc/2c/39/hyatt-ziva-cancun.jpg?w=900&h=500&s=1"
-                },
-                {
-                    title: "Brasília em 3 dias",
-                    cityName: "Brasília",
-                    image: "https://www.zapimoveis.com.br/blog/wp-content/uploads/2025/08/o-que-fazer-em-brasilia-capa.jpg"
-                },
-                {
-                    title: "Amsterdã em 4 dias",
-                    cityName: "Amsterdã",
-                    image: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/06/a4/78/c5/de-negen-straatjes.jpg"
-                }
-            ];
-
-            // 1. Embaralha o array base e pega apenas os 2 primeiros
-            const shuffledInspirations = [...baseInspirations].sort(() => 0.5 - Math.random());
-            const selectedInspirations = shuffledInspirations.slice(0, 2);
-
-            // 2. Adiciona o card fixo "Ver todos os roteiros" na última posição
-            selectedInspirations.push({
-                title: "Ver todos os roteiros",
-                cityName: "Todos",
-                image: "https://asset-prod.france.fr/louvre_piramide_paris_bf55d3e8b3.jpg" // Mantive a foto de Paris para não quebrar o layout, mas você pode trocar!
-            });       
-
-            // Retornamos ao formato original com apenas 1 card de vídeo
             const getWelcomeCardHtml = (isFirstTrip) => `
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <a href="https://youtu.be/b-NpcyDpmNI" target="_blank" rel="noopener noreferrer" class="trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative border-2 border-dashed border-blue-400 hover:border-blue-600">
@@ -5970,37 +5927,8 @@ window.addEventListener('popstate', (event) => {
                     </a>
                 </div>`;
 
-            // INÍCIO: Renderiza os cards de Sugestões de Roteiros
-            const suggestionsContent = document.getElementById('suggested-trips-content');
-            if (suggestionsContent) {
-                // Iteramos sobre o novo array 'selectedInspirations' (que sempre terá 3 itens)
-                suggestionsContent.innerHTML = selectedInspirations.map(inspiration => {
-                    // Lógica invertida: Se for "Ver todos os roteiros", abre o catálogo completo
-                    const clickAction = inspiration.title === "Ver todos os roteiros" 
-                        ? "openAllInspirationsModal()" 
-                        : `openCityInspirations('${inspiration.cityName}')`;
-
-                    return `
-                        <div onclick="${clickAction}" class="trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative border border-slate-200">
-                            <div class="h-48 bg-cover bg-center relative" style="background-image: url('${inspiration.image}');">
-                                <div class="absolute top-3 left-3 z-20 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full shadow-md">
-                                    ✨ Inspiração
-                                </div>
-                            </div>
-                            <div class="p-6 text-center flex flex-col justify-center h-[calc(100%-12rem)]">
-                                <h3 class="text-xl font-bold text-slate-900 line-clamp-2" title="${inspiration.title}">${inspiration.title}</h3>
-                                <p class="text-slate-500 mt-2 text-sm">Explorar roteiro sugerido</p>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-            }
-            // FIM: Renderiza os cards de Sugestões de Roteiros
-
             // --- INÍCIO DA LÓGICA DO FILTRO ---
             const isNewsFilterActive = document.getElementById('filter-news-checkbox')?.checked || false;
-            
-            // Filtra o array principal com base no checkbox
             let tripsToDisplay = tripsData;
             
             if (isNewsFilterActive) {
@@ -6008,46 +5936,17 @@ window.addEventListener('popstate', (event) => {
             }
             // --- FIM DA LÓGICA DO FILTRO ---
 
-            // Ocultar Sugestões de Roteiros se o filtro estiver ativo
-            const suggestedContainer = document.getElementById('suggested-trips-container');
-            if (suggestedContainer) {
-                if (isNewsFilterActive) {
-                    suggestedContainer.classList.add('hidden');
-                } else {
-                    suggestedContainer.classList.remove('hidden');
-                }
-            }
-
-            // Lógica para viagens destacadas (Favoritos)
-            // Nota: O filtro de novidades também se aplica aqui se estiver ativo
+            // Lógica para viagens destacadas (Favoritos) - SÍNCRONO
             const featuredTrips = tripsToDisplay.filter(trip => userFavoriteTrips.has(trip.id));
-            
             if(featuredTrips.length > 0) {
                 featuredTripsPanel.innerHTML = `<h2 class="text-2xl font-bold text-slate-800 mb-4">Viagens Destacadas ${isNewsFilterActive ? '(Com Novidades)' : ''}</h2>`;
+                const featuredTripsList = document.createElement('div');
+                featuredTripsList.id = 'featured-trips-list';
+                featuredTripsList.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
                 featuredTrips.forEach(trip => {
                     featuredTripsList.appendChild(createTripCard(trip, true));
                 });
                 featuredTripsPanel.appendChild(featuredTripsList);
-            }
-            
-            // Se não houver viagens (seja porque não tem nenhuma ou porque o filtro escondeu todas)
-            if (tripsToDisplay.length === 0) {
-                let emptyMsg = '';
-                
-                if (tripsData.length === 0) {
-                    // Caso 1: O usuário realmente não tem viagens
-                    upcomingContent.innerHTML = getWelcomeCardHtml(true);
-                    pastContent.innerHTML = `<p class="col-span-full text-center text-sm text-slate-500 py-4">Nenhuma viagem realizada ainda.</p>`;
-                } else {
-                    // Caso 2: O filtro "Novidades" está ativo, mas nenhuma viagem tem novidade
-                    upcomingContent.innerHTML = `
-                        <div class="flex flex-col items-center justify-center p-8 bg-slate-50 rounded-lg border border-dashed border-slate-300">
-                            <p class="text-lg text-slate-600 font-medium">Tudo em dia! ✅</p>
-                            <p class="text-sm text-slate-500">Nenhuma viagem possui novidades não lidas no momento.</p>
-                            <button onclick="document.getElementById('filter-news-checkbox').click()" class="mt-4 text-blue-600 hover:underline text-sm">Limpar filtro</button>
-                        </div>`;
-                }
-                return;
             }
 
             // Separa as viagens filtradas em futuras e passadas
@@ -6066,65 +5965,139 @@ window.addEventListener('popstate', (event) => {
                 }
             });
 
-            // --- Renderiza Próximas Viagens (Código Mantido/Adaptado) ---
-            if (upcomingTrips.length > 0) {
-                const groupedUpcoming = upcomingTrips.reduce((acc, trip) => {
-                    const year = new Date(trip.startDate).getFullYear();
-                    if (!acc[year]) acc[year] = [];
-                    acc[year].push(trip);
-                    return acc;
-                }, {});
+            // Tratamento Imediato caso não existam viagens
+            if (tripsToDisplay.length === 0) {
+                if (tripsData.length === 0) {
+                    upcomingContent.innerHTML = getWelcomeCardHtml(true);
+                } else {
+                    upcomingContent.innerHTML = `
+                        <div class="flex flex-col items-center justify-center p-8 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                            <p class="text-lg text-slate-600 font-medium">Tudo em dia! ✅</p>
+                            <p class="text-sm text-slate-500">Nenhuma viagem possui novidades não lidas no momento.</p>
+                            <button onclick="document.getElementById('filter-news-checkbox').click()" class="mt-4 text-blue-600 hover:underline text-sm">Limpar filtro</button>
+                        </div>`;
+                }
+            } else {
+                // --- Renderiza Próximas Viagens IMEDIATAMENTE ---
+                if (upcomingTrips.length > 0) {
+                    const groupedUpcoming = upcomingTrips.reduce((acc, trip) => {
+                        const year = new Date(trip.startDate).getFullYear();
+                        if (!acc[year]) acc[year] = [];
+                        acc[year].push(trip);
+                        return acc;
+                    }, {});
 
-                const sortedUpcomingYears = Object.keys(groupedUpcoming).sort((a, b) => a - b);
+                    const sortedUpcomingYears = Object.keys(groupedUpcoming).sort((a, b) => a - b);
 
-                sortedUpcomingYears.forEach(year => {
-                    const yearHeader = document.createElement('h3');
-                    yearHeader.className = 'text-xl font-bold text-blue-900 mt-8 mb-4 border-b pb-2';
-                    yearHeader.textContent = `${year}`;
-                    upcomingContent.appendChild(yearHeader);
+                    sortedUpcomingYears.forEach(year => {
+                        const yearHeader = document.createElement('h3');
+                        yearHeader.className = 'text-xl font-bold text-blue-900 mt-8 mb-4 border-b pb-2';
+                        yearHeader.textContent = `${year}`;
+                        upcomingContent.appendChild(yearHeader);
 
-                    const yearGrid = document.createElement('div');
-                    yearGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
-                    
-                    groupedUpcoming[year].forEach(trip => {
-                        yearGrid.appendChild(createTripCard(trip, true));
+                        const yearGrid = document.createElement('div');
+                        yearGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+                        
+                        groupedUpcoming[year].forEach(trip => {
+                            yearGrid.appendChild(createTripCard(trip, true));
+                        });
+                        upcomingContent.appendChild(yearGrid);
                     });
-                    upcomingContent.appendChild(yearGrid);
-                });
-            } else if (!isNewsFilterActive) {
-                // Só mostra mensagem vazia se não for culpa do filtro (já tratado acima)
-                upcomingContent.innerHTML = getWelcomeCardHtml(false);
+                } else if (!isNewsFilterActive) {
+                    upcomingContent.innerHTML = getWelcomeCardHtml(false);
+                }
             }
 
-            // --- Renderiza Viagens Passadas (Código Mantido/Adaptado) ---
-            if (pastTrips.length > 0) {
-                pastTrips.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
-                const groupedPast = pastTrips.reduce((acc, trip) => {
-                    const year = new Date(trip.startDate).getFullYear();
-                    if (!acc[year]) acc[year] = [];
-                    acc[year].push(trip);
-                    return acc;
-                }, {});
+            // =========================================================================
+            // DEFERIR CARREGAMENTO SECUNDÁRIO (Sugestões e Viagens Passadas)
+            // Isso permite que o browser "pinte" o header e as próximas viagens primeiro!
+            // =========================================================================
+            setTimeout(() => {
+                
+                // --- Renderiza Sugestões de Roteiros ---
+                const suggestedContainer = document.getElementById('suggested-trips-container');
+                if (suggestedContainer) {
+                    if (isNewsFilterActive) {
+                        suggestedContainer.classList.add('hidden');
+                    } else {
+                        suggestedContainer.classList.remove('hidden');
+                        
+                        const baseInspirations = [
+                            { title: "Nova York em 5 dias", cityName: "Nova York", image: "https://cdn.panrotas.com.br/portal-panrotas-statics/media-files-cache/427785/67553ba6ea2af76dcfb165e6bde137danye2023michaelhullphoto768/0,180,2560,1528/1206,720,0.33/0/default.jpg" },
+                            { title: "Cancún em 6 dias", cityName: "Cancún", image: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/10/bc/2c/39/hyatt-ziva-cancun.jpg?w=900&h=500&s=1" },
+                            { title: "Brasília em 3 dias", cityName: "Brasília", image: "https://www.zapimoveis.com.br/blog/wp-content/uploads/2025/08/o-que-fazer-em-brasilia-capa.jpg" },
+                            { title: "Amsterdã em 4 dias", cityName: "Amsterdã", image: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/06/a4/78/c5/de-negen-straatjes.jpg" }
+                        ];
 
-                const sortedPastYears = Object.keys(groupedPast).sort((a, b) => b - a);
+                        const shuffledInspirations = [...baseInspirations].sort(() => 0.5 - Math.random());
+                        const selectedInspirations = shuffledInspirations.slice(0, 2);
+                        
+                        selectedInspirations.push({
+                            title: "Ver todos os roteiros", cityName: "Todos", image: "https://asset-prod.france.fr/louvre_piramide_paris_bf55d3e8b3.jpg"
+                        });       
 
-                sortedPastYears.forEach(year => {
-                    const yearHeader = document.createElement('h3');
-                    yearHeader.className = 'text-xl font-bold text-slate-700 mt-8 mb-4 border-b pb-2';
-                    yearHeader.textContent = `${year}`;
-                    pastContent.appendChild(yearHeader);
+                        if (suggestionsContent) {
+                            suggestionsContent.innerHTML = selectedInspirations.map(inspiration => {
+                                const clickAction = inspiration.title === "Ver todos os roteiros" 
+                                    ? "openAllInspirationsModal()" 
+                                    : `openCityInspirations('${inspiration.cityName}')`;
 
-                    const yearGrid = document.createElement('div');
-                    yearGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
-                    
-                    groupedPast[year].forEach(trip => {
-                        yearGrid.appendChild(createTripCard(trip, false));
+                                return `
+                                    <div onclick="${clickAction}" class="trip-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform hover:-translate-y-1 transition-transform duration-300 relative border border-slate-200">
+                                        <div class="h-48 bg-cover bg-center relative" style="background-image: url('${inspiration.image}');">
+                                            <div class="absolute top-3 left-3 z-20 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full shadow-md">
+                                                ✨ Inspiração
+                                            </div>
+                                        </div>
+                                        <div class="p-6 text-center flex flex-col justify-center h-[calc(100%-12rem)]">
+                                            <h3 class="text-xl font-bold text-slate-900 line-clamp-2" title="${inspiration.title}">${inspiration.title}</h3>
+                                            <p class="text-slate-500 mt-2 text-sm">Explorar roteiro sugerido</p>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('');
+                        }
+                    }
+                }
+
+                // --- Renderiza Viagens Passadas ---
+                if (pastContent) pastContent.innerHTML = ''; // Limpa o "Carregando..."
+                
+                if (tripsToDisplay.length === 0) {
+                     if (tripsData.length === 0 && pastContent) {
+                         pastContent.innerHTML = `<p class="col-span-full text-center text-sm text-slate-500 py-4">Nenhuma viagem realizada ainda.</p>`;
+                     }
+                } else if (pastTrips.length > 0 && pastContent) {
+                    pastTrips.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+                    const groupedPast = pastTrips.reduce((acc, trip) => {
+                        const year = new Date(trip.startDate).getFullYear();
+                        if (!acc[year]) acc[year] = [];
+                        acc[year].push(trip);
+                        return acc;
+                    }, {});
+
+                    const sortedPastYears = Object.keys(groupedPast).sort((a, b) => b - a);
+
+                    sortedPastYears.forEach(year => {
+                        const yearHeader = document.createElement('h3');
+                        yearHeader.className = 'text-xl font-bold text-slate-700 mt-8 mb-4 border-b pb-2';
+                        yearHeader.textContent = `${year}`;
+                        pastContent.appendChild(yearHeader);
+
+                        const yearGrid = document.createElement('div');
+                        yearGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+                        
+                        groupedPast[year].forEach(trip => {
+                            yearGrid.appendChild(createTripCard(trip, false));
+                        });
+                        pastContent.appendChild(yearGrid);
                     });
-                    pastContent.appendChild(yearGrid);
-                });
-            } else if (!isNewsFilterActive) {
-                pastContent.innerHTML = `<p class="text-center text-sm text-slate-500 py-4">Nenhuma viagem realizada ainda.</p>`;
-            }            
+                } else if (!isNewsFilterActive && pastContent) {
+                    pastContent.innerHTML = `<p class="text-center text-sm text-slate-500 py-4">Nenhuma viagem realizada ainda.</p>`;
+                }
+
+            }, 100); // 100ms é imperceptível para a UI final, mas valioso para a main thread pintar a primeira parte.
+
         }
 
         window.renderTripLists = renderTripLists;
