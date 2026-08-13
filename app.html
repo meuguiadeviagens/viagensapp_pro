@@ -960,6 +960,9 @@
                             <a href="#" id="admin-open-trip-btn" onclick="adminOpenTripById()" class="hidden block px-4 py-2 text-sm text-yellow-600 font-bold border-t hover:bg-slate-100">
                                 Abrir Viagem por ID (Admin)
                             </a>
+                            <a href="admin_.html" target="_blank" id="admin-open-panel-btn" class="hidden block px-4 py-2 text-sm text-yellow-600 font-bold hover:bg-slate-100">
+                                Abrir Painel ADMIN
+                            </a>
                             <a href="#" id="install-app-btn" onclick="event.preventDefault();" class="block px-4 py-2 text-sm text-slate-700 border-t border-slate-100 hover:bg-slate-100 transition-colors">
                                 <div class="flex items-center justify-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-500">
@@ -1046,7 +1049,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.1.4 | 06/07/2026, 09:19</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.1.5 | 13/08/2026, 08:19</p>
             </main>
         </div>
 
@@ -5047,11 +5050,15 @@ window.addEventListener('popstate', (event) => {
                     // --- INÍCIO DA VERIFICAÇÃO DE ADMIN (v3 - A CORRETA) ---
                     // Agora checamos a licença AQUI, depois que ela foi carregada.
                     const adminBtn = document.getElementById('admin-open-trip-btn');
+                    const adminPanelBtn = document.getElementById('admin-open-panel-btn'); // Seleciona o novo botão
+
                     if (adminBtn) {
                         if (currentUserLicense.type === 'admin') {
                             adminBtn.classList.remove('hidden');
+                            if (adminPanelBtn) adminPanelBtn.classList.remove('hidden'); // Mostra o novo botão
                         } else {
                             adminBtn.classList.add('hidden');
+                            if (adminPanelBtn) adminPanelBtn.classList.add('hidden'); // Oculta o novo botão
                         }
                     }
                     // --- FIM DA VERIFICAÇÃO DE ADMIN (v3 - A CORRETA) ---
@@ -5387,37 +5394,53 @@ window.addEventListener('popstate', (event) => {
                         });
                         // --- FIM: NOTIFICAÇÃO PARA O ADMIN ---
 
-                        // --- INÍCIO: SOLICITAÇÃO DO CRÉDITO "INDIQUE E GANHE" PARA O ADMIN ---
+                        // --- INÍCIO: REGISTRO DE PARCERIA OU INDICAÇÃO ---
                         const referrerId = sessionStorage.getItem('pending_referral');
                         if (referrerId && userId) {
                             try {
-                                // 1. Cria a solicitação na fila de aprovação do painel Admin
-                                const solicitacaoRef = ref(db, `solicitacoes_upgrade/${referrerId}`);
-                                await set(solicitacaoRef, {
-                                    plano: 'avulsa',
-                                    actionType: 'store_credit',
-                                    tripName: `Indicação: Novo usuário ${profileData.fullName}`,
-                                    email: `🎁 Bônus de Indicação`, // Nome destacado para o Admin ver fácil
-                                    data: serverTimestamp(),
-                                    status: 'pendente',
-                                    isReferral: true // Flag importante que libera a gravação lá na Regra do Firebase!
-                                });
+                                const codigoLimpo = referrerId.toUpperCase();
+                                // 1. Verifica se o código é uma Campanha de Parceria CPA
+                                const campSnap = await get(ref(db, `parcerias/${codigoLimpo}`));
+                                
+                                if (campSnap.exists()) {
+                                    // É UMA PARCERIA! Registra o lead na campanha
+                                    const campData = campSnap.val();
+                                    if (campData.status !== 'finalizada') {
+                                        await set(ref(db, `parcerias/${codigoLimpo}/leads/${userId}`), {
+                                            nome: profileData.fullName,
+                                            dataCadastro: new Date().toISOString()
+                                        });
+                                        console.log("Lead contabilizado na parceria CPA com sucesso!");
+                                    }
+                                    sessionStorage.removeItem('pending_referral');
+                                } else {
+                                    // 2. SE NÃO É PARCERIA, SEGUE A LÓGICA DE INDIQUE E GANHE DE USUÁRIOS
+                                    const solicitacaoRef = ref(db, `solicitacoes_upgrade/${referrerId}`);
+                                    await set(solicitacaoRef, {
+                                        plano: 'avulsa',
+                                        actionType: 'store_credit',
+                                        tripName: `Indicação: Novo usuário ${profileData.fullName}`,
+                                        email: `🎁 Bônus de Indicação`,
+                                        data: serverTimestamp(),
+                                        status: 'pendente',
+                                        isReferral: true 
+                                    });
 
-                                // 2. Avisa o usuário que fez a indicação que o prêmio está em análise
-                                const notifRef = push(ref(db, `users/${referrerId}/notifications`));
-                                await set(notifRef, {
-                                    message: `🎉 Seu amigo ${profileData.fullName} se cadastrou! Seu bônus de 1 Crédito foi para a fila de liberação e logo estará disponível.`,
-                                    timestamp: serverTimestamp(),
-                                    isRead: false,
-                                    type: 'info'
-                                });
+                                    const notifRef = push(ref(db, `users/${referrerId}/notifications`));
+                                    await set(notifRef, {
+                                        message: `🎉 Seu amigo ${profileData.fullName} se cadastrou! Seu bônus de 1 Crédito foi para a fila de liberação e logo estará disponível.`,
+                                        timestamp: serverTimestamp(),
+                                        isRead: false,
+                                        type: 'info'
+                                    });
 
-                                sessionStorage.removeItem('pending_referral'); // Limpa o cachê
+                                    sessionStorage.removeItem('pending_referral');
+                                }
                             } catch (referralErr) {
-                                console.error("Erro ao solicitar bônus de indicação:", referralErr);
+                                console.error("Erro ao processar indicação ou parceria:", referralErr);
                             }
                         }
-                        // --- FIM: SOLICITAÇÃO DO CRÉDITO "INDIQUE E GANHE" PARA O ADMIN ---
+                        // --- FIM: REGISTRO DE PARCERIA OU INDICAÇÃO ---
                         
                         alert('Conta criada com sucesso! Você já está logado.');
                     } catch (error) {
