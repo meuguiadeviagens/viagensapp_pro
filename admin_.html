@@ -65,7 +65,7 @@
     <div id="admin-panel" class="hidden p-4 sm:p-8">
         <header class="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8">
 
-<div class="border-b border-slate-300 mb-6">
+        <div class="border-b border-slate-300 mb-6">
             <nav class="flex -mb-px space-x-6">
                 <button onclick="switchAdminView('users')" id="tab-users" class="admin-tab active whitespace-nowrap py-4 px-1 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-400">
                     Usuários
@@ -79,6 +79,9 @@
                 </button>
                 <button onclick="switchAdminView('tools')" id="tab-tools" class="admin-tab whitespace-nowrap py-4 px-1 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-400">
                     Ferramentas
+                </button>
+                <button onclick="switchAdminView('partners')" id="tab-partners" class="admin-tab whitespace-nowrap py-4 px-1 font-medium text-sm text-slate-500 hover:text-slate-700 hover:border-slate-400">
+                    Parcerias CPA
                 </button>
             </nav>
         </div>
@@ -180,7 +183,7 @@
             </div>
         </div>
 
-  <!-- PAINEL DE GERENCIAMENTO DE ROTEIROS SUGERIDOS -->
+        <!-- PAINEL DE GERENCIAMENTO DE ROTEIROS SUGERIDOS -->
         <div id="suggestions-management-view" class="hidden bg-white p-4 sm:p-6 rounded-xl shadow-lg">
             <h2 class="text-xl sm:text-2xl font-semibold text-slate-800 mb-4">Gerenciar Roteiros Sugeridos</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -237,28 +240,28 @@
 
         <!-- FORMATO DO JSON IMPORTAR ROTEIRO ATIVIDADES
 
- "Crie um JSON com as 10 melhores atrações turísticas da cidade _______ seguindo estritamente este modelo:
+        "Crie um JSON com as 10 melhores atrações turísticas da cidade _______ seguindo estritamente este modelo:
 
-JSON
-  {
-    "name": "Nome da Atração",
-    "type": "Passeio",
-    "description": "Resumo do local",
-    "icon": "ID do ícone",
-    "time": "HH:MM",
-    "day": 1,
-    "imageUrl": "URL de uma foto real da atração que seja arquivo .JPG",
-    "link": "URL do Google Maps da atração"
-  }
-Regras:
+        JSON
+        {
+            "name": "Nome da Atração",
+            "type": "Passeio",
+            "description": "Resumo do local",
+            "icon": "ID do ícone",
+            "time": "HH:MM",
+            "day": 1,
+            "imageUrl": "URL de uma foto real da atração que seja arquivo .JPG",
+            "link": "URL do Google Maps da atração"
+        }
+        Regras:
 
-O type deve ser sempre 'Passeio'.
+        O type deve ser sempre 'Passeio'.
 
-O icon deve usar um destes IDs: passeio, restaurante, building, shopping, tree, mountain, waves.
+        O icon deve usar um destes IDs: passeio, restaurante, building, shopping, tree, mountain, waves.
 
-Organize os day de forma lógica e próximas umas das outras (ex: 3 a 4 atrações por dia). Se a atração for muito demorada, reserve uma manhã ou uma tarde pra ela
+        Organize os day de forma lógica e próximas umas das outras (ex: 3 a 4 atrações por dia). Se a atração for muito demorada, reserve uma manhã ou uma tarde pra ela
 
-O link deve ser o link direto do Google Maps para o local."
+        O link deve ser o link direto do Google Maps para o local."
 
         -->
 
@@ -297,6 +300,50 @@ O link deve ser o link direto do Google Maps para o local."
                     <p id="bulk-status-message" class="text-sm text-center text-slate-600"></p>
                 </div>
             </div>
+            </div>
+
+            <!-- TELA DE PARCERIAS / INFLUENCERS -->
+            <div id="partners-management-view" class="hidden bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-semibold text-slate-800">Parcerias CPA</h2>
+                        <p class="text-sm text-slate-500 mt-1">Gerencie links e métricas de influenciadores.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <a href="partner.html" target="_blank" class="px-4 py-2 bg-slate-100 text-slate-700 font-semibold rounded-md hover:bg-slate-200 transition-colors border border-slate-300">👀 Ver Painel</a>
+                        <button class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700" onclick="window.openPartnerModal()">+ Nova Campanha</button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive-wrapper border rounded-lg mb-8">
+                    <table class="min-w-full min-w-table divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Campanha Ativa / URL</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Validade</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Conversões & Ganhos</th>
+                                <th scope="col" class="action-cell px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="partners-tbody" class="bg-white divide-y divide-slate-200"></tbody>
+                    </table>
+                </div>
+
+                <h3 class="text-lg font-semibold text-slate-800 mb-4">Campanhas Finalizadas (Histórico)</h3>
+                <div class="table-responsive-wrapper border rounded-lg">
+                    <table class="min-w-full min-w-table divide-y divide-slate-200">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Código</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Campanha</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Pagamento</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Resultado</th>
+                                <th scope="col" class="action-cell px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="partners-finished-tbody" class="bg-white divide-y divide-slate-200"></tbody>
+                    </table>
+                </div>
             </div>
 
     </div>        
@@ -583,6 +630,65 @@ O link deve ser o link direto do Google Maps para o local."
         </div>
     </div>
 
+    <!-- MODAL DE NOVA CAMPANHA CPA -->
+    <div id="modal-partner" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-lg m-4">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold">Campanha de Parceria</h3>
+                <button onclick="closeModal('modal-partner')" class="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+            <form id="partner-form" class="space-y-4">
+                <input type="hidden" id="part-original-codigo">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600">Nome do Parceiro/Campanha</label>
+                    <input type="text" id="part-nome" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600">Código URL (Sem espaços)</label>
+                        <input type="text" id="part-codigo" style="text-transform: uppercase;" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600">Senha de Acesso</label>
+                        <div class="flex gap-2 mt-1">
+                            <input type="text" id="part-senha" class="block w-full px-3 py-2 border border-slate-300 rounded-md font-mono font-bold" required>
+                            <button type="button" class="px-3 bg-slate-200 rounded-md hover:bg-slate-300" onclick="window.gerarSenhaParceiro()">🔄</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 border-t pt-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600">Fixo (R$)</label>
+                        <input type="number" id="part-base" value="0" min="0" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600">Por Lead (R$)</label>
+                        <input type="number" id="part-lead" value="2" min="0" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-600">Dias Válidos</label>
+                        <input type="number" id="part-dias" value="30" min="1" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md">
+                    </div>
+                </div>
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('modal-partner')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700">Salvar Campanha</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE RESULTADOS -->
+    <div id="modal-partner-result" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-md m-4">
+            <h3 class="text-xl font-semibold mb-6">Resultados da Campanha</h3>
+            <div id="partner-result-body" class="text-sm text-slate-700 space-y-2"></div>
+            <div class="pt-6 flex justify-end">
+                <button type="button" onclick="closeModal('modal-partner-result')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Fechar</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -725,6 +831,10 @@ O link deve ser o link direto do Google Maps para o local."
             document.getElementById('tab-suggestions').classList.toggle('active', view === 'suggestions');
             document.getElementById('tab-upgrades').classList.toggle('active', view === 'upgrades'); // <-- ADICIONE ESTA LINHA
             document.getElementById('tab-tools').classList.toggle('active', view === 'tools');
+
+            document.getElementById('partners-management-view').classList.toggle('hidden', view !== 'partners');
+            document.getElementById('tab-partners').classList.toggle('active', view === 'partners');
+            if (view === 'partners' && window.loadPartners) window.loadPartners();
         };
 
         // --- 2. LÓGICA DE LOGIN/LOGOUT ---
@@ -3356,10 +3466,10 @@ O link deve ser o link direto do Google Maps para o local."
             let newValue = currentValue + amount;
             if (newValue < 0) newValue = 0; // Impede créditos negativos
             input.value = newValue;
-        };
+        };        
 
     </script>
-<br><center><p>V. 1.3.1 - 15/05/2026 08:42</p></center><br>
+<br><center><p>V. 1.4.0 - 13/08/2026 08:42</p></center><br>
 
 <script>
     // Força a desinstalação de qualquer Service Worker antigo que tenha ficado em cache
@@ -3373,6 +3483,252 @@ O link deve ser o link direto do Google Maps para o local."
         });
     }
 </script>
+
+        <script type="module">
+            import { getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+            import { getDatabase, ref, get, set, update, remove } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+            
+            // Captura a instância do Firebase já inicializada pelo script principal do painel
+            const dbPartner = getDatabase(getApp());
+            
+            window.allPartners = [];
+
+            window.loadPartners = async () => {
+                try {
+                    const snap = await get(ref(dbPartner, 'parcerias'));
+                    let partners = [];
+                    if (snap.exists()) {
+                        const data = snap.val();
+                        partners = Object.keys(data).map(key => ({ id: key, ...data[key] }));
+                    }
+                    window.allPartners = partners;
+
+                    for (let p of window.allPartners) {
+                        const leads = p.leads ? Object.values(p.leads) : [];
+                        p.totalLeads = leads.length;
+                        p.primeiroRegistro = null;
+                        p.dataFimCalculada = null;
+                        p.isAtivo = true;
+
+                        if (leads.length > 0) {
+                            leads.sort((a, b) => new Date(a.dataCadastro) - new Date(b.dataCadastro));
+                            const dataInicio = new Date(leads[0].dataCadastro);
+                            const dataFim = new Date(dataInicio);
+                            dataFim.setDate(dataFim.getDate() + (Number(p.diasValidade) || 30));
+                            p.primeiroRegistro = dataInicio;
+                            p.dataFimCalculada = dataFim;
+                            p.isAtivo = new Date() <= dataFim;
+                        }
+                    }
+                    window.renderPartners();
+                } catch (e) {
+                    console.error("Erro ao carregar parcerias", e);
+                }
+            };
+
+            window.renderPartners = () => {
+                const tbodyAtivas = document.getElementById('partners-tbody');
+                const tbodyFinalizadas = document.getElementById('partners-finished-tbody');
+                tbodyAtivas.innerHTML = ''; tbodyFinalizadas.innerHTML = '';
+
+                const ativas = window.allPartners.filter(p => p.status !== 'finalizada');
+                const finalizadas = window.allPartners.filter(p => p.status === 'finalizada');
+
+                if (ativas.length === 0) tbodyAtivas.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-slate-500">Nenhuma campanha ativa.</td></tr>';
+                ativas.forEach(p => {
+                    const tr = document.createElement('tr');
+                    let prazoHtml = `<span class="text-slate-400">Aguardando 1º registro</span>`;
+                    if (p.primeiroRegistro) prazoHtml = `${p.primeiroRegistro.toLocaleDateString('pt-BR')} a ${p.dataFimCalculada.toLocaleDateString('pt-BR')}`;
+                    const statusHtml = p.isAtivo ? '<span class="text-green-600 font-bold bg-green-100 px-2 py-1 rounded text-xs">Ativa</span>' : '<span class="text-red-600 font-bold bg-red-100 px-2 py-1 rounded text-xs">Encerrada</span>';
+                    const ganhos = (Number(p.valorBase)||0) + (p.totalLeads * (Number(p.valorPorLead)||0));
+
+                    tr.innerHTML = `
+                        <td class="p-4 border-b">
+                            <strong class="text-slate-800">${p.nome}</strong><br>
+                            <small class="font-mono text-blue-600">${p.id}</small> 
+                            <small class="text-slate-500 ml-2">Senha: ${p.senha}</small><br>
+                            
+                            <!-- NOVO BOTÃO DE COPIAR -->
+                            <button onclick="window.copyPartnerLink('${p.id}', this)" class="mt-2 text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 transition-colors outline-none">
+                                🔗 Copiar Link
+                            </button>
+                            
+                            <div class="mt-2">${statusHtml}</div>
+                        </td>
+                        <td class="p-4 border-b text-sm text-slate-600">${prazoHtml}<br><small>(${p.diasValidade} dias)</small></td>
+                        <td class="p-4 border-b text-sm text-slate-600"><strong>${p.totalLeads}</strong> leads<br>R$ ${ganhos}</td>
+                        <td class="p-4 border-b flex gap-2">
+                            <button onclick="window.finalizarPartner('${p.id}')" class="text-green-600 hover:bg-green-50 p-2 rounded transition-colors font-bold text-sm">✓ Finalizar</button>
+                            <button onclick="window.openPartnerModal('${p.id}')" class="text-blue-600 hover:bg-blue-50 p-2 rounded transition-colors text-sm">Editar</button>
+                            <button onclick="window.deletePartner('${p.id}')" class="text-red-600 hover:bg-red-50 p-2 rounded transition-colors text-sm">Apagar</button>
+                        </td>`;
+                    tbodyAtivas.appendChild(tr);
+                });
+
+                if (finalizadas.length === 0) tbodyFinalizadas.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-slate-500">Nenhuma campanha finalizada.</td></tr>';
+                finalizadas.forEach(p => {
+                    const tr = document.createElement('tr');
+                    const ganhos = (Number(p.valorBase)||0) + (p.totalLeads * (Number(p.valorPorLead)||0));
+                    tr.innerHTML = `
+                        <td class="p-4 border-b font-mono text-sm text-slate-600">${p.codigoOriginal || p.id}</td>
+                        <td class="p-4 border-b font-semibold text-slate-800">${p.nome}</td>
+                        <td class="p-4 border-b text-sm text-slate-600">${p.dataPagamento ? p.dataPagamento.split('-').reverse().join('/') : '-'}</td>
+                        <td class="p-4 border-b text-sm text-slate-600"><strong>${p.totalLeads}</strong> leads<br>Total: R$ ${ganhos}</td>
+                        <td class="p-4 border-b flex gap-2">
+                            <button onclick="window.verResultadosPartner('${p.id}')" class="text-blue-600 bg-blue-50 px-3 py-1 rounded hover:bg-blue-100 transition-colors text-sm font-medium">Resultados</button>
+                            <button onclick="window.deletePartner('${p.id}')" class="text-red-600 hover:bg-red-50 p-2 rounded transition-colors text-sm">Apagar</button>
+                        </td>`;
+                    tbodyFinalizadas.appendChild(tr);
+                });
+            };
+
+            // --- FUNÇÃO PARA COPIAR LINK DO PARCEIRO ---
+            window.copyPartnerLink = (codigo, btnElement) => {
+                // Monta a URL dinamicamente (ajuste o '/app.html' se a sua página principal for 'index.html')
+                const link = `${window.location.origin}/app.html?ref=${codigo}`;
+                
+                navigator.clipboard.writeText(link).then(() => {
+                    const originalText = btnElement.innerHTML;
+                    btnElement.innerHTML = '✅ Copiado!';
+                    btnElement.classList.add('text-green-600'); // Fica verde
+                    
+                    // Retorna ao texto original após 1.5 segundos
+                    setTimeout(() => {
+                        btnElement.innerHTML = originalText;
+                        btnElement.classList.remove('text-green-600');
+                    }, 1500);
+                }).catch(err => {
+                    console.error('Erro ao copiar o link:', err);
+                    alert('Falha ao copiar o link. Verifique as permissões do navegador.');
+                });
+            };
+
+            window.gerarSenhaParceiro = () => {
+                const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                let senha = "";
+                for (let i = 0; i < 6; i++) senha += chars.charAt(Math.floor(Math.random() * chars.length));
+                document.getElementById('part-senha').value = senha;
+            };
+
+            window.openPartnerModal = (editId = null) => {
+                const inputCodigo = document.getElementById('part-codigo');
+                if (editId) {
+                    const p = window.allPartners.find(x => x.id === editId);
+                    if (!p) return;
+                    document.getElementById('part-nome').value = p.nome || '';
+                    document.getElementById('part-codigo').value = p.id;
+                    document.getElementById('part-senha').value = p.senha || '';
+                    document.getElementById('part-base').value = p.valorBase || '0';
+                    document.getElementById('part-lead').value = p.valorPorLead || '2';
+                    document.getElementById('part-dias').value = p.diasValidade || '10';
+                    document.getElementById('part-original-codigo').value = p.id;
+                    inputCodigo.disabled = true; inputCodigo.classList.add('bg-slate-100');
+                } else {
+                    document.getElementById('partner-form').reset();
+                    document.getElementById('part-base').value = '0';
+                    document.getElementById('part-lead').value = '2';
+                    document.getElementById('part-dias').value = '10';
+                    document.getElementById('part-original-codigo').value = '';
+                    window.gerarSenhaParceiro();
+                    inputCodigo.disabled = false; inputCodigo.classList.remove('bg-slate-100');
+                }
+                window.openModal('modal-partner');
+            };
+
+            document.getElementById('partner-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const nome = document.getElementById('part-nome').value.trim();
+                const codigoRaw = document.getElementById('part-codigo').value.trim();
+                const senha = document.getElementById('part-senha').value.trim();
+                const original = document.getElementById('part-original-codigo').value;
+                const codigo = codigoRaw.replace(/[^a-zA-Z0-9_-]/g, '').toUpperCase();
+
+                try {
+                    if (!original) {
+                        const snap = await get(ref(dbPartner, `parcerias/${codigo}`));
+                        if (snap.exists()) {
+                            const dadosExistentes = snap.val();
+                            if (dadosExistentes.status === 'finalizada') {
+                                const novoIdArq = `${codigo}_${Date.now()}`;
+                                dadosExistentes.codigoOriginal = codigo;
+                                await set(ref(dbPartner, `parcerias/${novoIdArq}`), dadosExistentes);
+                                await remove(ref(dbPartner, `parcerias/${codigo}`));
+                                console.log("Legado movido!");
+                            } else {
+                                return alert(`O código "${codigo}" já está ativo em outra campanha.`);
+                            }
+                        }
+                    }
+
+                    const payload = {
+                        nome: nome,
+                        senha: senha,
+                        valorBase: Number(document.getElementById('part-base').value),
+                        valorPorLead: Number(document.getElementById('part-lead').value),
+                        diasValidade: Number(document.getElementById('part-dias').value)
+                    };
+                    if (!original) payload.dataCriacao = new Date().toISOString();
+
+                    await update(ref(dbPartner, `parcerias/${codigo}`), payload);
+                    window.closeModal('modal-partner');
+                    window.loadPartners();
+                } catch (err) { alert("Erro ao salvar!"); console.error(err); }
+            });
+
+            window.finalizarPartner = async (id) => {
+                if (!confirm("Finalizar, arquivar e liberar esta URL para novos usos?")) return;
+                const hoje = new Date().toISOString().split('T')[0];
+                const dtPagamento = prompt("Data do pagamento (AAAA-MM-DD):", hoje);
+                if (!dtPagamento) return;
+
+                try {
+                    const novoId = `${id}_${Date.now()}`;
+                    const campSnap = await get(ref(dbPartner, `parcerias/${id}`));
+                    if (!campSnap.exists()) return;
+                    
+                    const campData = campSnap.val();
+                    campData.status = 'finalizada';
+                    campData.dataPagamento = dtPagamento;
+                    campData.codigoOriginal = id;
+                    
+                    await set(ref(dbPartner, `parcerias/${novoId}`), campData);
+                    await remove(ref(dbPartner, `parcerias/${id}`));
+
+                    alert("Campanha arquivada. Código liberado!");
+                    window.loadPartners();
+                } catch (e) { alert("Erro ao finalizar."); console.error(e); }
+            };
+
+            window.deletePartner = async (id) => {
+                if (!confirm("Excluir esta parceria definitivamente? O painel do influencer parará de funcionar.")) return;
+                await remove(ref(dbPartner, `parcerias/${id}`));
+                window.loadPartners();
+            };
+
+            window.verResultadosPartner = (id) => {
+                const p = window.allPartners.find(x => x.id === id);
+                if (!p) return;
+                const base = Number(p.valorBase) || 0;
+                const lead = Number(p.valorPorLead) || 5;
+                const total = base + (p.totalLeads * lead);
+                const dtPag = p.dataPagamento ? p.dataPagamento.split('-').reverse().join('/') : '-';
+
+                document.getElementById('partner-result-body').innerHTML = `
+                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 text-slate-800">
+                        <p><strong>Influenciador:</strong> ${p.nome}</p>
+                        <p><strong>Código:</strong> <span class="font-mono text-blue-600">${p.codigoOriginal || p.id}</span></p>
+                        <hr class="my-3 border-slate-200">
+                        <div class="flex justify-between"><span>Taxa Fixa:</span> <strong>R$ ${base.toFixed(2)}</strong></div>
+                        <div class="flex justify-between"><span>Por Cadastro:</span> <strong>R$ ${lead.toFixed(2)}</strong></div>
+                        <div class="flex justify-between"><span>Cadastros:</span> <strong>${p.totalLeads}</strong></div>
+                        <div class="mt-4 p-3 bg-green-100 text-green-800 rounded-lg border border-green-200">
+                            <div class="flex justify-between font-bold text-lg mb-1"><span>Total Pago:</span> <span>R$ ${total.toFixed(2)}</span></div>
+                            <div class="text-xs">Data: ${dtPag}</div>
+                        </div>
+                    </div>`;
+                window.openModal('modal-partner-result');
+            };
+        </script>
 
 </body>
 </html>
