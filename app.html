@@ -1049,7 +1049,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.1.5 | 13/08/2026, 08:19</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.1.6 | 19/08/2026, 08:19</p>
             </main>
         </div>
 
@@ -3525,6 +3525,35 @@
             "BRL", "USD", "EUR", "JPY", "GBP", "AUD", 
             "CAD", "CHF", "CNY", "CC/IOF"
         ];
+
+        // --- SISTEMA ANTI-SCROLL PARA BOTÕES MOBILE ---
+        let isScrollingMobile = false;
+        let touchStartYPos = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            touchStartYPos = e.touches[0].clientY;
+            isScrollingMobile = false;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', (e) => {
+            if (Math.abs(e.touches[0].clientY - touchStartYPos) > 10) {
+                isScrollingMobile = true; // Se moveu mais de 10px, é scroll!
+            }
+        }, { passive: true });
+
+        // Função intermediária que protege o botão de edição
+        window.handleSafeEditClick = (event, activityId) => {
+            event.stopPropagation(); // Previne eventos em cascata
+            
+            // Se o usuário estava rolando a tela, ignora o clique
+            if (isScrollingMobile) {
+                event.preventDefault();
+                return; 
+            }
+            
+            // Se foi um clique limpo, chama sua função original
+            window.openEditActivityModal(activityId);
+        };
 
         // ===============================================
         // INÍCIO: LÓGICA DE ATUALIZAÇÃO AUTOMÁTICA (SEM MODAL)
@@ -6961,8 +6990,8 @@ window.addEventListener('popstate', (event) => {
                                 <img src="${imageUrl}" class="w-full h-full object-cover">
                                 ${(isEditable && !isReadOnly) ? `
                                 <div class="absolute top-2 right-2 flex gap-1.5 z-10 print:hidden">
-                                    <button onpointerdown="event.stopPropagation(); openEditActivityModal('${eventData.id}')" class="bg-white/90 text-blue-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
-                                    <button onpointerdown="event.stopPropagation(); deleteActivity('${eventData.id}')" class="bg-white/90 text-red-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
+                                    <button onclick="handleSafeEditClick(event, '${eventData.id}')" class="bg-white/90 text-blue-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+                                    <button onclick="event.stopPropagation(); deleteActivity('${eventData.id}')" class="bg-white/90 text-red-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
                                 </div>` : ''}
                             </div>
                             <div class="p-3 rounded-b-xl flex items-center gap-3 border-x border-b border-gray-100/50" style="${bgColorStyle}">
@@ -7000,7 +7029,7 @@ window.addEventListener('popstate', (event) => {
                             </div>
                             ${(isEditable && !isReadOnly) ? `
                             <div class="activity-actions-print flex gap-2 items-center flex-shrink-0">
-                                <button onclick="event.stopPropagation(); openEditActivityModal('${eventData.id}')" class="${iconColorClass} hover:text-blue-400 p-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+                                <button onclick="handleSafeEditClick(event, '${eventData.id}')" class="${iconColorClass} hover:text-blue-400 p-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                                 <button onclick="event.stopPropagation(); deleteActivity('${eventData.id}')" class="${iconColorClass} hover:text-red-400 p-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
                             </div>` : ''}
                         </div>`;
@@ -8199,7 +8228,6 @@ let dividerHtml = '';
         }
 
         window.openEditActivityModal = (activityId) => {
-            event.stopPropagation();
             const trip = tripsData.find(t => t.id === currentTripId);
             
             // --- INÍCIO DA NOVA LÓGICA DE BUSCA ---
