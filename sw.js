@@ -1,6 +1,6 @@
 // Define um nome e versão para o seu cache
 // IMPORTANTE: Mude este nome (ex: v1.0.2) toda vez que atualizar seus arquivos
-const CACHE_NAME = 'meu-guia-de-viagens-v2.1.92';
+const CACHE_NAME = 'meu-guia-de-viagens-v2.1.93';
 
 // Lista de arquivos principais do seu "App Shell"
 const APP_SHELL_URLS = [
@@ -11,6 +11,7 @@ const APP_SHELL_URLS = [
   'favicon.png',
   // Scripts e estilos essenciais que você usa no <head>
   'https://cdn.tailwindcss.com',
+  'https://unpkg.com/@tailwindcss/browser@4',
   'https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
   // Scripts do Firebase
@@ -88,6 +89,7 @@ self.addEventListener('fetch', (event) => {
   // --- Estratégia 2: Stale-While-Revalidate (Para CDNs e Fontes) ---
   // Responde rápido com o cache, mas busca uma atualização em segundo plano.
   if (url.origin.includes('cdn.tailwindcss.com') ||
+      url.origin.includes('unpkg.com') ||
       url.origin.includes('cdn.jsdelivr.net') ||
       url.origin.includes('fonts.googleapis.com') ||
       url.origin.includes('fonts.gstatic.com')) {
@@ -139,38 +141,6 @@ self.addEventListener('fetch', (event) => {
       })
   );
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
