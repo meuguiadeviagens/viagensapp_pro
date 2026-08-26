@@ -1069,7 +1069,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.1.7 | 25/08/2026, 08:19</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.1.8 | 25/08/2026, 08:19</p>
             </main>
         </div>
 
@@ -3663,17 +3663,6 @@
                 // SEM INTERNET: Mostra o alerta e ativa modo leitura
                 if (alertBox) alertBox.classList.remove('hidden');
                 document.body.classList.add('offline-read-only');
-
-                // Tenta carregar o backup local se o tripsData estiver vazio (refresh na página)
-                if (tripsData.length === 0) {
-                    const cachedTrips = localStorage.getItem('offlineTripsBackup');
-                    if (cachedTrips) {
-                        tripsData = JSON.parse(cachedTrips);
-                        if (typeof renderTripLists === 'function') {
-                            renderTripLists();
-                        }
-                    }
-                }
             } else {
                 // COM INTERNET: Esconde alerta e libera edição
                 if (alertBox) alertBox.classList.add('hidden');
@@ -5335,6 +5324,21 @@ window.addEventListener('popstate', (event) => {
                 setupNotificationListener(user.uid);
                 setupFavoritesListener(user.uid);
                 setupChecklistListener(user.uid);
+
+                // --- INÍCIO: CARREGAMENTO DE BACKUP OFFLINE ---
+                // Se o app abrir sem internet, força o carregamento local após a UI estar visível
+                if (!navigator.onLine) {
+                    const cachedTrips = localStorage.getItem(`offlineTripsBackup_${user.uid}`);
+                    if (cachedTrips) {
+                        tripsData = JSON.parse(cachedTrips);
+                        
+                        // Garante que a lista será renderizada com os dados locais
+                        if (typeof renderTripLists === 'function') {
+                            renderTripLists();
+                        }
+                    }
+                }
+                // --- FIM: CARREGAMENTO DE BACKUP OFFLINE ---
 
             } else {
                 currentUserId = null; // Limpa o ID quando o usuário sai
@@ -7269,7 +7273,7 @@ window.addEventListener('popstate', (event) => {
                     renderCurrentView(); 
                 }
 
-                localStorage.setItem('offlineTripsBackup', JSON.stringify(tripsData));
+                localStorage.setItem(`offlineTripsBackup_${currentUserId}`, JSON.stringify(tripsData));
 
             });
         }
