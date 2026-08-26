@@ -705,6 +705,26 @@
         .safe-padding-top { padding-top: var(--safe-area-top); }
         .safe-padding-bottom { padding-bottom: var(--safe-area-bottom); }
 
+        /* --- MODO OFFLINE (APENAS LEITURA) --- */
+        body.offline-read-only button[onclick*="openModal('add-"],
+        body.offline-read-only button[onclick*="openEditTripModal"],
+        body.offline-read-only .add-activity-btn,
+        body.offline-read-only .delete-day-btn,
+        body.offline-read-only #reorg-start-btn,
+        body.offline-read-only button[onclick*="deleteSharedExpense"],
+        body.offline-read-only form, /* Esconde formulários rápidos como de documentos e anotações */
+        body.offline-read-only .activity-item button[title="Editar"],
+        body.offline-read-only .activity-item button[title="Excluir"] {
+            display: none !important;
+            pointer-events: none !important;
+        }
+
+        body.offline-read-only #offline-alert h3::after {
+            content: " (Modo Apenas Leitura Ativo)";
+            font-weight: normal;
+            font-size: 0.85em;
+        }
+
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -1049,7 +1069,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.1.6 | 19/08/2026, 08:19</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.1.7 | 25/08/2026, 08:19</p>
             </main>
         </div>
 
@@ -3640,11 +3660,24 @@
             const alertBox = document.getElementById('offline-alert');
             
             if (!navigator.onLine) {
-                // Se estiver SEM internet, remove a classe 'hidden' para mostrar o alerta
-                alertBox.classList.remove('hidden');
+                // SEM INTERNET: Mostra o alerta e ativa modo leitura
+                if (alertBox) alertBox.classList.remove('hidden');
+                document.body.classList.add('offline-read-only');
+
+                // Tenta carregar o backup local se o tripsData estiver vazio (refresh na página)
+                if (tripsData.length === 0) {
+                    const cachedTrips = localStorage.getItem('offlineTripsBackup');
+                    if (cachedTrips) {
+                        tripsData = JSON.parse(cachedTrips);
+                        if (typeof renderTripLists === 'function') {
+                            renderTripLists();
+                        }
+                    }
+                }
             } else {
-                // Se a internet VOLTAR, esconde o alerta automaticamente (boa prática de UX)
-                alertBox.classList.add('hidden');
+                // COM INTERNET: Esconde alerta e libera edição
+                if (alertBox) alertBox.classList.add('hidden');
+                document.body.classList.remove('offline-read-only');
             }
         }
 
@@ -6550,7 +6583,7 @@ window.addEventListener('popstate', (event) => {
                 <div class="flex-1">
                     <p class="font-semibold text-slate-800">${item.name}</p>
                     <p class="text-sm text-slate-600">${item.address}</p>
-                    <p class="text-xs text-slate-500">Check-in: ${formatDate(item.checkinDate)}</p>
+                    <p class="text-xs text-slate-500">Check-in: ${formatDate(item.checkinDate)} às ${item.checkinTime}</p>
                     <p class="text-xs text-slate-500">Check-out: ${formatDate(item.checkoutDate)} às ${item.checkoutTime}</p>
                     ${item.link ? `
                     <a href="${item.link}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="mt-2 inline-flex items-center gap-2 text-xs bg-slate-100 text-slate-700 font-semibold px-3 py-1.5 rounded-md hover:bg-slate-200 transition-colors">
@@ -7235,6 +7268,8 @@ window.addEventListener('popstate', (event) => {
                 else if (listChanged) {
                     renderCurrentView(); 
                 }
+
+                localStorage.setItem('offlineTripsBackup', JSON.stringify(tripsData));
 
             });
         }
