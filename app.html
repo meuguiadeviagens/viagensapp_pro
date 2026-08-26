@@ -1069,7 +1069,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.1.8 | 25/08/2026, 08:19</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.1.9 | 25/08/2026, 08:19</p>
             </main>
         </div>
 
@@ -5050,26 +5050,39 @@ window.addEventListener('popstate', (event) => {
                     joinTripViaLink(pendingTripId, user);
                 }
               
-                // 1. USUÁRIO ESTÁ LOGADO
-                //console.log("Usuário logado:", user.uid);
-                 
+                //Usuário está logado
+                // --- INÍCIO: CACHE DO PERFIL E UPDATE DO LAST LOGIN ---
                 const userProfileRef = ref(db, `users/${user.uid}/profile`);
+                
+                // 1. Tenta carregar o perfil do cache imediatamente (Resolve o "Carregando...")
+                const cachedProfile = localStorage.getItem(`offlineProfile_${user.uid}`);
+                if (cachedProfile) {
+                    currentUserProfile = JSON.parse(cachedProfile);
+                    if (currentUserProfile && currentUserProfile.fullName) {
+                        document.getElementById('user-menu-name').textContent = currentUserProfile.fullName.split(' ')[0];
+                    }
+                }
                     
                 update(userProfileRef, {
                     LastLogin: serverTimestamp()
-                }).catch(error => console.error("Erro ao atualizar LastLogin:", error));
+                }).catch(error => console.warn("Modo offline, LastLogin não atualizado.")); // Mudei para warn para não sujar o console
 
-                    onValue(userProfileRef, (snapshot) => {
-                        const profile = snapshot.val();
-                        currentUserProfile = profile || {};
-                        if (profile && profile.fullName) {
-                            const firstName = profile.fullName.split(' ')[0];
-                            document.getElementById('user-menu-name').textContent = firstName;
-                        } else {
-                            document.getElementById('user-menu-name').textContent = "Perfil";
-                        }                       
-
-                    });
+                onValue(userProfileRef, (snapshot) => {
+                    const profile = snapshot.val();
+                    if (profile) {
+                        currentUserProfile = profile;
+                        // 2. Salva no cache sempre que puxar dados frescos da internet
+                        localStorage.setItem(`offlineProfile_${user.uid}`, JSON.stringify(profile));
+                        
+                        if (profile.fullName) {
+                            document.getElementById('user-menu-name').textContent = profile.fullName.split(' ')[0];
+                        }
+                    } else if (!cachedProfile) {
+                        document.getElementById('user-menu-name').textContent = "Perfil";
+                    }                       
+                });
+                // --- FIM: CACHE DO PERFIL ---             
+                
 
                 // NOVO: Carregar a licença do usuário
                 const licenseRef = ref(db, `users/${user.uid}/license`);
@@ -5325,20 +5338,23 @@ window.addEventListener('popstate', (event) => {
                 setupFavoritesListener(user.uid);
                 setupChecklistListener(user.uid);
 
-                // --- INÍCIO: CARREGAMENTO DE BACKUP OFFLINE ---
-                // Se o app abrir sem internet, força o carregamento local após a UI estar visível
+                // 3. O App acabou de ficar visível (appView.classList.remove('hidden')),
+                // então forçamos a checagem do alerta e bloqueio de botões AGORA.
+                checkConnectivity();
+
+                // 4. Lógica blindada para carregar as viagens em modo offline
                 if (!navigator.onLine) {
                     const cachedTrips = localStorage.getItem(`offlineTripsBackup_${user.uid}`);
                     if (cachedTrips) {
                         tripsData = JSON.parse(cachedTrips);
-                        
-                        // Garante que a lista será renderizada com os dados locais
+                        console.log("Modo Offline: Viagens carregadas do cache local.");
                         if (typeof renderTripLists === 'function') {
                             renderTripLists();
                         }
+                    } else {
+                        console.warn("Nenhum backup de viagens encontrado no dispositivo.");
                     }
                 }
-                // --- FIM: CARREGAMENTO DE BACKUP OFFLINE ---
 
             } else {
                 currentUserId = null; // Limpa o ID quando o usuário sai
