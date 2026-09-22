@@ -971,6 +971,7 @@
                                 <span id="notification-menu-badge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span>
                             </a>
                             <a href="#" onclick="showChecklistView(event)" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Checklist de Viagem</a>
+                            <a href="#" onclick="openUserMuralModal(event)" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Anotações</a>
                             <a href="#" onclick="openLicenseModal()" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Minha licença</a>
                             <a href="#" id="menu-refer-earn-btn" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 border-b font-semibold text-green-700" onclick="event.preventDefault(); document.getElementById('user-menu-dropdown').classList.add('hidden'); openReferralModal();">🎁 Indique e Ganhe</a>
                             <a href="#" id="upgrade-plan-btn" class="hidden block px-4 py-2 text-sm font-semibold text-blue-600 hover:bg-slate-100" onclick="event.preventDefault(); openModal('upgrade-plan-modal'); userMenuDropdown.classList.add('hidden');">
@@ -1069,7 +1070,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.1.92 | 25/08/2026, 08:19</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.2.0 | 22/09/2026, 08:19</p>
             </main>
         </div>
 
@@ -3376,6 +3377,83 @@
             </div>
         </div>
     </div>
+
+    <!-- INÍCIO: MODAL MURAL DE ANOTAÇÕES (VISUALIZAÇÃO EM GRADE) -->
+    <div id="user-mural-modal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl m-4 flex flex-col max-h-[85vh]">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800">Meu Mural de Anotações</h3>
+                    <p class="text-sm text-slate-500 mt-1">Anotações globais salvas no seu perfil</p>
+                </div>
+                <button onclick="closeModal('user-mural-modal')" class="text-slate-400 hover:text-slate-600 transition-colors self-start p-1" title="Fechar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            
+            <div class="p-6 border-b border-slate-100">
+                <button onclick="openManageUserNote()" class="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-4 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Nova Anotação</span>
+                </button>
+            </div>
+
+            <div id="user-mural-list" class="flex-grow overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <!-- Anotações serão injetadas aqui -->
+            </div>
+        </div>
+    </div>
+    <!-- FIM: MODAL MURAL DE ANOTAÇÕES -->
+
+    <!-- INÍCIO: MODAL ADICIONAR/EDITAR/LER ANOTAÇÃO DO MURAL -->
+    <div id="manage-user-note-modal" class="fixed inset-0 z-[110] hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-lg m-4 flex flex-col max-h-[90vh]">
+            <h3 id="manage-mural-title" class="text-2xl font-semibold mb-6 text-slate-800">Anotação</h3>
+            
+            <div class="flex-grow overflow-y-auto pr-2 space-y-4">
+                <input type="hidden" id="mural-note-id">
+                
+                <div>
+                    <label for="mural-note-title" class="block text-sm font-medium text-slate-600">Título</label>
+                    <input type="text" id="mural-note-title" placeholder="Ex: Ideias para os próximos destinos" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label for="mural-note-image-url" class="block text-sm font-medium text-slate-600">URL da Imagem de Capa (Opcional)</label>
+                    <input type="url" id="mural-note-image-url" placeholder="https://exemplo.com/foto.jpg" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">Descrição</label>
+                    <!-- Barra de ferramentas do WYSIWYG Nativo -->
+                    <div class="flex gap-2 p-2 border border-slate-300 rounded-t-md bg-slate-50 border-b-0 overflow-x-auto">
+                        <button type="button" onclick="document.execCommand('bold', false, null)" class="px-2 py-1 font-bold bg-white border border-slate-300 rounded hover:bg-slate-200 transition-colors" title="Negrito">B</button>
+                        <button type="button" onclick="document.execCommand('underline', false, null)" class="px-2 py-1 underline bg-white border border-slate-300 rounded hover:bg-slate-200 transition-colors" title="Sublinhado">U</button>
+                        
+                        <div class="w-px h-6 bg-slate-300 mx-1 self-center"></div>
+                        
+                        <button type="button" onclick="document.execCommand('foreColor', false, 'black')" class="w-6 h-6 rounded-full bg-black border border-slate-300 hover:scale-110 transition-transform flex-shrink-0" title="Preto"></button>
+                        <button type="button" onclick="document.execCommand('foreColor', false, '#dc2626')" class="w-6 h-6 rounded-full bg-red-600 border border-slate-300 hover:scale-110 transition-transform flex-shrink-0" title="Vermelho"></button>
+                        <button type="button" onclick="document.execCommand('foreColor', false, '#2563eb')" class="w-6 h-6 rounded-full bg-blue-600 border border-slate-300 hover:scale-110 transition-transform flex-shrink-0" title="Azul"></button>
+                        <button type="button" onclick="document.execCommand('foreColor', false, '#16a34a')" class="w-6 h-6 rounded-full bg-green-600 border border-slate-300 hover:scale-110 transition-transform flex-shrink-0" title="Verde"></button>
+                    </div>
+                    <!-- Div Editável que permite salvar HTML estruturado -->
+                    <div id="mural-note-content" contenteditable="true" class="w-full min-h-[150px] max-h-[300px] p-3 border border-slate-300 rounded-b-md overflow-y-auto focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white whitespace-pre-wrap"></div>
+                </div>
+            </div>
+
+            <div class="pt-6 flex justify-between gap-3 border-t mt-4">
+                <button type="button" id="delete-mural-note-btn" onclick="deleteUserMuralNote()" class="px-4 py-2 bg-red-100 text-red-600 font-semibold rounded-md hover:bg-red-200 transition-colors hidden">
+                    Excluir
+                </button>
+                <div class="flex gap-3 ml-auto">
+                    <button type="button" onclick="closeModal('manage-user-note-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Cancelar</button>
+                    <button type="button" onclick="saveUserMuralNote()" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- FIM: MODAL ADICIONAR/EDITAR/LER ANOTAÇÃO DO MURAL -->
 
 
     <script type="module">
@@ -16133,6 +16211,212 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         };
 
         // --- FIM: SISTEMA DE PESQUISA/FILTRO DE VIAGENS ---
+
+        // ==========================================
+        // INÍCIO: LÓGICA DO MURAL DE ANOTAÇÕES GLOBAL
+        // ==========================================
+
+        let muralSortableInstance = null; // Variável para gerenciar a instância do Sortable
+
+        // 1. CARREGAR E RENDERIZAR ANOTAÇÕES (COM PROTEÇÃO DE ESCOPO)
+        window.loadUserMuralNotes = () => {
+            // Usa o método moderno do Firebase (v9+) para cancelar o listener anterior
+            if (window.muralNotesUnsubscribe) {
+                window.muralNotesUnsubscribe();
+            }
+            
+            const muralRef = ref(db, `users/${currentUserId}/muralNotes`);
+            
+            // onValue no Firebase v9+ retorna a função de unsubscribe diretamente
+            window.muralNotesUnsubscribe = onValue(muralRef, (snapshot) => {
+                const listContainer = document.getElementById('user-mural-list');
+                
+                // Proteção extra caso o DOM não esteja pronto
+                if (!listContainer) return;
+                
+                listContainer.innerHTML = '';
+                
+                if (snapshot.exists()) {
+                    const notes = [];
+                    snapshot.forEach(child => {
+                        notes.push({ id: child.key, ...child.val() });
+                    });
+                    
+                    // Ordena pela propriedade 'order' (se existir) ou pelo timestamp
+                    notes.sort((a, b) => {
+                        const orderA = a.order !== undefined ? a.order : (a.timestamp || 0);
+                        const orderB = b.order !== undefined ? b.order : (b.timestamp || 0);
+                        return orderA - orderB; 
+                    });
+                    
+                    notes.forEach(note => {
+                        const noteCard = document.createElement('div');
+                        noteCard.className = 'mural-note-item bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col h-full overflow-hidden relative group';
+                        noteCard.dataset.id = note.id;
+                        
+                        // HTML do ícone de arrastar
+                        const dragHandleHtml = `
+                            <div class="absolute top-2 right-2 bg-black/40 text-white p-1.5 rounded cursor-grab opacity-0 group-hover:opacity-100 transition-opacity drag-handle-mural z-10" title="Arraste para reordenar">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                            </div>
+                        `;
+
+                        // Renderização condicional da imagem de capa
+                        const imgHtml = note.imageUrl ? `<div class="h-32 bg-cover bg-center border-b border-slate-100" style="background-image: url('${note.imageUrl}');"></div>` : '';
+
+                        noteCard.innerHTML = `
+                            ${dragHandleHtml}
+                            ${imgHtml}
+                            <div class="p-4 flex flex-col gap-2 flex-grow cursor-pointer">
+                                <h4 class="font-bold text-slate-800 text-lg truncate pr-8">${note.title || 'Sem título'}</h4>
+                                <div class="text-sm text-slate-600 line-clamp-3 overflow-hidden text-ellipsis pointer-events-none break-words">
+                                    ${note.content || '...'}
+                                </div>
+                            </div>
+                        `;
+
+                        // Associa o evento de clique 
+                        noteCard.onclick = (e) => {
+                            if(e.target.closest('.drag-handle-mural')) return;
+                            window.openManageUserNote(note.id, note.title, note.content, note.imageUrl);
+                        };
+
+                        listContainer.appendChild(noteCard);
+                    });
+
+                    // Inicializa o SortableJS para o drag-and-drop usando a janela global
+                    if (window.muralSortableInstance) {
+                        window.muralSortableInstance.destroy();
+                    }
+                    window.muralSortableInstance = new Sortable(listContainer, {
+                        animation: 150,
+                        handle: '.drag-handle-mural',
+                        ghostClass: 'opacity-50',
+                        onEnd: function () {
+                            window.saveMuralNotesOrder();
+                        }
+                    });
+
+                } else {
+                    // Se não houver anotações, exibe o fallback
+                    listContainer.innerHTML = '<p class="text-slate-500 text-center col-span-full py-8 bg-slate-50 rounded-xl border border-dashed border-slate-300">Seu mural está vazio. Adicione a primeira anotação!</p>';
+                }
+            });
+        };
+
+        // 2. ABRIR MODAL (AGORA COM IMAGEM)
+        window.openManageUserNote = (id = null, title = '', content = '', imageUrl = '') => {
+            document.getElementById('mural-note-id').value = id || '';
+            document.getElementById('mural-note-title').value = title;
+            document.getElementById('mural-note-image-url').value = imageUrl || '';
+            
+            const contentDiv = document.getElementById('mural-note-content');
+            contentDiv.innerHTML = content;
+            
+            const deleteBtn = document.getElementById('delete-mural-note-btn');
+            if (id) {
+                deleteBtn.classList.remove('hidden');
+            } else {
+                deleteBtn.classList.add('hidden');
+            }
+            
+            openModal('manage-user-note-modal');
+        };
+
+        // 3. SALVAR ANOTAÇÃO (AGORA COM IMAGEM E ORDEM PADRÃO)
+        window.saveUserMuralNote = async () => {
+            const id = document.getElementById('mural-note-id').value;
+            const title = document.getElementById('mural-note-title').value;
+            const imageUrl = document.getElementById('mural-note-image-url').value;
+            const content = document.getElementById('mural-note-content').innerHTML;
+            
+            if (!title.trim() && !content.trim()) {
+                alert('A anotação precisa de ao menos um título ou conteúdo.');
+                return;
+            }
+            
+            const noteData = {
+                title: title.trim(),
+                content: content,
+                imageUrl: imageUrl.trim(),
+                timestamp: serverTimestamp() 
+            };
+
+            // Se for uma nota nova, atribui um "order" alto (Data atual) para ela ir pro final da lista
+            if (!id) {
+                noteData.order = Date.now();
+            }
+
+            try {
+                if (id) {
+                    await update(ref(db, `users/${currentUserId}/muralNotes/${id}`), noteData);
+                } else {
+                    await push(ref(db, `users/${currentUserId}/muralNotes`), noteData);
+                }
+                closeModal('manage-user-note-modal');
+            } catch (error) {
+                console.error("Erro ao salvar anotação do mural:", error);
+                alert("Ocorreu um erro ao salvar a anotação.");
+            }
+        };
+
+        // 4. NOVA FUNÇÃO: SALVAR ORDEM APÓS ARRASTAR
+        window.saveMuralNotesOrder = async () => {
+            const listContainer = document.getElementById('user-mural-list');
+            const items = listContainer.querySelectorAll('.mural-note-item');
+            const updates = {};
+            
+            // Itera sobre a nova ordem do DOM e atribui o índice (index) como a propriedade 'order'
+            items.forEach((item, index) => {
+                const noteId = item.dataset.id;
+                updates[`users/${currentUserId}/muralNotes/${noteId}/order`] = index;
+            });
+
+            try {
+                // Envia o update em lote para o Firebase
+                await update(ref(db), updates);
+            } catch (error) {
+                console.error("Erro ao salvar ordem das notas:", error);
+            }
+        };
+
+        // Abre o modal principal do mural
+        window.openUserMuralModal = (event) => {
+            if (event) event.preventDefault();
+            
+            // Esconde o menu do usuário ao clicar
+            const menuDropdown = document.getElementById('user-menu-dropdown');
+            if(menuDropdown) menuDropdown.classList.add('hidden');
+            
+            // Trava de segurança
+            if (!currentUserId) {
+                alert("Você precisa estar logado para ver suas anotações.");
+                return;
+            }
+            
+            openModal('user-mural-modal');
+            window.loadUserMuralNotes();
+        };
+
+        // Exclui a anotação
+        window.deleteUserMuralNote = async () => {
+            const id = document.getElementById('mural-note-id').value;
+            if (!id) return;
+            
+            // Reutiliza a caixa de confirmação nativa (ou o seu showConfirmDelete global se preferir)
+            if (confirm('Tem certeza que deseja excluir permanentemente esta anotação do seu mural?')) {
+                try {
+                    await remove(ref(db, `users/${currentUserId}/muralNotes/${id}`));
+                    closeModal('manage-user-note-modal');
+                } catch (error) {
+                    console.error("Erro ao excluir anotação do mural:", error);
+                }
+            }
+        };
+
+        // ==========================================
+        // FIM: LÓGICA DO MURAL DE ANOTAÇÕES GLOBAL
+        // ==========================================
 
     </script>
 
