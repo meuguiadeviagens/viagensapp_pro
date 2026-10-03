@@ -1070,7 +1070,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.2.0 | 22/09/2026, 08:19</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.2.1 | 22/09/2026, 08:19</p>
             </main>
         </div>
 
@@ -16251,29 +16251,54 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     
                     notes.forEach(note => {
                         const noteCard = document.createElement('div');
-                        noteCard.className = 'mural-note-item bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col h-full overflow-hidden relative group';
+                        noteCard.className = 'mural-note-item cursor-pointer bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-blue-300 transition-all flex flex-col h-full overflow-hidden relative group';
                         noteCard.dataset.id = note.id;
                         
-                        // HTML do ícone de arrastar
+                        let innerContent = '';
+
+                        // HTML do ícone de arrastar (mantido no canto superior direito)
                         const dragHandleHtml = `
                             <div class="absolute top-2 right-2 bg-black/40 text-white p-1.5 rounded cursor-grab opacity-0 group-hover:opacity-100 transition-opacity drag-handle-mural z-10" title="Arraste para reordenar">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
                             </div>
                         `;
 
-                        // Renderização condicional da imagem de capa
-                        const imgHtml = note.imageUrl ? `<div class="h-32 bg-cover bg-center border-b border-slate-100" style="background-image: url('${note.imageUrl}');"></div>` : '';
-
-                        noteCard.innerHTML = `
-                            ${dragHandleHtml}
-                            ${imgHtml}
-                            <div class="p-4 flex flex-col gap-2 flex-grow cursor-pointer">
-                                <h4 class="font-bold text-slate-800 text-lg truncate pr-8">${note.title || 'Sem título'}</h4>
-                                <div class="text-sm text-slate-600 line-clamp-3 overflow-hidden text-ellipsis pointer-events-none break-words">
-                                    ${note.content || '...'}
+                        if (note.imageUrl) {
+                            // --- LAYOUT LADO A LADO (Imagem na esquerda, Texto na direita) ---
+                            innerContent = `
+                                ${dragHandleHtml}
+                                <div class="flex flex-row h-full w-full">
+                                    <!-- Imagem fixa no canto esquerdo -->
+                                    <div class="w-24 md:w-32 shrink-0 bg-cover bg-center border-r border-slate-100" style="background-image: url('${note.imageUrl}');"></div>
+                                    
+                                    <!-- Bloco de Texto na direita -->
+                                    <div class="p-3 md:p-4 flex flex-col gap-1 flex-grow justify-center min-w-0 bg-white">
+                                        <h4 class="font-bold text-slate-800 text-base md:text-lg truncate pr-6">${note.title || 'Sem título'}</h4>
+                                        <!-- Descrição visível apenas no desktop -->
+                                        <div class="hidden md:block">
+                                            <div class="text-sm text-slate-600 line-clamp-2 overflow-hidden text-ellipsis pointer-events-none break-words">
+                                                ${note.content || '...'}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
+                        } else {
+                            // --- LAYOUT SEM IMAGEM (Apenas Texto) ---
+                            innerContent = `
+                                ${dragHandleHtml}
+                                <div class="p-3 md:p-4 flex flex-col gap-1 flex-grow justify-center min-w-0 bg-white">
+                                    <h4 class="font-bold text-slate-800 text-base md:text-lg truncate pr-6">${note.title || 'Sem título'}</h4>
+                                    <div class="hidden md:block">
+                                        <div class="text-sm text-slate-600 line-clamp-2 overflow-hidden text-ellipsis pointer-events-none break-words">
+                                            ${note.content || '...'}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        noteCard.innerHTML = innerContent;
 
                         // Associa o evento de clique 
                         noteCard.onclick = (e) => {
