@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -1145,7 +1145,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.2.3 | 04/10/2026, 08:19</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.2.4 | 04/10/2026, 08:19</p>
             </main>
         </div>
 
@@ -16876,7 +16876,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         };
 
         // ==================================================
-        // FUNÇÃO DE ARRASTAR PARA NAVEGAR (ESTILO GOOGLE MAPS)
+        // FUNÇÃO DE ARRASTAR PARA NAVEGAR (MOUSE E CELULAR/TOUCH)
         // ==================================================
         window.setupPanoramaPanning = () => {
             const containerWrap = document.querySelector('.iso-grid-container');
@@ -16892,47 +16892,59 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             let startX, startY;
             let initialTranslateX = 0, initialTranslateY = 0;
 
-            containerWrap.addEventListener('mousedown', (e) => {
-                if(e.target.closest('.iso-block')) return; 
+            // Função ajudante para pegar as coordenadas (Mouse ou Touch)
+            const getEventX = (e) => e.type.includes('touch') ? e.touches[0].pageX : e.pageX;
+            const getEventY = (e) => e.type.includes('touch') ? e.touches[0].pageY : e.pageY;
+
+            const startDrag = (e) => {
+                // Se estiver clicando na data ou nos botões do card, não arrasta
+                if(e.target.closest('.iso-block') || e.target.closest('span')) return; 
                 
                 isDown = true;
                 containerWrap.style.cursor = 'grabbing';
                 
-                startX = e.pageX;
-                startY = e.pageY;
+                startX = getEventX(e);
+                startY = getEventY(e);
                 
-                // Recupera a posição atual gravada no dataset do grid
                 initialTranslateX = parseFloat(grid.dataset.x || 0);
                 initialTranslateY = parseFloat(grid.dataset.y || 0);
-            });
+            };
 
-            containerWrap.addEventListener('mouseleave', () => {
+            const stopDrag = () => {
                 isDown = false;
                 containerWrap.style.cursor = 'grab';
-            });
+            };
 
-            containerWrap.addEventListener('mouseup', () => {
-                isDown = false;
-                containerWrap.style.cursor = 'grab'; 
-            });
-
-            containerWrap.addEventListener('mousemove', (e) => {
+            const drag = (e) => {
                 if (!isDown) return;
-                e.preventDefault();
                 
-                const walkX = (e.pageX - startX); // Distância movida no Eixo X
-                const walkY = (e.pageY - startY); // Distância movida no Eixo Y
+                // Muito importante: impede que o celular dê scroll na página inteira ao arrastar o mapa
+                if (e.cancelable) e.preventDefault();
+                
+                const walkX = (getEventX(e) - startX); 
+                const walkY = (getEventY(e) - startY); 
                 
                 const currentTranslateX = initialTranslateX + walkX;
                 const currentTranslateY = initialTranslateY + walkY;
                 
-                // Salva a nova posição
                 grid.dataset.x = currentTranslateX;
                 grid.dataset.y = currentTranslateY;
                 
-                // Aplica o movimento na tela 2D *antes* de curvar o mapa isométrico
                 grid.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) rotateX(60deg) rotateZ(-45deg)`;
-            });
+            };
+
+            // 1. Escutadores de Eventos para Computador (Mouse)
+            containerWrap.addEventListener('mousedown', startDrag);
+            containerWrap.addEventListener('mouseleave', stopDrag);
+            containerWrap.addEventListener('mouseup', stopDrag);
+            containerWrap.addEventListener('mousemove', drag);
+
+            // 2. Escutadores de Eventos para Celular/Tablet (Touch)
+            // { passive: false } é obrigatório para o preventDefault() funcionar e travar o scroll do iOS/Android
+            containerWrap.addEventListener('touchstart', startDrag, { passive: false });
+            containerWrap.addEventListener('touchend', stopDrag);
+            containerWrap.addEventListener('touchcancel', stopDrag);
+            containerWrap.addEventListener('touchmove', drag, { passive: false });
         };
 
     </script>
