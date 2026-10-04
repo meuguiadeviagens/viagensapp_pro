@@ -1152,7 +1152,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.2.6 | 04/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.2.7 | 04/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -16623,11 +16623,16 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 });
             }
 
-            // CORREÇÃO: Filtro rigoroso APENAS para atividades do tipo 'Cidade'
             const cityActivities = allActivities.filter(a => a.type === 'Cidade');
             
             cityActivities.forEach(act => {
-                const existingCity = rawCities.find(c => c && (c.cityName === act.name || c.name === act.name));
+                // CORREÇÃO MÁGICA: Agora exigimos que o NOME e a DATA sejam iguais para mesclar.
+                // Se for a mesma cidade (Zurique) mas em data diferente, ele criará um novo pino no mapa!
+                const existingCity = rawCities.find(c => 
+                    (c.cityName === act.name || c.name === act.name) && 
+                    (c.arrivalDate === act.date || c.date === act.date)
+                );
+                
                 if (existingCity) {
                     existingCity.time = act.time;
                     if (act.date) existingCity.arrivalDate = act.date;
@@ -16636,7 +16641,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
             });
 
-            // Normaliza as cidades com datas válidas
+            // Normaliza as cidades com datas válidas E blinda a ordenação
             const validCities = rawCities.map(c => {
                 if (typeof c === 'string') return { name: c, date: '', time: '12:00' };
                 return { 
@@ -16644,7 +16649,12 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     date: c.arrivalDate || c.date || c.dataChegada || '',
                     time: c.arrivalTime || c.time || c.horaChegada || '12:00'
                 };
-            }).filter(c => c.name && c.date).sort((a, b) => a.date.localeCompare(b.date));
+            }).filter(c => c.name && c.date).sort((a, b) => {
+                // CORREÇÃO: localeCompare garante ordenação perfeita e à prova de falhas para strings ISO, ignorando o NaN do JavaScript
+                const dtA = `${a.date}T${(a.time || '12:00').padStart(5, '0')}`;
+                const dtB = `${b.date}T${(b.time || '12:00').padStart(5, '0')}`;
+                return dtA.localeCompare(dtB);
+            });
 
             const flights = trip.flights ? Object.values(trip.flights) : [];
             const lodgings = trip.lodgings ? Object.values(trip.lodgings) : [];
@@ -16674,35 +16684,43 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 const displayDate = currentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' });
 
                 // --- POSICIONAMENTO SNAKE VERDADEIRO (COM 2 BLOCOS DE DESCIDA) ---
-                const verticalDropBlocks = 2; // <-- Aumentamos para 2 blocos de descida (espaço de respiro)
-                const cycleLength = (blocksPerRow * 2) + (verticalDropBlocks * 2); // 16 blocos formam o "S" completo
+                const verticalDropBlocks = 2; 
+                const cycleLength = (blocksPerRow * 2) + (verticalDropBlocks * 2);
                 const cycle = Math.floor(i / cycleLength);
                 const pos = i % cycleLength;
                 
-                const rowsPerCycle = 2 + (verticalDropBlocks * 2); // Cada ciclo ocupa 6 linhas no CSS Grid
+                const rowsPerCycle = 2 + (verticalDropBlocks * 2); 
+                
+                // NOVA REGRA: Verifica se é o ÚLTIMO bloco da viagem inteira
+                const isLastBlock = (i === daysCount - 1);
                 
                 let colIndex, rowIndex;
                 let gradientDirection = 'to right'; 
 
-                if (pos < blocksPerRow) {
-                    // 1. Indo para a direita (0 a 5)
+                // Se estiver indo para a direita, OU se for o ÚLTIMO bloco e ele ia descer na direita
+                if (pos < blocksPerRow || (isLastBlock && pos >= blocksPerRow && pos < blocksPerRow + verticalDropBlocks)) {
+                    // 1. Indo para a direita (O CSS Grid cria colunas extras à direita sozinho!)
                     colIndex = pos + 1;
                     rowIndex = (cycle * rowsPerCycle) + 1;
                     gradientDirection = 'to right';
-                } else if (pos >= blocksPerRow && pos < blocksPerRow + verticalDropBlocks) {
-                    // 2. Quina Direita - Descendo (6 e 7)
+                } 
+                else if (pos >= blocksPerRow && pos < blocksPerRow + verticalDropBlocks) {
+                    // 2. Quina Direita - Descendo
                     colIndex = blocksPerRow;
                     const dropStep = pos - blocksPerRow + 1;
                     rowIndex = (cycle * rowsPerCycle) + 1 + dropStep; 
                     gradientDirection = 'to bottom';
-                } else if (pos >= blocksPerRow + verticalDropBlocks && pos < (blocksPerRow * 2) + verticalDropBlocks) {
-                    // 3. Voltando para a esquerda (8 a 13)
+                } 
+                else if (pos >= blocksPerRow + verticalDropBlocks && pos < (blocksPerRow * 2) + verticalDropBlocks) {
+                    // 3. Voltando para a esquerda
                     const leftPos = pos - (blocksPerRow + verticalDropBlocks); 
                     colIndex = blocksPerRow - leftPos;
                     rowIndex = (cycle * rowsPerCycle) + verticalDropBlocks + 2; 
                     gradientDirection = 'to left';
-                } else {
-                    // 4. Quina Esquerda - Descendo (14 e 15)
+                } 
+                else {
+                    // 4. Quina Esquerda - Descendo 
+                    // (Aqui mantemos a descida normal pois o Grid não aceita colunas negativas à esquerda do zero)
                     colIndex = 1;
                     const dropStep = pos - ((blocksPerRow * 2) + verticalDropBlocks) + 1; 
                     rowIndex = (cycle * rowsPerCycle) + verticalDropBlocks + 2 + dropStep; 
@@ -16710,85 +16728,107 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
                 // -----------------------------------------------------------------
 
-                // --- LÓGICA DE TRANSIÇÃO DIÁRIA (Cores) ---
+                // --- LÓGICA DE TRANSIÇÃO DIÁRIA (Suporte a Múltiplos Eventos no Mesmo Dia) ---
                 let colorStart = '#94a3b8'; 
-                let colorEnd = '#94a3b8';
-                let transitionTime = '12:00';
-                let hasTransition = false;
                 let mainCityNameForLabel = 'Em Trânsito';
-                let cityArrivingToday = null;
+                let labelTime = '';
+                let labelColor = '#94a3b8';
 
+                // 1. Quem estava ativo no início do dia (00:00)?
                 const cityAtStart = validCities.slice().reverse().find(c => c.date < dateStr);
                 if (cityAtStart) {
                     if (!cityColors[cityAtStart.name]) cityColors[cityAtStart.name] = colors[colorIndex++ % colors.length];
                     colorStart = cityColors[cityAtStart.name];
                     mainCityNameForLabel = cityAtStart.name;
+                    labelColor = colorStart;
                 }
 
-                cityArrivingToday = validCities.find(c => c.date === dateStr);
-                if (cityArrivingToday) {
-                    if (!cityColors[cityArrivingToday.name]) cityColors[cityArrivingToday.name] = colors[colorIndex++ % colors.length];
-                    colorEnd = cityColors[cityArrivingToday.name];
-                    transitionTime = cityArrivingToday.time;
-                    hasTransition = true;
-                    mainCityNameForLabel = cityArrivingToday.name;
-                } else {
-                    colorEnd = colorStart;
-                }
+                // 2. Coleta TODOS os eventos que ocorrem hoje (Chegadas Múltiplas + Voo)
+                let todayEvents = [];
+                
+                // Filtramos todas as cidades que chegam hoje (agora suporta mais de uma por dia!)
+                const citiesArrivingToday = validCities.filter(c => c.date === dateStr);
+                citiesArrivingToday.forEach(city => {
+                    if (!cityColors[city.name]) cityColors[city.name] = colors[colorIndex++ % colors.length];
+                    todayEvents.push({
+                        time: city.time || '12:00',
+                        color: cityColors[city.name],
+                        name: city.name,
+                        isCity: true
+                    });
+                });
 
+                // Adiciona o voo de volta se for hoje
                 if (lastFlight && lastFlight.departureDate === dateStr) {
-                    colorEnd = '#94a3b8';
-                    transitionTime = lastFlight.departureTime || '12:00';
-                    hasTransition = true;
+                    todayEvents.push({
+                        time: lastFlight.departureTime || lastFlight.time || '12:00',
+                        color: '#94a3b8', 
+                        name: 'Em Trânsito',
+                        isCity: false
+                    });
                 }
 
+                // 3. Ordena os eventos cronologicamente dentro do próprio dia
+                todayEvents.sort((a, b) => a.time.localeCompare(b.time));
+
+                // 4. Se já passou do voo final, força tudo pra trânsito
                 if (lastFlight && dateStr > lastFlight.departureDate) {
                     colorStart = '#94a3b8';
-                    colorEnd = '#94a3b8';
-                    hasTransition = false;
-                    mainCityNameForLabel = 'Em Trânsito';
-                }
-                
-                if (!cityAtStart && !cityArrivingToday && !hasTransition) {
+                    todayEvents = [];
                     mainCityNameForLabel = 'Em Trânsito';
                 }
 
-                // --- GERAÇÃO DOS CORTES PROPORCIONAIS (Correção 3D nas Faces Laterais) ---
-                let bgStyleTop = `background-color: ${colorEnd};`;
-                let bgStyleSide1 = `background-color: ${colorEnd};`; // Parede Inferior Direita
-                let bgStyleSide2 = `background-color: ${colorEnd};`; // Parede Superior Esquerda
+                // --- GERAÇÃO DOS CORTES PROPORCIONAIS MULTI-CORES ---
+                let gradientStr = '';
+                let currentColor = colorStart;
+                let bgStyleTop, bgStyleSide1, bgStyleSide2;
+                let hasTransition = todayEvents.length > 0;
 
-                if (hasTransition && colorStart !== colorEnd) {
-                    const [hours, minutes] = transitionTime.split(':').map(Number);
-                    const percent = Math.round((((hours || 12) * 60 + (minutes || 0)) / 1440) * 100);
+                if (!hasTransition) {
+                    bgStyleTop = `background-color: ${currentColor};`;
+                    bgStyleSide1 = `background-color: ${currentColor};`;
+                    bgStyleSide2 = `background-color: ${currentColor};`;
+                } else {
+                    let gradParts = [];
+                    gradParts.push(`${currentColor} 0%`);
+
+                    // Vai fatiando o bloco para cada evento do dia
+                    todayEvents.forEach(evt => {
+                        const [hours, minutes] = evt.time.split(':').map(Number);
+                        const percent = Math.round((((hours || 12) * 60 + (minutes || 0)) / 1440) * 100);
+                        
+                        gradParts.push(`${currentColor} ${percent}%`);
+                        currentColor = evt.color;
+                        gradParts.push(`${currentColor} ${percent}%`);
+                        
+                        // A legenda exibida será sempre a da última CIDADE que chegou no dia
+                        if (evt.isCity) {
+                            mainCityNameForLabel = evt.name;
+                            labelTime = evt.time;
+                            labelColor = evt.color;
+                        }
+                    });
                     
-                    // String base do "Corte Seco" para reutilizarmos
-                    const gradientStr = `${colorStart} 0%, ${colorStart} ${percent}%, ${colorEnd} ${percent}%, ${colorEnd} 100%`;
+                    gradParts.push(`${currentColor} 100%`);
+                    gradientStr = gradParts.join(', ');
+                    const finalColor = currentColor;
 
                     bgStyleTop = `background: linear-gradient(${gradientDirection}, ${gradientStr});`;
 
-                    // A MÁGICA DAS PAREDES 3D: Dependendo para onde a cobra (tabuleiro) anda, as paredes assumem papéis diferentes!
+                    // Aplica a física 3D das paredes para degradês complexos
                     if (gradientDirection === 'to right') {
-                        // 1. Cobra indo para a Direita:
-                        // Face Direita corta junto. Face Esquerda ficou 100% no Passado.
                         bgStyleSide1 = `background: linear-gradient(to right, ${gradientStr});`;
                         bgStyleSide2 = `background-color: ${colorStart};`; 
-                        
                     } else if (gradientDirection === 'to left') {
-                        // 2. Cobra indo para a Esquerda (Volta):
-                        // Face Direita corta junto. Face Esquerda já chegou 100% no Futuro.
                         bgStyleSide1 = `background: linear-gradient(to left, ${gradientStr});`;
-                        bgStyleSide2 = `background-color: ${colorEnd};`; 
-                        
+                        bgStyleSide2 = `background-color: ${finalColor};`; 
                     } else if (gradientDirection === 'to bottom') {
-                        // 3. Cobra Descendo (Quinas / Degraus):
-                        // Face Esquerda corta junto verticalmente. Face Direita (baixo) já chegou 100% no Futuro.
-                        bgStyleSide1 = `background-color: ${colorEnd};`;
+                        bgStyleSide1 = `background-color: ${finalColor};`;
                         bgStyleSide2 = `background: linear-gradient(to bottom, ${gradientStr});`; 
                     }
                 }
-                // ----------------------------------------------------------------
 
+                // Ícones Flutuantes
                 let floatingIcons = '';
                 const hasFlight = flights.some(f => f.departureDate === dateStr || f.arrivalDate === dateStr);
                 const hasLodging = lodgings.some(l => l.checkinDate === dateStr || l.checkoutDate === dateStr);
@@ -16796,53 +16836,48 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 if (hasFlight) floatingIcons += `<span class="block text-xl md:text-2xl filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">✈️</span>`;
                 if (hasLodging) floatingIcons += `<span class="block text-xl md:text-2xl filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">🏨</span>`;
 
-                // --- LÓGICA DA LEGENDA DA CIDADE (SVG 2D Flutuante Anti-Colisão) ---
+                // --- LÓGICA DA LEGENDA DA CIDADE ---
                 let cityLabelHtml = '';
                 if (mainCityNameForLabel !== previousCityName) {
                     if (mainCityNameForLabel !== 'Em Trânsito') {
-                        const timeDisplay = (hasTransition && cityArrivingToday) ? `<span class="opacity-75 font-normal ml-1.5 border-l border-white/30 pl-1.5">${transitionTime}</span>` : '';
+                        const timeDisplay = labelTime ? `<span class="opacity-75 font-normal ml-1.5 border-l border-white/30 pl-1.5">${labelTime}</span>` : '';
                         
-                        // Atira a legenda para fora da "cobra" (Snake) para não cruzar com os blocos de cima/baixo
-                        let offsetX = 0;
-                        let offsetY = -90; 
-
+                        // --- DIREÇÃO DA LEGENDA BASEADA NA POSIÇÃO DO TABULEIRO ---
+                        let offsetX = 0, offsetY = -90; 
+                        
                         if (pos < blocksPerRow) {
-                            // Indo para a direita (Linha superior) -> Joga para CIMA
-                            offsetX = 0; offsetY = -90;
+                            offsetX = 0; offsetY = -90; // Joga pra cima-direita
                         } else if (pos >= blocksPerRow && pos < blocksPerRow + verticalDropBlocks) {
-                            // Descendo pela lateral direita (Quina) -> Joga para a DIREITA
-                            offsetX = 90; offsetY = 0;
+                            offsetX = 90; offsetY = 0; // Joga pra baixo-direita
                         } else if (pos >= blocksPerRow + verticalDropBlocks && pos < (blocksPerRow * 2) + verticalDropBlocks) {
-                            // Voltando para a esquerda (Linha inferior) -> Joga para BAIXO
-                            offsetX = 0; offsetY = 90;
+                            offsetX = 0; offsetY = 90; // Joga pra baixo-esquerda
                         } else {
-                            // Descendo pela lateral esquerda (Quina) -> Joga para a ESQUERDA
-                            offsetX = -90; offsetY = 0;
+                            offsetX = -90; offsetY = 0; // Joga pra cima-esquerda
+                        }
+
+                        // REGRA DE EXCEÇÃO: O último bloco sempre atira a legenda para Baixo-Esquerda 
+                        // (na margem inferior vazia do tabuleiro) para nunca colidir com si mesmo!
+                        if (isLastBlock) {
+                            offsetX = 0; 
+                            offsetY = 130; // 130px garante bastante distanciamento do bloco
                         }
                         
                         cityLabelHtml = `
-                            <!-- A Base: translateZ(80px) garante que a legenda voe FISICAMENTE acima das datas (50px) -->
                             <div class="absolute top-1/2 left-1/2 pointer-events-none" style="transform: translate(-50%, -50%) translateZ(80px) rotateZ(45deg) rotateX(-60deg); z-index: 60;">
-                                
-                                <!-- Linha e Ponto SVG (Desenhados no plano 2D limpo) -->
                                 <svg class="absolute overflow-visible" style="top: 0; left: 0;" width="1" height="1">
-                                    <circle cx="0" cy="0" r="4" fill="${colorEnd}" class="shadow-sm" />
-                                    <line x1="0" y1="0" x2="${offsetX}" y2="${offsetY}" stroke="${colorEnd}" stroke-width="2" class="opacity-80" />
+                                    <circle cx="0" cy="0" r="4" fill="${labelColor}" class="shadow-sm" />
+                                    <line x1="0" y1="0" x2="${offsetX}" y2="${offsetY}" stroke="${labelColor}" stroke-width="2" class="opacity-80" />
                                 </svg>
-                                
-                                <!-- Pílula com o Texto -->
                                 <div class="absolute flex flex-col items-center justify-center" style="transform: translate(${offsetX}px, ${offsetY}px) translate(-50%, -50%);">
-                                    <span class="text-white text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full shadow-2xl whitespace-nowrap border border-white/20 flex items-center" style="background-color: ${colorEnd};">
+                                    <span class="text-white text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full shadow-2xl whitespace-nowrap border border-white/20 flex items-center" style="background-color: ${labelColor};">
                                         ${mainCityNameForLabel} ${timeDisplay}
                                     </span>
                                 </div>
-                                
                             </div>
                         `;
                     }
                     previousCityName = mainCityNameForLabel;
                 }
-                // -------------------------------------------------------------------------
 
                 // --- 5. CONSTRUÇÃO DO BLOCO ISOMÉTRICO ---
                 const block = document.createElement('div');
@@ -17076,7 +17111,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             <img id="image-preview-content" src="" alt="Pré-visualização" class="block w-full h-full object-contain">
         </div>    
 
-        <div id="reorg-actions-container" class="hidden fixed bottom-20 right-6 z-[2001] flex flex-col items-end">
+        <div id="reorg-actions-container" class="hidden fixed bottom-32 right-6 z-[2001] flex flex-col items-end">
             <div class="bg-white/95 backdrop-blur-md p-1 rounded-xl shadow-xl border border-slate-200 flex items-center gap-1">
                 <button id="reorg-mode-days-btn" onclick="switchReorganizationType('days')" 
                     class="reorg-mode-btn text-[10px] font-bold px-3 py-2 rounded-lg transition-all uppercase tracking-wider">
