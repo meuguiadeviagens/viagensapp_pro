@@ -27,6 +27,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com/">
     <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <!-- Biblioteca dom-to-image: Renderização nativa que suporta CSS 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
     
     <style>
 
@@ -824,7 +826,12 @@
 
                 <!-- Footer Informativo -->
                 <div class="p-4 border-t border-slate-800 bg-slate-950 flex justify-between items-center flex-shrink-0">
-                    <span class="text-xs text-slate-500 italic">Dica: No futuro, adicionaremos um botão para exportar isso como imagem (JPG).</span>
+                    <span class="text-xs text-slate-500 italic">
+                        <!-- Substitua o texto da dica por este botão -->
+                        <button type="button" onclick="window.exportPanoramaToImage()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs md:text-sm font-bold rounded-lg transition-colors shadow-lg">
+                            📸 Salvar Imagem
+                        </button>
+                    </span>
                     <button type="button" onclick="closeModal('trip-3d-modal')" class="px-5 py-2 bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-700 transition-colors">Voltar</button>
                 </div>
             </div>
@@ -1145,7 +1152,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.2.4 | 04/10/2026, 08:19</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.2.5 | 04/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -16559,10 +16566,12 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             container.innerHTML = ''; 
             legendContainer.innerHTML = '';
 
-            // --- RESET DA CÂMERA DO MAPA ---
-            container.style.transform = 'translate(0px, 0px) rotateX(60deg) rotateZ(-45deg)';
+            // --- RESET DA CÂMERA DO MAPA (Com Scale) ---
+            // Adicionamos o scale(1) antes das rotações
+            container.style.transform = 'translate(0px, 0px) scale(1) rotateX(60deg) rotateZ(-45deg)';
             container.dataset.x = 0;
             container.dataset.y = 0;
+            container.dataset.scale = 1; // Reseta o dataset do zoom
             // -------------------------------
 
             // 1. Tratamento seguro das datas
@@ -16876,7 +16885,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         };
 
         // ==================================================
-        // FUNÇÃO DE ARRASTAR PARA NAVEGAR (MOUSE E CELULAR/TOUCH)
+        // FUNÇÃO DE NAVEGAÇÃO COMPLETA (PAN + ZOOM + PINCH)
         // ==================================================
         window.setupPanoramaPanning = () => {
             const containerWrap = document.querySelector('.iso-grid-container');
@@ -16892,13 +16901,39 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             let startX, startY;
             let initialTranslateX = 0, initialTranslateY = 0;
 
-            // Função ajudante para pegar as coordenadas (Mouse ou Touch)
+            // Estados do Zoom
+            let currentTranslateX = 0;
+            let currentTranslateY = 0;
+            let currentScale = 1;
+            
+            let initialPinchDistance = null;
+            let initialPinchScale = 1;
+
+            // Aplica as transformações preservando a ordem matemática exigida pelo isométrico 3D
+            const updateTransform = () => {
+                grid.dataset.x = currentTranslateX;
+                grid.dataset.y = currentTranslateY;
+                grid.dataset.scale = currentScale;
+                grid.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale}) rotateX(60deg) rotateZ(-45deg)`;
+            };
+
             const getEventX = (e) => e.type.includes('touch') ? e.touches[0].pageX : e.pageX;
             const getEventY = (e) => e.type.includes('touch') ? e.touches[0].pageY : e.pageY;
 
             const startDrag = (e) => {
-                // Se estiver clicando na data ou nos botões do card, não arrasta
                 if(e.target.closest('.iso-block') || e.target.closest('span')) return; 
+
+                // Se houver 2 dedos na tela (Mobile), inicia o modo PINÇA (Zoom) e cancela o arrasto normal
+                if (e.type.includes('touch') && e.touches.length === 2) {
+                    isDown = false; 
+                    // Teorema de Pitágoras para calcular a distância entre os 2 dedos
+                    initialPinchDistance = Math.hypot(
+                        e.touches[0].pageX - e.touches[1].pageX,
+                        e.touches[0].pageY - e.touches[1].pageY
+                    );
+                    initialPinchScale = currentScale;
+                    return;
+                }
                 
                 isDown = true;
                 containerWrap.style.cursor = 'grabbing';
@@ -16906,45 +16941,113 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 startX = getEventX(e);
                 startY = getEventY(e);
                 
-                initialTranslateX = parseFloat(grid.dataset.x || 0);
-                initialTranslateY = parseFloat(grid.dataset.y || 0);
+                currentTranslateX = parseFloat(grid.dataset.x || 0);
+                currentTranslateY = parseFloat(grid.dataset.y || 0);
+                currentScale = parseFloat(grid.dataset.scale || 1);
+                
+                initialTranslateX = currentTranslateX;
+                initialTranslateY = currentTranslateY;
             };
 
             const stopDrag = () => {
                 isDown = false;
                 containerWrap.style.cursor = 'grab';
+                initialPinchDistance = null;
             };
 
             const drag = (e) => {
+                // 1. Lógica do Pinch-to-Zoom (2 Dedos)
+                if (e.type.includes('touch') && e.touches.length === 2) {
+                    if (e.cancelable) e.preventDefault();
+                    if (!initialPinchDistance) return;
+
+                    const currentDistance = Math.hypot(
+                        e.touches[0].pageX - e.touches[1].pageX,
+                        e.touches[0].pageY - e.touches[1].pageY
+                    );
+                    
+                    const newScale = initialPinchScale * (currentDistance / initialPinchDistance);
+                    // Trava o zoom entre 40% (afastado) e 300% (muito perto)
+                    currentScale = Math.max(0.4, Math.min(newScale, 3)); 
+                    updateTransform();
+                    return;
+                }
+
+                // 2. Lógica de Arraste (1 Dedo ou Mouse)
                 if (!isDown) return;
-                
-                // Muito importante: impede que o celular dê scroll na página inteira ao arrastar o mapa
                 if (e.cancelable) e.preventDefault();
                 
-                const walkX = (getEventX(e) - startX); 
-                const walkY = (getEventY(e) - startY); 
+                // Dividimos o movimento pelo 'currentScale' para que, quando houver zoom, 
+                // o mapa não pareça estar escorregando mais rápido que o mouse.
+                const walkX = (getEventX(e) - startX) / currentScale; 
+                const walkY = (getEventY(e) - startY) / currentScale; 
                 
-                const currentTranslateX = initialTranslateX + walkX;
-                const currentTranslateY = initialTranslateY + walkY;
+                currentTranslateX = initialTranslateX + walkX;
+                currentTranslateY = initialTranslateY + walkY;
                 
-                grid.dataset.x = currentTranslateX;
-                grid.dataset.y = currentTranslateY;
-                
-                grid.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) rotateX(60deg) rotateZ(-45deg)`;
+                updateTransform();
             };
 
-            // 1. Escutadores de Eventos para Computador (Mouse)
+            // 3. Lógica do Scroll do Mouse (Desktop)
+            containerWrap.addEventListener('wheel', (e) => {
+                if(e.target.closest('.iso-block')) return; // Permite rolar a janela se estiver em cima de um card longo
+                e.preventDefault();
+                
+                currentScale = parseFloat(grid.dataset.scale || 1);
+                
+                // Intensidade do giro da rodinha (deltaY) - ajusta a suavidade
+                const zoomIntensity = -e.deltaY * 0.0015; 
+                const newScale = currentScale * (1 + zoomIntensity);
+                
+                currentScale = Math.max(0.4, Math.min(newScale, 3));
+                updateTransform();
+            }, { passive: false });
+
+            // Eventos Desktop
             containerWrap.addEventListener('mousedown', startDrag);
             containerWrap.addEventListener('mouseleave', stopDrag);
             containerWrap.addEventListener('mouseup', stopDrag);
             containerWrap.addEventListener('mousemove', drag);
 
-            // 2. Escutadores de Eventos para Celular/Tablet (Touch)
-            // { passive: false } é obrigatório para o preventDefault() funcionar e travar o scroll do iOS/Android
+            // Eventos Mobile
             containerWrap.addEventListener('touchstart', startDrag, { passive: false });
             containerWrap.addEventListener('touchend', stopDrag);
             containerWrap.addEventListener('touchcancel', stopDrag);
             containerWrap.addEventListener('touchmove', drag, { passive: false });
+        };
+
+        // ==================================================
+        // FUNÇÃO DE EXPORTAR O PANORAMA 3D PARA JPG (Resolvido CSS 3D)
+        // ==================================================
+        window.exportPanoramaToImage = () => {
+            const container = document.querySelector('.iso-grid-container');
+            if (!container) return;
+
+            // Muda o cursor para indicar processamento
+            const originalCursor = container.style.cursor;
+            container.style.cursor = 'wait';
+
+            // O domtoimage usa o motor nativo do navegador, mantendo a perspectiva 3D intacta
+            domtoimage.toJpeg(container, { 
+                quality: 0.95, 
+                bgcolor: '#0f172a' // Garante o fundo azul marinho correto
+            })
+            .then(function (dataUrl) {
+                // Restaura o cursor
+                container.style.cursor = originalCursor;
+                
+                // Dispara o download automático
+                const link = document.createElement('a');
+                const dataDeHoje = new Date().toISOString().split('T')[0];
+                link.download = `Meu_Roteiro_3D_${dataDeHoje}.jpg`;
+                link.href = dataUrl;
+                link.click();
+            })
+            .catch(function (error) {
+                console.error("Erro ao gerar imagem 3D nativa:", error);
+                container.style.cursor = originalCursor;
+                alert("Ops! Ocorreu um erro ao gerar a sua foto.");
+            });
         };
 
     </script>
