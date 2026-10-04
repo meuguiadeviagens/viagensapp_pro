@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -725,6 +725,32 @@
             font-size: 0.85em;
         }
 
+        /* INÍCIO: ESTILOS PARA O PANORAMA 3D ISOMÉTRICO */
+        .iso-grid-container {
+            /* Transformamos em um flexbox para centralizar tudo perfeitamente */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; /* Removemos o scroll nativo, o JS assumirá o controle infinito */
+            width: 100%;
+            height: 100%;
+        }
+
+        .iso-grid {
+            display: grid;
+            gap: 2rem 3rem; 
+            /* O JS vai manipular o translate(X, Y) antes das rotações */
+            transform: translate(0px, 0px) rotateX(60deg) rotateZ(-45deg);
+            transform-style: preserve-3d;
+            /* Aumentamos muito o padding-top (14rem) para dar teto de sobra aos alfinetes */
+            padding: 14rem 4rem 4rem 4rem;
+            width: max-content;
+        }
+        .iso-block {
+            transform-style: preserve-3d;
+        }
+        /* FIM: ESTILOS PARA O PANORAMA 3D ISOMÉTRICO */
+
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -764,6 +790,46 @@
             </div>
 
     </form>
+
+        <!-- INÍCIO: MODAL PANORAMA 3D ISOMÉTRICO -->
+        <div id="trip-3d-modal" class="fixed inset-0 z-[150] hidden items-center justify-center modal-backdrop p-2 md:p-4">
+            <div class="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-6xl h-[95vh] md:h-[85vh] flex flex-col overflow-hidden border border-slate-700 animate-in fade-in zoom-in duration-200">
+                
+                <!-- Header -->
+                <div class="p-4 md:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
+                    <div>
+                        <h3 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                            🗺️ Panorama 3D do Roteiro
+                        </h3>
+                        <p class="text-xs md:text-sm text-slate-400 mt-1">Sua jornada em blocos. Role para o lado para ver todos os dias.</p>
+                    </div>
+                    <button onclick="closeModal('trip-3d-modal')" class="text-slate-400 hover:text-white transition-colors bg-slate-800 p-2 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Canvas 3D com a Legenda Flutuante embutida -->
+                <div class="flex-grow iso-grid-container custom-scrollbar bg-slate-900 relative">
+                    
+                    <!-- Legenda Dinâmica de Cidades (Agora como HUD flutuante no canto superior esquerdo) -->
+                    <div class="absolute top-4 left-4 z-10 flex flex-col gap-2 pointer-events-none" id="panorama-3d-legend">
+                        <!-- Preenchido via JS -->
+                    </div>
+                    
+                    <div id="panorama-3d-grid" class="iso-grid">
+                        <!-- Blocos serão injetados aqui via JS -->
+                    </div>
+                    
+                </div>
+
+                <!-- Footer Informativo -->
+                <div class="p-4 border-t border-slate-800 bg-slate-950 flex justify-between items-center flex-shrink-0">
+                    <span class="text-xs text-slate-500 italic">Dica: No futuro, adicionaremos um botão para exportar isso como imagem (JPG).</span>
+                    <button type="button" onclick="closeModal('trip-3d-modal')" class="px-5 py-2 bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-700 transition-colors">Voltar</button>
+                </div>
+            </div>
+        </div>
+        <!-- FIM: MODAL PANORAMA 3D ISOMÉTRICO -->
 
         <div id="day-preview-modal" class="fixed inset-0 z-[60] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div class="fixed inset-0 bg-gray-900 bg-opacity-80 transition-opacity backdrop-blur-sm" onclick="closeModal('day-preview-modal')"></div>
@@ -1079,7 +1145,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.2.2 | 03/10/2026, 08:19</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.2.3 | 04/10/2026, 08:19</p>
             </main>
         </div>
 
@@ -3184,9 +3250,16 @@
             
             <div class="p-4 md:p-6 border-b border-slate-800 flex justify-between items-center bg-slate-800/30">
                 <div>
-                    <h3 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
-                        <span class="animate-pulse">✨</span> Mural de Imersão
-                    </h3>
+                    <div class="flex flex-col md:flex-row md:items-center gap-3">
+                        <h3 class="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                            <span class="animate-pulse">✨</span> Mural de Imersão
+                        </h3>
+                        <!-- NOVO BOTÃO: Mapa 3D -->
+                        <button onclick="openTrip3DPanorama()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-1.5 px-4 rounded-full flex items-center gap-2 transition-all shadow-[0_0_15px_rgba(79,70,229,0.5)] border border-indigo-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                            Mapa 3D da Viagem
+                        </button>
+                    </div>
                     <p class="text-xs md:text-sm text-slate-400">Inspirações e brainstorming para a viagem.</p>
                 </div>
                 <button onclick="closeModal('modal-imersao')" class="text-slate-400 hover:text-white transition-colors bg-slate-800 p-2 rounded-full">
@@ -16473,6 +16546,394 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         // ==========================================
         // FIM: LÓGICA DO MURAL DE ANOTAÇÕES GLOBAL
         // ==========================================
+
+        // ==================================================
+        // PANORAMA 3D ISOMÉTRICO DA VIAGEM
+        // ==================================================
+        window.openTrip3DPanorama = () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            if (!trip) return;
+
+            const container = document.getElementById('panorama-3d-grid');
+            const legendContainer = document.getElementById('panorama-3d-legend');
+            container.innerHTML = ''; 
+            legendContainer.innerHTML = '';
+
+            // --- RESET DA CÂMERA DO MAPA ---
+            container.style.transform = 'translate(0px, 0px) rotateX(60deg) rotateZ(-45deg)';
+            container.dataset.x = 0;
+            container.dataset.y = 0;
+            // -------------------------------
+
+            // 1. Tratamento seguro das datas
+            let start, end;
+            if (typeof trip.startDate === 'number') {
+                start = new Date(trip.startDate);
+                end = new Date(trip.endDate);
+            } else {
+                start = new Date(trip.startDate + 'T00:00:00Z');
+                end = new Date(trip.endDate + 'T00:00:00Z');
+            }
+            
+            start.setUTCHours(0, 0, 0, 0);
+            end.setUTCHours(0, 0, 0, 0);
+
+            const daysCount = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+            if (isNaN(daysCount) || daysCount <= 0) {
+                container.innerHTML = '<p class="text-white text-center w-full pt-10">Erro ao carregar as datas da viagem.</p>';
+                return;
+            }
+
+            // 2. Paleta de Cores e Dicionário (Adicionada a cor base para Trânsito)
+            const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#eab308'];
+            // Forçamos a cor de 'Em Trânsito' a ser um cinzento neutro (slate-400)
+            const cityColors = { 'Em Trânsito': '#94a3b8' }; 
+            let colorIndex = 0;
+
+            // 3. Extração de Cidades e Voos Blindada (Lê Atividades, Variações e Header)
+            let rawCities = [];
+            if (trip.cities) {
+                rawCities.push(...(Array.isArray(trip.cities) ? trip.cities : Object.values(trip.cities)));
+            }
+
+            const allActivities = [];
+            if (trip.activities) allActivities.push(...Object.values(trip.activities));
+            if (trip.variations) {
+                Object.values(trip.variations).forEach(day => {
+                    Object.values(day).forEach(user => {
+                        if (user.activities) allActivities.push(...Object.values(user.activities));
+                    });
+                });
+            }
+
+            // CORREÇÃO: Filtro rigoroso APENAS para atividades do tipo 'Cidade'
+            const cityActivities = allActivities.filter(a => a.type === 'Cidade');
+            
+            cityActivities.forEach(act => {
+                const existingCity = rawCities.find(c => c && (c.cityName === act.name || c.name === act.name));
+                if (existingCity) {
+                    existingCity.time = act.time;
+                    if (act.date) existingCity.arrivalDate = act.date;
+                } else {
+                    rawCities.push({ name: act.name, arrivalDate: act.date, time: act.time });
+                }
+            });
+
+            // Normaliza as cidades com datas válidas
+            const validCities = rawCities.map(c => {
+                if (typeof c === 'string') return { name: c, date: '', time: '12:00' };
+                return { 
+                    name: c.cityName || c.name || c.cidade || c.city || 'Destino', 
+                    date: c.arrivalDate || c.date || c.dataChegada || '',
+                    time: c.arrivalTime || c.time || c.horaChegada || '12:00'
+                };
+            }).filter(c => c.name && c.date).sort((a, b) => a.date.localeCompare(b.date));
+
+            const flights = trip.flights ? Object.values(trip.flights) : [];
+            const lodgings = trip.lodgings ? Object.values(trip.lodgings) : [];
+
+            // Identifica o último voo (Volta pra casa)
+            let lastFlight = null;
+            if (flights.length > 0) {
+                const sortedFlights = [...flights].sort((a, b) => {
+                    const dateA = a.departureDate + 'T' + (a.departureTime || '00:00');
+                    const dateB = b.departureDate + 'T' + (b.departureTime || '00:00');
+                    return dateB.localeCompare(dateA); // Do mais recente pro mais antigo
+                });
+                lastFlight = sortedFlights[0];
+            }
+
+            // 4. Montagem do Grid
+            let previousCityName = ''; 
+            const blocksPerRow = 6; 
+            
+            const actualCols = Math.min(daysCount, blocksPerRow);
+            container.style.gridTemplateColumns = `repeat(${actualCols}, max-content)`;
+
+            for (let i = 0; i < daysCount; i++) {
+                const currentDate = new Date(start);
+                currentDate.setUTCDate(start.getUTCDate() + i);
+                const dateStr = currentDate.toISOString().split('T')[0];
+                const displayDate = currentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' });
+
+                // --- POSICIONAMENTO SNAKE VERDADEIRO (COM 2 BLOCOS DE DESCIDA) ---
+                const verticalDropBlocks = 2; // <-- Aumentamos para 2 blocos de descida (espaço de respiro)
+                const cycleLength = (blocksPerRow * 2) + (verticalDropBlocks * 2); // 16 blocos formam o "S" completo
+                const cycle = Math.floor(i / cycleLength);
+                const pos = i % cycleLength;
+                
+                const rowsPerCycle = 2 + (verticalDropBlocks * 2); // Cada ciclo ocupa 6 linhas no CSS Grid
+                
+                let colIndex, rowIndex;
+                let gradientDirection = 'to right'; 
+
+                if (pos < blocksPerRow) {
+                    // 1. Indo para a direita (0 a 5)
+                    colIndex = pos + 1;
+                    rowIndex = (cycle * rowsPerCycle) + 1;
+                    gradientDirection = 'to right';
+                } else if (pos >= blocksPerRow && pos < blocksPerRow + verticalDropBlocks) {
+                    // 2. Quina Direita - Descendo (6 e 7)
+                    colIndex = blocksPerRow;
+                    const dropStep = pos - blocksPerRow + 1;
+                    rowIndex = (cycle * rowsPerCycle) + 1 + dropStep; 
+                    gradientDirection = 'to bottom';
+                } else if (pos >= blocksPerRow + verticalDropBlocks && pos < (blocksPerRow * 2) + verticalDropBlocks) {
+                    // 3. Voltando para a esquerda (8 a 13)
+                    const leftPos = pos - (blocksPerRow + verticalDropBlocks); 
+                    colIndex = blocksPerRow - leftPos;
+                    rowIndex = (cycle * rowsPerCycle) + verticalDropBlocks + 2; 
+                    gradientDirection = 'to left';
+                } else {
+                    // 4. Quina Esquerda - Descendo (14 e 15)
+                    colIndex = 1;
+                    const dropStep = pos - ((blocksPerRow * 2) + verticalDropBlocks) + 1; 
+                    rowIndex = (cycle * rowsPerCycle) + verticalDropBlocks + 2 + dropStep; 
+                    gradientDirection = 'to bottom';
+                }
+                // -----------------------------------------------------------------
+
+                // --- LÓGICA DE TRANSIÇÃO DIÁRIA (Cores) ---
+                let colorStart = '#94a3b8'; 
+                let colorEnd = '#94a3b8';
+                let transitionTime = '12:00';
+                let hasTransition = false;
+                let mainCityNameForLabel = 'Em Trânsito';
+                let cityArrivingToday = null;
+
+                const cityAtStart = validCities.slice().reverse().find(c => c.date < dateStr);
+                if (cityAtStart) {
+                    if (!cityColors[cityAtStart.name]) cityColors[cityAtStart.name] = colors[colorIndex++ % colors.length];
+                    colorStart = cityColors[cityAtStart.name];
+                    mainCityNameForLabel = cityAtStart.name;
+                }
+
+                cityArrivingToday = validCities.find(c => c.date === dateStr);
+                if (cityArrivingToday) {
+                    if (!cityColors[cityArrivingToday.name]) cityColors[cityArrivingToday.name] = colors[colorIndex++ % colors.length];
+                    colorEnd = cityColors[cityArrivingToday.name];
+                    transitionTime = cityArrivingToday.time;
+                    hasTransition = true;
+                    mainCityNameForLabel = cityArrivingToday.name;
+                } else {
+                    colorEnd = colorStart;
+                }
+
+                if (lastFlight && lastFlight.departureDate === dateStr) {
+                    colorEnd = '#94a3b8';
+                    transitionTime = lastFlight.departureTime || '12:00';
+                    hasTransition = true;
+                }
+
+                if (lastFlight && dateStr > lastFlight.departureDate) {
+                    colorStart = '#94a3b8';
+                    colorEnd = '#94a3b8';
+                    hasTransition = false;
+                    mainCityNameForLabel = 'Em Trânsito';
+                }
+                
+                if (!cityAtStart && !cityArrivingToday && !hasTransition) {
+                    mainCityNameForLabel = 'Em Trânsito';
+                }
+
+                // --- GERAÇÃO DOS CORTES PROPORCIONAIS (Correção 3D nas Faces Laterais) ---
+                let bgStyleTop = `background-color: ${colorEnd};`;
+                let bgStyleSide1 = `background-color: ${colorEnd};`; // Parede Inferior Direita
+                let bgStyleSide2 = `background-color: ${colorEnd};`; // Parede Superior Esquerda
+
+                if (hasTransition && colorStart !== colorEnd) {
+                    const [hours, minutes] = transitionTime.split(':').map(Number);
+                    const percent = Math.round((((hours || 12) * 60 + (minutes || 0)) / 1440) * 100);
+                    
+                    // String base do "Corte Seco" para reutilizarmos
+                    const gradientStr = `${colorStart} 0%, ${colorStart} ${percent}%, ${colorEnd} ${percent}%, ${colorEnd} 100%`;
+
+                    bgStyleTop = `background: linear-gradient(${gradientDirection}, ${gradientStr});`;
+
+                    // A MÁGICA DAS PAREDES 3D: Dependendo para onde a cobra (tabuleiro) anda, as paredes assumem papéis diferentes!
+                    if (gradientDirection === 'to right') {
+                        // 1. Cobra indo para a Direita:
+                        // Face Direita corta junto. Face Esquerda ficou 100% no Passado.
+                        bgStyleSide1 = `background: linear-gradient(to right, ${gradientStr});`;
+                        bgStyleSide2 = `background-color: ${colorStart};`; 
+                        
+                    } else if (gradientDirection === 'to left') {
+                        // 2. Cobra indo para a Esquerda (Volta):
+                        // Face Direita corta junto. Face Esquerda já chegou 100% no Futuro.
+                        bgStyleSide1 = `background: linear-gradient(to left, ${gradientStr});`;
+                        bgStyleSide2 = `background-color: ${colorEnd};`; 
+                        
+                    } else if (gradientDirection === 'to bottom') {
+                        // 3. Cobra Descendo (Quinas / Degraus):
+                        // Face Esquerda corta junto verticalmente. Face Direita (baixo) já chegou 100% no Futuro.
+                        bgStyleSide1 = `background-color: ${colorEnd};`;
+                        bgStyleSide2 = `background: linear-gradient(to bottom, ${gradientStr});`; 
+                    }
+                }
+                // ----------------------------------------------------------------
+
+                let floatingIcons = '';
+                const hasFlight = flights.some(f => f.departureDate === dateStr || f.arrivalDate === dateStr);
+                const hasLodging = lodgings.some(l => l.checkinDate === dateStr || l.checkoutDate === dateStr);
+
+                if (hasFlight) floatingIcons += `<span class="block text-xl md:text-2xl filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">✈️</span>`;
+                if (hasLodging) floatingIcons += `<span class="block text-xl md:text-2xl filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">🏨</span>`;
+
+                // --- LÓGICA DA LEGENDA DA CIDADE (SVG 2D Flutuante Anti-Colisão) ---
+                let cityLabelHtml = '';
+                if (mainCityNameForLabel !== previousCityName) {
+                    if (mainCityNameForLabel !== 'Em Trânsito') {
+                        const timeDisplay = (hasTransition && cityArrivingToday) ? `<span class="opacity-75 font-normal ml-1.5 border-l border-white/30 pl-1.5">${transitionTime}</span>` : '';
+                        
+                        // Atira a legenda para fora da "cobra" (Snake) para não cruzar com os blocos de cima/baixo
+                        let offsetX = 0;
+                        let offsetY = -90; 
+
+                        if (pos < blocksPerRow) {
+                            // Indo para a direita (Linha superior) -> Joga para CIMA
+                            offsetX = 0; offsetY = -90;
+                        } else if (pos >= blocksPerRow && pos < blocksPerRow + verticalDropBlocks) {
+                            // Descendo pela lateral direita (Quina) -> Joga para a DIREITA
+                            offsetX = 90; offsetY = 0;
+                        } else if (pos >= blocksPerRow + verticalDropBlocks && pos < (blocksPerRow * 2) + verticalDropBlocks) {
+                            // Voltando para a esquerda (Linha inferior) -> Joga para BAIXO
+                            offsetX = 0; offsetY = 90;
+                        } else {
+                            // Descendo pela lateral esquerda (Quina) -> Joga para a ESQUERDA
+                            offsetX = -90; offsetY = 0;
+                        }
+                        
+                        cityLabelHtml = `
+                            <!-- A Base: translateZ(80px) garante que a legenda voe FISICAMENTE acima das datas (50px) -->
+                            <div class="absolute top-1/2 left-1/2 pointer-events-none" style="transform: translate(-50%, -50%) translateZ(80px) rotateZ(45deg) rotateX(-60deg); z-index: 60;">
+                                
+                                <!-- Linha e Ponto SVG (Desenhados no plano 2D limpo) -->
+                                <svg class="absolute overflow-visible" style="top: 0; left: 0;" width="1" height="1">
+                                    <circle cx="0" cy="0" r="4" fill="${colorEnd}" class="shadow-sm" />
+                                    <line x1="0" y1="0" x2="${offsetX}" y2="${offsetY}" stroke="${colorEnd}" stroke-width="2" class="opacity-80" />
+                                </svg>
+                                
+                                <!-- Pílula com o Texto -->
+                                <div class="absolute flex flex-col items-center justify-center" style="transform: translate(${offsetX}px, ${offsetY}px) translate(-50%, -50%);">
+                                    <span class="text-white text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full shadow-2xl whitespace-nowrap border border-white/20 flex items-center" style="background-color: ${colorEnd};">
+                                        ${mainCityNameForLabel} ${timeDisplay}
+                                    </span>
+                                </div>
+                                
+                            </div>
+                        `;
+                    }
+                    previousCityName = mainCityNameForLabel;
+                }
+                // -------------------------------------------------------------------------
+
+                // --- 5. CONSTRUÇÃO DO BLOCO ISOMÉTRICO ---
+                const block = document.createElement('div');
+                // 1. Trocamos o 'cursor-pointer' pelo 'pointer-events-none'. 
+                // Isso faz as paredes 3D do bloco ignorarem o mouse, permitindo arrastar o mapa clicando nelas!
+                block.className = 'iso-block relative w-16 h-16 md:w-20 md:h-20 shrink-0 group transition-colors duration-300 hover:!bg-white pointer-events-none';
+                
+                block.style.cssText = `
+                    transform-style: preserve-3d; 
+                    grid-column: ${colIndex}; 
+                    grid-row: ${rowIndex}; 
+                    ${bgStyleTop}
+                `;
+                
+                block.innerHTML = `
+                    <div class="absolute inset-0 bg-black/40 blur-md rounded-full transform translate-y-12 translate-x-12 -z-10 opacity-60 pointer-events-none"></div>
+                    
+                    <div class="absolute w-full h-8 md:h-10 bottom-[-32px] md:bottom-[-40px] left-0 brightness-75 origin-top transition-colors duration-300 group-hover:!bg-white" style="${bgStyleSide1} transform: rotateX(-90deg);"></div>
+                    
+                    <div class="absolute w-8 md:w-10 h-full top-0 left-[-32px] md:left-[-40px] brightness-90 origin-right transition-colors duration-300 group-hover:!bg-white" style="${bgStyleSide2} transform: rotateY(-90deg);"></div>
+                    
+                    <div class="absolute top-1/2 left-1/2 flex flex-col items-center gap-1.5 pointer-events-none" style="transform: translate(-50%, -50%) translateZ(50px) rotateZ(45deg) rotateX(-60deg);">
+                        <div class="flex gap-1 transition-transform duration-300 group-hover:scale-125">${floatingIcons}</div>
+                        <!-- 2. A MÁGICA: Devolvemos o 'pointer-events-auto' e o 'cursor-pointer' APENAS para a data. -->
+                        <!-- O Hover nela vai propagar pro 'group' do pai e acender o bloco! -->
+                        <span class="pointer-events-auto cursor-pointer text-white text-[10px] md:text-xs font-bold bg-slate-900/80 group-hover:bg-blue-600 px-2 py-1 rounded-md backdrop-blur-sm shadow-xl whitespace-nowrap border border-white/20 transition-colors duration-300">${displayDate}</span>
+                    </div>
+                    
+                    ${cityLabelHtml}
+                `;
+                container.appendChild(block);
+            }
+            
+            // 6. Limpeza do HUD Antigo
+            if (legendContainer) {
+                legendContainer.innerHTML = '';
+                legendContainer.classList.add('hidden');
+            }
+
+            const imersaoModal = document.getElementById('modal-imersao');
+            if(imersaoModal) imersaoModal.classList.add('hidden');
+            
+            // Ativa o arraste pelo cenário
+            window.setupPanoramaPanning();
+            
+            openModal('trip-3d-modal');
+        };
+
+        // ==================================================
+        // FUNÇÃO DE ARRASTAR PARA NAVEGAR (ESTILO GOOGLE MAPS)
+        // ==================================================
+        window.setupPanoramaPanning = () => {
+            const containerWrap = document.querySelector('.iso-grid-container');
+            const grid = document.getElementById('panorama-3d-grid');
+            if (!containerWrap || !grid) return;
+            
+            if (containerWrap.dataset.panningSetup === 'true') return;
+            containerWrap.dataset.panningSetup = 'true';
+
+            containerWrap.style.cursor = 'grab';
+            
+            let isDown = false;
+            let startX, startY;
+            let initialTranslateX = 0, initialTranslateY = 0;
+
+            containerWrap.addEventListener('mousedown', (e) => {
+                if(e.target.closest('.iso-block')) return; 
+                
+                isDown = true;
+                containerWrap.style.cursor = 'grabbing';
+                
+                startX = e.pageX;
+                startY = e.pageY;
+                
+                // Recupera a posição atual gravada no dataset do grid
+                initialTranslateX = parseFloat(grid.dataset.x || 0);
+                initialTranslateY = parseFloat(grid.dataset.y || 0);
+            });
+
+            containerWrap.addEventListener('mouseleave', () => {
+                isDown = false;
+                containerWrap.style.cursor = 'grab';
+            });
+
+            containerWrap.addEventListener('mouseup', () => {
+                isDown = false;
+                containerWrap.style.cursor = 'grab'; 
+            });
+
+            containerWrap.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                
+                const walkX = (e.pageX - startX); // Distância movida no Eixo X
+                const walkY = (e.pageY - startY); // Distância movida no Eixo Y
+                
+                const currentTranslateX = initialTranslateX + walkX;
+                const currentTranslateY = initialTranslateY + walkY;
+                
+                // Salva a nova posição
+                grid.dataset.x = currentTranslateX;
+                grid.dataset.y = currentTranslateY;
+                
+                // Aplica o movimento na tela 2D *antes* de curvar o mapa isométrico
+                grid.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) rotateX(60deg) rotateZ(-45deg)`;
+            });
+        };
 
     </script>
 
