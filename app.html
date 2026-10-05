@@ -826,14 +826,26 @@
 
                 <!-- Footer Informativo -->
                 <div class="p-4 border-t border-slate-800 bg-slate-950 flex justify-between items-center flex-shrink-0">
-                    <span class="text-xs text-slate-500 italic">
-                        <!-- Substitua o texto da dica por este botão -->
+                    
+                    <!-- 1. PACOTE DA ESQUERDA (Agrupa Salvar e Compartilhar) -->
+                    <div class="flex items-center gap-3">
                         <button type="button" onclick="window.exportPanoramaToImage()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs md:text-sm font-bold rounded-lg transition-colors shadow-lg">
                             📸 Salvar Imagem
+                        </button>                        
+                        
+                        <button type="button" onclick="window.sharePanoramaImage()" class="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs md:text-sm font-semibold rounded-lg transition-all shadow-md hover:shadow-lg border border-emerald-400/30">
+                            <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+                            </svg>
+                            Compartilhar
                         </button>
-                    </span>
+                    </div>
+
+                    <!-- 2. BOTÃO DA DIREITA (Fica isolado no canto graças ao justify-between) -->
                     <button type="button" onclick="closeModal('trip-3d-modal')" class="px-5 py-2 bg-slate-800 text-white font-semibold rounded-lg hover:bg-slate-700 transition-colors">Voltar</button>
+                    
                 </div>
+
             </div>
         </div>
         <!-- FIM: MODAL PANORAMA 3D ISOMÉTRICO -->
@@ -1152,7 +1164,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.2.7 | 04/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.2.8 | 04/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -1504,7 +1516,7 @@
                         <span>Roteiro</span>
                     </button>
                     <!-- Botão Panorama 3D -->
-                    <button type="button" onclick="window.openTrip3DPanorama()" class="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs md:text-sm font-semibold rounded-lg transition-all shadow-md hover:shadow-lg border border-blue-400/30">
+                    <button type="button" onclick="window.openTrip3DPanorama()" class="flex items-center gap-2 text-sm bg-cyan-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-cyan-400 transition-colors">
                         <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
                         </svg>
@@ -16683,47 +16695,41 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 const dateStr = currentDate.toISOString().split('T')[0];
                 const displayDate = currentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'UTC' });
 
-                // --- POSICIONAMENTO SNAKE VERDADEIRO (COM 2 BLOCOS DE DESCIDA) ---
-                const verticalDropBlocks = 2; 
-                const cycleLength = (blocksPerRow * 2) + (verticalDropBlocks * 2);
+                // --- POSICIONAMENTO SNAKE VERDADEIRO (Geometria 14-Blocos) --- 3 blocos de descida, mas 2 se a viagem terminar no bloco 3
+                // Para garantir que o bloco 9, 16, 23 iniciem perfeitamente as novas linhas (exatamente como desenhado), 
+                // o ciclo exato do tabuleiro se consolida em 14 blocos, fundindo as quinas.
+                const cycleLength = 14;
                 const cycle = Math.floor(i / cycleLength);
                 const pos = i % cycleLength;
                 
-                const rowsPerCycle = 2 + (verticalDropBlocks * 2); 
-                
-                // NOVA REGRA: Verifica se é o ÚLTIMO bloco da viagem inteira
                 const isLastBlock = (i === daysCount - 1);
                 
                 let colIndex, rowIndex;
                 let gradientDirection = 'to right'; 
 
-                // Se estiver indo para a direita, OU se for o ÚLTIMO bloco e ele ia descer na direita
-                if (pos < blocksPerRow || (isLastBlock && pos >= blocksPerRow && pos < blocksPerRow + verticalDropBlocks)) {
-                    // 1. Indo para a direita (O CSS Grid cria colunas extras à direita sozinho!)
+                if (pos >= 0 && pos <= 5) {
+                    // 1. Indo para a direita (Blocos 1 ao 6)
                     colIndex = pos + 1;
-                    rowIndex = (cycle * rowsPerCycle) + 1;
-                    gradientDirection = 'to right';
+                    rowIndex = (cycle * 4) + 1;
+                    // O bloco pos 0 de ciclos avançados (ex: bloco 15) age como quina de descida!
+                    gradientDirection = (pos === 0 && i > 0) ? 'to bottom' : 'to right';
                 } 
-                else if (pos >= blocksPerRow && pos < blocksPerRow + verticalDropBlocks) {
-                    // 2. Quina Direita - Descendo
-                    colIndex = blocksPerRow;
-                    const dropStep = pos - blocksPerRow + 1;
-                    rowIndex = (cycle * rowsPerCycle) + 1 + dropStep; 
+                else if (pos === 6 || pos === 7) {
+                    // 2. Quina Direita - Descendo (Blocos 7 e 8)
+                    colIndex = 6;
+                    rowIndex = (cycle * 4) + 1 + (pos - 5); // pos 6 -> linha 2, pos 7 -> linha 3
                     gradientDirection = 'to bottom';
                 } 
-                else if (pos >= blocksPerRow + verticalDropBlocks && pos < (blocksPerRow * 2) + verticalDropBlocks) {
-                    // 3. Voltando para a esquerda
-                    const leftPos = pos - (blocksPerRow + verticalDropBlocks); 
-                    colIndex = blocksPerRow - leftPos;
-                    rowIndex = (cycle * rowsPerCycle) + verticalDropBlocks + 2; 
+                else if (pos >= 8 && pos <= 12) {
+                    // 3. Voltando para a esquerda (Blocos 9 ao 13 - A Nova Linha!)
+                    colIndex = 6 - (pos - 7); // pos 8 nasce na coluna 5 (esq), pos 9 na 4, etc.
+                    rowIndex = (cycle * 4) + 3;
                     gradientDirection = 'to left';
                 } 
-                else {
-                    // 4. Quina Esquerda - Descendo 
-                    // (Aqui mantemos a descida normal pois o Grid não aceita colunas negativas à esquerda do zero)
+                else if (pos === 13) {
+                    // 4. Quina Esquerda - Descendo (Bloco 14)
                     colIndex = 1;
-                    const dropStep = pos - ((blocksPerRow * 2) + verticalDropBlocks) + 1; 
-                    rowIndex = (cycle * rowsPerCycle) + verticalDropBlocks + 2 + dropStep; 
+                    rowIndex = (cycle * 4) + 4;
                     gradientDirection = 'to bottom';
                 }
                 // -----------------------------------------------------------------
@@ -16843,24 +16849,37 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                         const timeDisplay = labelTime ? `<span class="opacity-75 font-normal ml-1.5 border-l border-white/30 pl-1.5">${labelTime}</span>` : '';
                         
                         // --- DIREÇÃO DA LEGENDA BASEADA NA POSIÇÃO DO TABULEIRO ---
+                        // Valores estrategicamente calculados para fugir das "paredes 3D" frontais dos blocos
                         let offsetX = 0, offsetY = -90; 
                         
-                        if (pos < blocksPerRow) {
-                            offsetX = 0; offsetY = -90; // Joga pra cima-direita
-                        } else if (pos >= blocksPerRow && pos < blocksPerRow + verticalDropBlocks) {
-                            offsetX = 90; offsetY = 0; // Joga pra baixo-direita
-                        } else if (pos >= blocksPerRow + verticalDropBlocks && pos < (blocksPerRow * 2) + verticalDropBlocks) {
-                            offsetX = 0; offsetY = 90; // Joga pra baixo-esquerda
-                        } else {
-                            offsetX = -90; offsetY = 0; // Joga pra cima-esquerda
-                        }
-
-                        // REGRA DE EXCEÇÃO: O último bloco sempre atira a legenda para Baixo-Esquerda 
-                        // (na margem inferior vazia do tabuleiro) para nunca colidir com si mesmo!
-                        if (isLastBlock) {
+                        if (pos >= 1 && pos <= 5) {
+                            // 1. Linha Superior (Atira pra Cima) - Fundo sempre livre
                             offsetX = 0; 
-                            offsetY = 130; // 130px garante bastante distanciamento do bloco
-                        }
+                            offsetY = -90; 
+                        } 
+                        else if (pos === 6 || pos === 7) {
+                            // 2. Descida Direita (Atira pra Direita)
+                            offsetX = 100; 
+                            offsetY = 0; 
+                        } 
+                        else if (pos >= 8 && pos <= 12) {
+                            // 3. Linha Inferior (Blocos que você mencionou)
+                            // Atira pra Direita e para Baixo (Diagonal), saindo totalmente da frente do próprio bloco
+                            offsetX = 110; 
+                            offsetY = 60; 
+                        } 
+                        else if (pos === 13 || (pos === 0 && i > 0)) {
+                            // 4. Descida Esquerda (Blocos 13, 14, 15...)
+                            // Lateraliza para a Esquerda e um pouco para baixo, fugindo da quina
+                            offsetX = -110; 
+                            offsetY = 40; 
+                        } 
+                        else if (pos === 0 && i === 0) {
+                            // 5. Bloco Inicial Absoluto da Viagem (Atira pra Cima)
+                            offsetX = 0; 
+                            offsetY = -90; 
+                        }                    
+                       
                         
                         cityLabelHtml = `
                             <div class="absolute top-1/2 left-1/2 pointer-events-none" style="transform: translate(-50%, -50%) translateZ(80px) rotateZ(45deg) rotateX(-60deg); z-index: 60;">
@@ -16881,8 +16900,6 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
                 // --- 5. CONSTRUÇÃO DO BLOCO ISOMÉTRICO ---
                 const block = document.createElement('div');
-                // 1. Trocamos o 'cursor-pointer' pelo 'pointer-events-none'. 
-                // Isso faz as paredes 3D do bloco ignorarem o mouse, permitindo arrastar o mapa clicando nelas!
                 block.className = 'iso-block relative w-16 h-16 md:w-20 md:h-20 shrink-0 group transition-colors duration-300 hover:!bg-white pointer-events-none';
                 
                 block.style.cssText = `
@@ -16895,14 +16912,21 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 block.innerHTML = `
                     <div class="absolute inset-0 bg-black/40 blur-md rounded-full transform translate-y-12 translate-x-12 -z-10 opacity-60 pointer-events-none"></div>
                     
-                    <div class="absolute w-full h-8 md:h-10 bottom-[-32px] md:bottom-[-40px] left-0 brightness-75 origin-top transition-colors duration-300 group-hover:!bg-white" style="${bgStyleSide1} transform: rotateX(-90deg);"></div>
+                    <!-- PAREDE 1 (Inferior Direita - A "Frente" do Degrau) -->
+                    <!-- Adicionamos 'flex items-center justify-center' para centralizar o contador -->
+                    <div class="absolute w-full h-8 md:h-10 bottom-[-32px] md:bottom-[-40px] left-0 brightness-75 origin-top transition-colors duration-300 group-hover:!bg-white flex items-center justify-center" style="${bgStyleSide1} transform: rotateX(-90deg);">
+                        <!-- O Contador de Dias -->
+                        <span class="text-white/50 font-black text-[10px] md:text-xs pointer-events-none select-none drop-shadow-md">
+                            ${i + 1}/${daysCount}
+                        </span>
+                    </div>
                     
+                    <!-- PAREDE 2 (Superior Esquerda - A "Lateral" do Degrau) -->
                     <div class="absolute w-8 md:w-10 h-full top-0 left-[-32px] md:left-[-40px] brightness-90 origin-right transition-colors duration-300 group-hover:!bg-white" style="${bgStyleSide2} transform: rotateY(-90deg);"></div>
                     
+                    <!-- Ícones Flutuantes e Legenda da Data -->
                     <div class="absolute top-1/2 left-1/2 flex flex-col items-center gap-1.5 pointer-events-none" style="transform: translate(-50%, -50%) translateZ(50px) rotateZ(45deg) rotateX(-60deg);">
                         <div class="flex gap-1 transition-transform duration-300 group-hover:scale-125">${floatingIcons}</div>
-                        <!-- 2. A MÁGICA: Devolvemos o 'pointer-events-auto' e o 'cursor-pointer' APENAS para a data. -->
-                        <!-- O Hover nela vai propagar pro 'group' do pai e acender o bloco! -->
                         <span class="pointer-events-auto cursor-pointer text-white text-[10px] md:text-xs font-bold bg-slate-900/80 group-hover:bg-blue-600 px-2 py-1 rounded-md backdrop-blur-sm shadow-xl whitespace-nowrap border border-white/20 transition-colors duration-300">${displayDate}</span>
                     </div>
                     
@@ -17059,7 +17083,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         };
 
         // ==================================================
-        // FUNÇÃO DE EXPORTAR O PANORAMA 3D PARA JPG (Resolvido CSS 3D)
+        // FUNÇÃO DE EXPORTAR O PANORAMA 3D PARA JPG (Scale 5x + Marca d'água blindada)
         // ==================================================
         window.exportPanoramaToImage = () => {
             const container = document.querySelector('.iso-grid-container');
@@ -17069,28 +17093,167 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const originalCursor = container.style.cursor;
             container.style.cursor = 'wait';
 
-            // O domtoimage usa o motor nativo do navegador, mantendo a perspectiva 3D intacta
-            domtoimage.toJpeg(container, { 
-                quality: 0.95, 
-                bgcolor: '#0f172a' // Garante o fundo azul marinho correto
-            })
+            // 1. Busca exata pelo Nome e Datas da Viagem no DOM
+            let tripName = 'Meu_Roteiro'; 
+            let tripDates = '';
+            
+            const titleEl = document.getElementById('details-title');
+            if (titleEl && titleEl.innerText.trim() !== '') {
+                tripName = titleEl.innerText.trim();
+            } else if (window.currentTrip && window.currentTrip.name) {
+                tripName = window.currentTrip.name;
+            }
+
+            const datesEl = document.getElementById('details-dates');
+            if (datesEl && datesEl.innerText.trim() !== '') {
+                tripDates = datesEl.innerText.trim();
+            }
+
+            // 2. Injeta a Marca d'água no canto inferior direito
+            const watermark = document.createElement('div');
+            watermark.id = 'panorama-watermark';
+            // Adicionamos text-right para forçar o alinhamento interno
+            watermark.className = 'absolute bottom-8 right-8 flex flex-col items-end text-right z-[9999] pointer-events-none';
+            
+            // Trocamos 'span' por 'div' e removemos o 'tracking-wide' que causava o desalinhamento fantasma
+            watermark.innerHTML = `
+                <div class="text-white font-black text-2xl md:text-3xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] whitespace-nowrap leading-none mb-1.5">${tripName}</div>
+                ${tripDates ? `<div class="text-slate-300 font-medium text-sm md:text-base drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] whitespace-nowrap leading-none mb-1.5">${tripDates}</div>` : ''}
+                <div class="text-blue-400 font-bold text-base md:text-lg drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] whitespace-nowrap leading-none">NaoVouSozinho.com</div>
+            `;
+            container.appendChild(watermark);
+
+            // 3. O Truque da Alta Definição: Scale = 5 (Resolução Extrema)
+            const scale = 4; 
+            const param = {
+                height: container.clientHeight * scale,
+                width: container.clientWidth * scale,
+                quality: 1, // 100% de qualidade JPEG
+                bgcolor: '#0f172a',
+                style: {
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left',
+                    width: container.clientWidth + 'px',
+                    height: container.clientHeight + 'px'
+                }
+            };
+
+            // 4. Renderiza e baixa a imagem
+            domtoimage.toJpeg(container, param)
             .then(function (dataUrl) {
-                // Restaura o cursor
+                // Tira a marca d'água do HTML para o usuário voltar a navegar 3D normalmente
+                if(watermark.parentNode) watermark.parentNode.removeChild(watermark);
                 container.style.cursor = originalCursor;
                 
-                // Dispara o download automático
-                const link = document.createElement('a');
+                // Formata o nome do arquivo para o download
                 const dataDeHoje = new Date().toISOString().split('T')[0];
-                link.download = `Meu_Roteiro_3D_${dataDeHoje}.jpg`;
+                const fileName = `${tripName}_3D_${dataDeHoje}.jpg`.replace(/\s+/g, '_'); 
+                
+                // Clica no link invisível
+                const link = document.createElement('a');
+                link.download = fileName;
                 link.href = dataUrl;
                 link.click();
             })
             .catch(function (error) {
+                // Em caso de erro, a marca d'água também deve ser limpa
+                if(watermark.parentNode) watermark.parentNode.removeChild(watermark);
                 console.error("Erro ao gerar imagem 3D nativa:", error);
                 container.style.cursor = originalCursor;
-                alert("Ops! Ocorreu um erro ao gerar a sua foto.");
+                alert("Ops! Ocorreu um erro ao gerar a sua foto em altíssima resolução.");
             });
-        };        
+        };   
+        
+        // ==================================================
+        // FUNÇÃO DE COMPARTILHAR O PANORAMA (WhatsApp, Insta, etc.)
+        // ==================================================
+        window.sharePanoramaImage = () => {
+            const container = document.querySelector('.iso-grid-container');
+            if (!container) return;
+
+            const originalCursor = container.style.cursor;
+            container.style.cursor = 'wait';
+
+            // 1. Busca Nome e Datas (Igual à exportação)
+            let tripName = 'Meu_Roteiro'; 
+            let tripDates = '';
+            
+            const titleEl = document.getElementById('details-title');
+            if (titleEl && titleEl.innerText.trim() !== '') tripName = titleEl.innerText.trim();
+            else if (window.currentTrip && window.currentTrip.name) tripName = window.currentTrip.name;
+
+            const datesEl = document.getElementById('details-dates');
+            if (datesEl && datesEl.innerText.trim() !== '') tripDates = datesEl.innerText.trim();
+
+            // 2. Injeta a Marca d'água
+            const watermark = document.createElement('div');
+            watermark.id = 'panorama-watermark';
+            watermark.className = 'absolute bottom-8 right-8 flex flex-col items-end text-right z-[9999] pointer-events-none';
+            watermark.innerHTML = `
+                <div class="text-white font-black text-2xl md:text-3xl drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] whitespace-nowrap leading-none mb-1.5">${tripName}</div>
+                ${tripDates ? `<div class="text-slate-300 font-medium text-sm md:text-base drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] whitespace-nowrap leading-none mb-1.5">${tripDates}</div>` : ''}
+                <div class="text-blue-400 font-bold text-base md:text-lg drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)] whitespace-nowrap leading-none">NaoVouSozinho.com</div>
+            `;
+            container.appendChild(watermark);
+
+            const scale = 5; 
+            const param = {
+                height: container.clientHeight * scale,
+                width: container.clientWidth * scale,
+                quality: 1, 
+                bgcolor: '#0f172a',
+                style: {
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left',
+                    width: container.clientWidth + 'px',
+                    height: container.clientHeight + 'px'
+                }
+            };
+
+            // 3. Renderiza e Converte
+            domtoimage.toJpeg(container, param)
+            .then(async function (dataUrl) {
+                if(watermark.parentNode) watermark.parentNode.removeChild(watermark);
+                container.style.cursor = originalCursor;
+                
+                const fileName = `${tripName}_3D.jpg`.replace(/\s+/g, '_'); 
+
+                // Conversor Base64 -> Arquivo Real (Blob)
+                const arr = dataUrl.split(',');
+                const mime = arr[0].match(/:(.*?);/)[1];
+                const bstr = atob(arr[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+                const file = new File([new Blob([u8arr], {type: mime})], fileName, { type: mime });
+
+                // 4. Aciona o Compartilhamento Nativo (Gaveta do Celular)
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            title: tripName,
+                            text: 'Confira nosso roteiro 3D gerado no NaoVouSozinho.com!',
+                            files: [file]
+                        });
+                    } catch (err) {
+                        console.log("Compartilhamento cancelado pelo usuário.");
+                    }
+                } else {
+                    // Fallback para computadores antigos que não têm WhatsApp instalado ou gaveta de share
+                    alert("Seu navegador não suporta envio direto. A imagem será salva na sua galeria para você enviar!");
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = dataUrl;
+                    link.click();
+                }
+            })
+            .catch(function (error) {
+                if(watermark.parentNode) watermark.parentNode.removeChild(watermark);
+                container.style.cursor = originalCursor;
+                console.error("Erro ao gerar imagem 3D nativa:", error);
+                alert("Ops! Ocorreu um erro ao preparar a sua foto.");
+            });
+        };
 
     </script>
 
