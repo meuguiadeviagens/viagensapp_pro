@@ -1164,7 +1164,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.2.8 | 04/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v2.2.9 | 05/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -16784,6 +16784,16 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     mainCityNameForLabel = 'Em Trânsito';
                 }
 
+                // --- NOVA LÓGICA DE MÚLTIPLAS LEGENDAS (Bate e Volta / Day Trips) ---
+                let dayLabels = [];
+                let trackCityName = previousCityName;
+
+                // 1. A cidade que iniciou o dia ganha legenda se for diferente do dia anterior (virou a noite)
+                if (mainCityNameForLabel !== trackCityName && mainCityNameForLabel !== 'Em Trânsito') {
+                    dayLabels.push({ name: mainCityNameForLabel, time: '', color: labelColor });
+                    trackCityName = mainCityNameForLabel;
+                }
+
                 // --- GERAÇÃO DOS CORTES PROPORCIONAIS MULTI-CORES ---
                 let gradientStr = '';
                 let currentColor = colorStart;
@@ -16798,7 +16808,6 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     let gradParts = [];
                     gradParts.push(`${currentColor} 0%`);
 
-                    // Vai fatiando o bloco para cada evento do dia
                     todayEvents.forEach(evt => {
                         const [hours, minutes] = evt.time.split(':').map(Number);
                         const percent = Math.round((((hours || 12) * 60 + (minutes || 0)) / 1440) * 100);
@@ -16807,11 +16816,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                         currentColor = evt.color;
                         gradParts.push(`${currentColor} ${percent}%`);
                         
-                        // A legenda exibida será sempre a da última CIDADE que chegou no dia
-                        if (evt.isCity) {
-                            mainCityNameForLabel = evt.name;
-                            labelTime = evt.time;
-                            labelColor = evt.color;
+                        // 2. O Segredo: Se houver mudança de cidade NO MEIO DO DIA (ex: Bate e Volta),
+                        // nós empurramos a cidade do meio do dia para a fila de legendas!
+                        if (evt.isCity && evt.name !== trackCityName) {
+                            dayLabels.push({ name: evt.name, time: evt.time, color: evt.color });
+                            trackCityName = evt.name;
                         }
                     });
                     
@@ -16821,7 +16830,6 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
                     bgStyleTop = `background: linear-gradient(${gradientDirection}, ${gradientStr});`;
 
-                    // Aplica a física 3D das paredes para degradês complexos
                     if (gradientDirection === 'to right') {
                         bgStyleSide1 = `background: linear-gradient(to right, ${gradientStr});`;
                         bgStyleSide2 = `background-color: ${colorStart};`; 
@@ -16834,68 +16842,51 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     }
                 }
 
+                // Atualiza o global para o próximo bloco do laço saber onde paramos!
+                previousCityName = trackCityName;
+
                 // Ícones Flutuantes
                 let floatingIcons = '';
                 const hasFlight = flights.some(f => f.departureDate === dateStr || f.arrivalDate === dateStr);
                 const hasLodging = lodgings.some(l => l.checkinDate === dateStr || l.checkoutDate === dateStr);
 
-                if (hasFlight) floatingIcons += `<span class="block text-xl md:text-2xl filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">✈️</span>`;
+                if (hasFlight) floatingIcons += `<span class="block text-xl md:text-2xl filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">✈️️</span>`;
                 if (hasLodging) floatingIcons += `<span class="block text-xl md:text-2xl filter drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">🏨</span>`;
 
-                // --- LÓGICA DA LEGENDA DA CIDADE ---
+                // --- LÓGICA DA LEGENDA DA CIDADE (Agora renderiza um ARRAY de legendas) ---
                 let cityLabelHtml = '';
-                if (mainCityNameForLabel !== previousCityName) {
-                    if (mainCityNameForLabel !== 'Em Trânsito') {
-                        const timeDisplay = labelTime ? `<span class="opacity-75 font-normal ml-1.5 border-l border-white/30 pl-1.5">${labelTime}</span>` : '';
+                
+                if (dayLabels.length > 0) {
+                    let baseOffsetX = 0, baseOffsetY = -90; 
+                    
+                    if (pos >= 1 && pos <= 5) { baseOffsetX = 0; baseOffsetY = -90; } 
+                    else if (pos === 6 || pos === 7) { baseOffsetX = 100; baseOffsetY = 0; } 
+                    else if (pos >= 8 && pos <= 12) { baseOffsetX = 110; baseOffsetY = 60; } 
+                    else if (pos === 13 || (pos === 0 && i > 0)) { baseOffsetX = -110; baseOffsetY = 40; } 
+                    else if (pos === 0 && i === 0) { baseOffsetX = 0; baseOffsetY = -90; }
+
+                    // Laço de repetição: Cria um pino para cada cidade visitada no dia
+                    dayLabels.forEach((lbl, idx) => {
+                        const timeDisplay = lbl.time ? `<span class="opacity-75 font-normal ml-1.5 border-l border-white/30 pl-1.5">${lbl.time}</span>` : '';
                         
-                        // --- DIREÇÃO DA LEGENDA BASEADA NA POSIÇÃO DO TABULEIRO ---
-                        // Valores estrategicamente calculados para fugir das "paredes 3D" frontais dos blocos
-                        let offsetX = 0, offsetY = -90; 
-                        
-                        if (pos >= 1 && pos <= 5) {
-                            // 1. Linha Superior (Atira pra Cima) - Fundo sempre livre
-                            offsetX = 0; 
-                            offsetY = -90; 
-                        } 
-                        else if (pos === 6 || pos === 7) {
-                            // 2. Descida Direita (Atira pra Direita)
-                            offsetX = 100; 
-                            offsetY = 0; 
-                        } 
-                        else if (pos >= 8 && pos <= 12) {
-                            // 3. Linha Inferior (Blocos que você mencionou)
-                            // Atira pra Direita e para Baixo (Diagonal), saindo totalmente da frente do próprio bloco
-                            offsetX = 110; 
-                            offsetY = 60; 
-                        } 
-                        else if (pos === 13 || (pos === 0 && i > 0)) {
-                            // 4. Descida Esquerda (Blocos 13, 14, 15...)
-                            // Lateraliza para a Esquerda e um pouco para baixo, fugindo da quina
-                            offsetX = -110; 
-                            offsetY = 40; 
-                        } 
-                        else if (pos === 0 && i === 0) {
-                            // 5. Bloco Inicial Absoluto da Viagem (Atira pra Cima)
-                            offsetX = 0; 
-                            offsetY = -90; 
-                        }                    
-                       
-                        
-                        cityLabelHtml = `
-                            <div class="absolute top-1/2 left-1/2 pointer-events-none" style="transform: translate(-50%, -50%) translateZ(80px) rotateZ(45deg) rotateX(-60deg); z-index: 60;">
+                        // O Truque Visual: A cada nova legenda no mesmo bloco, nós somamos 32px
+                        // para baixo. Assim elas ficam empilhadas como uma escadinha!
+                        const currentOffsetY = baseOffsetY + (idx * 32);
+
+                        cityLabelHtml += `
+                            <div class="absolute top-1/2 left-1/2 pointer-events-none" style="transform: translate(-50%, -50%) translateZ(80px) rotateZ(45deg) rotateX(-60deg); z-index: ${60 - idx};">
                                 <svg class="absolute overflow-visible" style="top: 0; left: 0;" width="1" height="1">
-                                    <circle cx="0" cy="0" r="4" fill="${labelColor}" class="shadow-sm" />
-                                    <line x1="0" y1="0" x2="${offsetX}" y2="${offsetY}" stroke="${labelColor}" stroke-width="2" class="opacity-80" />
+                                    <circle cx="0" cy="0" r="4" fill="${lbl.color}" class="shadow-sm" />
+                                    <line x1="0" y1="0" x2="${baseOffsetX}" y2="${currentOffsetY}" stroke="${lbl.color}" stroke-width="2" class="opacity-80" />
                                 </svg>
-                                <div class="absolute flex flex-col items-center justify-center" style="transform: translate(${offsetX}px, ${offsetY}px) translate(-50%, -50%);">
-                                    <span class="text-white text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full shadow-2xl whitespace-nowrap border border-white/20 flex items-center" style="background-color: ${labelColor};">
-                                        ${mainCityNameForLabel} ${timeDisplay}
+                                <div class="absolute flex flex-col items-center justify-center" style="transform: translate(${baseOffsetX}px, ${currentOffsetY}px) translate(-50%, -50%);">
+                                    <span class="text-white text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-full shadow-2xl whitespace-nowrap border border-white/20 flex items-center" style="background-color: ${lbl.color};">
+                                        ${lbl.name} ${timeDisplay}
                                     </span>
                                 </div>
                             </div>
                         `;
-                    }
-                    previousCityName = mainCityNameForLabel;
+                    });
                 }
 
                 // --- 5. CONSTRUÇÃO DO BLOCO ISOMÉTRICO ---
