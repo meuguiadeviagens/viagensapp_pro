@@ -10006,7 +10006,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 const diffTime = endDateObj - startDateObj;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 
-                if (diffDays > 90) {
+                if (diffDays > 93) {
                     alert('Desculpe, o Não Vou Sozinho permite planejar roteiros com duração máxima de até 3 meses (93 dias), para garantir a performance do aplicativo e organização da gestão de informações.\n\nComo sua viagem é muito longa, recomendamos dividi-la em blocos (ex: "Mochilão Europa - Parte 1" e "Parte 2").');
                     return; // Interrompe a execução e NÃO salva no Firebase
                 }
@@ -10259,6 +10259,22 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         document.getElementById('edit-trip-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+
+            // Cole isso dentro do submit do 'edit-trip-form'
+            const editStartDateVal = document.getElementById('edit-trip-start-date').value;
+            const editEndDateVal = document.getElementById('edit-trip-end-date').value;
+
+            if (editStartDateVal && editEndDateVal) {
+                const startObj = new Date(editStartDateVal + 'T00:00:00Z');
+                const endObj = new Date(editEndDateVal + 'T00:00:00Z');
+                
+                const diffDays = Math.ceil((endObj - startObj) / (1000 * 60 * 60 * 24));
+                
+                if (diffDays > 93) {
+                    alert('Não é possível estender o roteiro para mais de 3 meses (93 dias). Por favor, divida sua viagem em duas ou mais partes.');
+                    return; 
+                }
+            }
 
             const campoEdicao = document.getElementById('edit-trip-destination');
             const valorDestinoEditado = campoEdicao ? campoEdicao.value : "";
