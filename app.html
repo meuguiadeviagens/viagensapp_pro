@@ -1164,7 +1164,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v2.2.9 | 05/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v3.0.0 | 06/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -1185,7 +1185,15 @@
                 <div onclick="setActivityColor('#581c87')" class="w-6 h-6 rounded-full bg-purple-900 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Roxo Escuro"></div>
                 <div onclick="setActivityColor('#991b1b')" class="w-6 h-6 rounded-full bg-red-800 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Vinho/Vermelho"></div>
                 <div onclick="setActivityColor('#854d0e')" class="w-6 h-6 rounded-full bg-yellow-800 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Ouro Escuro"></div>
-                <div onclick="setActivityColor('#115e59')" class="w-6 h-6 rounded-full bg-teal-800 cursor-pointer border border-slate-300 hover:scale-110 transition-transform" title="Verde Petróleo"></div>
+                
+                <!-- NOVO BOTÃO: Seletor de Cor Personalizada Nativo (Substitui o Verde Petróleo) -->
+                <label class="relative w-6 h-6 rounded-full cursor-pointer border border-slate-300 hover:scale-110 transition-transform flex items-center justify-center overflow-hidden shadow-inner" title="Cor Personalizada" style="background: conic-gradient(#ef4444, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444);">
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/10">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.8));"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    </div>
+                    <!-- Dispara a pintura visual contínua (oninput) e o salvamento real (onchange) -->
+                    <input type="color" oninput="previewActivityColor(this.value)" onchange="setActivityColor(this.value)" class="opacity-0 absolute -inset-2 w-10 h-10 cursor-pointer">
+                </label>
             </div>
 
             <div class="border-t my-1"></div>
@@ -9984,6 +9992,27 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         // --- LISTENERS DOS FORMULÁRIOS ---
         document.getElementById('add-trip-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+
+            // --- INÍCIO DA VALIDAÇÃO DE LIMITE DE 3 MESES (90 DIAS) ---
+            const startDateVal = document.getElementById('trip-start-date').value;
+            const endDateVal = document.getElementById('trip-end-date').value;
+
+            if (startDateVal && endDateVal) {
+                // Instancia as datas forçando o fuso UTC para não dar erro de fuso horário
+                const startDateObj = new Date(startDateVal + 'T00:00:00Z');
+                const endDateObj = new Date(endDateVal + 'T00:00:00Z');
+                
+                // Calcula a diferença de tempo em milissegundos e converte para dias
+                const diffTime = endDateObj - startDateObj;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays > 90) {
+                    alert('Desculpe, o Não Vou Sozinho permite planejar roteiros com duração máxima de até 3 meses (93 dias), para garantir a performance do aplicativo e organização da gestão de informações.\n\nComo sua viagem é muito longa, recomendamos dividi-la em blocos (ex: "Mochilão Europa - Parte 1" e "Parte 2").');
+                    return; // Interrompe a execução e NÃO salva no Firebase
+                }
+            }
+            // --- FIM DA VALIDAÇÃO ---
+
             console.log("=== SALVANDO VIAGEM (PRIORIDADE: LISTA DE CIDADES) ===");
 
             // --- 1. CAPTURA OBRIGATÓRIA DA LISTA DE CIDADES ---
@@ -17244,6 +17273,31 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 console.error("Erro ao gerar imagem 3D nativa:", error);
                 alert("Ops! Ocorreu um erro ao preparar a sua foto.");
             });
+        };
+
+        // ==================================================
+        // FUNÇÃO DE LIVE PREVIEW DE COR (Versão à prova de Tailwind)
+        // ==================================================
+        window.previewActivityColor = (colorHex) => {
+            if (!currentContextMenuActivityId) return;
+
+            const activityCard = document.querySelector(`.activity-item[data-activity-id="${currentContextMenuActivityId}"]`);
+            
+            if (activityCard) {
+                // Tática 1: Força a cor no container principal ignorando outras regras CSS
+                activityCard.style.setProperty('background-color', colorHex, 'important');
+                
+                // Tática 2: Procura o elemento interno real que segura a cor (Disfarce do Tailwind)
+                // Se a sua atividade for uma "Cidade" ou "Passeio", geralmente o fundo visível
+                // fica no primeiro container filho. Vamos pintar ele também!
+                const childrenElements = activityCard.querySelectorAll('div');
+                
+                childrenElements.forEach(el => {
+                    // Pinta apenas elementos que já possuíam alguma cor de fundo (para não pintar botões acidentalmente)
+                    // ou força a pintura da div principal do card.
+                    el.style.setProperty('background-color', colorHex, 'important');
+                });
+            }
         };
 
     </script>
