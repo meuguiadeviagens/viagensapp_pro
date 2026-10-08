@@ -13438,7 +13438,7 @@ function route(){ const h=location.hash||'#/'; const m=h.match(/^#\/pauta\/(.+)$
         const capTotal = capServ + capEstag; // Capacidade Bruta (Cinza)
         
         const capMax = capServ + (numEstag * 4); // Capacidade de Risco (Vermelho)
-        const salasSimultaneas = Math.max(0, numServ + numEstag - 4); // Salas por Hora (Rosa)
+        const salasSimultaneas = Math.max(0, numServ + numEstag); // Salas por Hora (Rosa)
 
         divResumo.innerHTML = `
             <div class="row" style="gap:12px; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap;">
@@ -13449,18 +13449,20 @@ function route(){ const h=location.hash||'#/'; const m=h.match(/^#\/pauta\/(.+)$
                     <div style="font-size:11px; font-weight:700; color:#c2410c; background:#ffedd5; padding:4px; border-radius:6px; margin-top:8px;">${capServ} sessões (5/dia)</div>
                 </div>
                 
-                <div class="card" style="flex:1; min-width:140px; background:#f0fdfa; border-color:#ccfbf1; padding:14px 10px; text-align:center;">
-                    <div style="font-size:11px; font-weight:800; color:#0f766e; text-transform:uppercase; letter-spacing:0.03em;">Estagiários</div>
-                    <div style="font-size:32px; font-weight:900; color:#115e59;">${numEstag}</div>
-                    <div style="font-size:11px; font-weight:700; color:#0f766e; background:#ccfbf1; padding:4px; border-radius:6px; margin-top:8px;">${capEstag} sessões (3/dia)</div>
+                <!-- Painel Azul (Estagiários) -->
+                <div class="card" style="flex:1; min-width:140px; background:#eff6ff; border-color:#bfdbfe; padding:14px 10px; text-align:center;">
+                    <div style="font-size:11px; font-weight:800; color:#1d4ed8; text-transform:uppercase; letter-spacing:0.03em;">Estagiários</div>
+                    <div style="font-size:32px; font-weight:900; color:#1e3a8a;">${numEstag}</div>
+                    <div style="font-size:11px; font-weight:700; color:#1d4ed8; background:#dbeafe; padding:4px; border-radius:6px; margin-top:8px;">${capEstag} sessões (3/dia)</div>
+                </div>              
+                
+                <!-- Painel Verde (Capacidade Recomendada) -->
+                <div class="card" style="flex:1; min-width:200px; background:#f0fdfa; border-color:#ccfbf1; padding:16px; text-align:center;">
+                    <div style="font-size:12px; font-weight:700; color:#0f766e; text-transform:uppercase;">Capacidade Recomendada</div>
+                    <div style="font-size:36px; font-weight:800; color:#115e59;">${capTotal-5}</div>
+                    <div style="font-size:12px; font-weight:700; color:#0f766e; background:#ccfbf1; padding:4px; border-radius:6px; margin-top:8px;">Total -Banco(5) -Atest.(3)</div>
                 </div>
                 
-                <div class="card" style="flex:1; min-width:140px; background:#f8fafc; border-color:var(--line); padding:14px 10px; text-align:center;">
-                    <div style="font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:0.03em;">Capac. Bruta</div>
-                    <div style="font-size:32px; font-weight:900; color:var(--ink);">${capTotal}</div>
-                    <div style="font-size:11px; font-weight:700; color:var(--muted); background:#f1f5f9; padding:4px; border-radius:6px; margin-top:8px;">Ideal Recomendado</div>
-                </div>
-
                 <div class="card" style="flex:1; min-width:140px; background:#fef2f2; border-color:#fecaca; padding:14px 10px; text-align:center;">
                     <div style="font-size:11px; font-weight:800; color:#b91c1c; text-transform:uppercase; letter-spacing:0.03em;">Limite Máx.</div>
                     <div style="font-size:32px; font-weight:900; color:#991b1b;">${capMax}</div>
@@ -13469,9 +13471,9 @@ function route(){ const h=location.hash||'#/'; const m=h.match(/^#\/pauta\/(.+)$
 
                 <div class="card" style="flex:1; min-width:140px; background:#fdf2f8; border-color:#fbcfe8; padding:14px 10px; text-align:center;">
                     <div style="font-size:11px; font-weight:800; color:#be185d; text-transform:uppercase; letter-spacing:0.03em;">Salas Simult.</div>
-                    <div style="font-size:32px; font-weight:900; color:#9d174d;">${salasSimultaneas}</div>
-                    <div style="font-size:11px; font-weight:800; color:#be185d; background:#fce7f3; padding:4px; border-radius:6px; margin-top:8px;" title="Equipe Total - 4">Máximo por Hora</div>
-                </div>
+                    <div style="font-size:32px; font-weight:900; color:#9d174d;">${salasSimultaneas-4}</div>
+                    <div style="font-size:11px; font-weight:800; color:#be185d; background:#fce7f3; padding:4px; border-radius:6px; margin-top:8px;" title="Equipe Total - 4">No máx. às 14h/15h/16h<br>Às 13h/17h: ${numServ+4}</div>
+                </div>    
 
             </div>
             
