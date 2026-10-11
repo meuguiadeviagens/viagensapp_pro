@@ -707,18 +707,28 @@
         .safe-padding-top { padding-top: var(--safe-area-top); }
         .safe-padding-bottom { padding-bottom: var(--safe-area-bottom); }
 
-        /* --- MODO OFFLINE (APENAS LEITURA) --- */
+        /* --- MODO OFFLINE E LINK PÚBLICO (APENAS LEITURA) --- */
         body.offline-read-only button[onclick*="openModal('add-"],
         body.offline-read-only button[onclick*="openEditTripModal"],
+        body.offline-read-only button[onclick*="handleSafeEditClick"], /* Esconde o Lápis da atividade */
+        body.offline-read-only button[onclick*="openEditActivityModal"], /* Esconde Lápis alternativo */
+        body.offline-read-only button[onclick*="delete"], /* Esconde Lixeiras */
+        body.offline-read-only button[onclick*="openEdit"], /* Esconde ferramentas de Edição */
+        body.offline-read-only button[title*="Editar"],
+        body.offline-read-only button[title*="Excluir"],
         body.offline-read-only .add-activity-btn,
         body.offline-read-only .delete-day-btn,
         body.offline-read-only #reorg-start-btn,
-        body.offline-read-only button[onclick*="deleteSharedExpense"],
-        body.offline-read-only form, /* Esconde formulários rápidos como de documentos e anotações */
-        body.offline-read-only .activity-item button[title="Editar"],
-        body.offline-read-only .activity-item button[title="Excluir"] {
+        body.offline-read-only #import-suggestions-btn,
+        body.offline-read-only form {
             display: none !important;
             pointer-events: none !important;
+        }
+
+        /* Varredura extra para os botões do cabeçalho do Dia (Grid e Plus verde) */
+        body.offline-read-only #daily-itinerary-list button[onclick*="Activity"],
+        body.offline-read-only #daily-itinerary-list button[onclick*="Reorg"] {
+            display: none !important;
         }
 
         body.offline-read-only #offline-alert h3::after {
@@ -1164,7 +1174,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.0.0 | 06/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v3.0.1 | 11/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -1546,6 +1556,11 @@
                         <span>Novidades</span>
                         <span id="activity-log-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
                     </button>
+                    <!-- INÍCIO: Botão Compartilhar -->
+                    <button onclick="openShareTripModal()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors shadow-sm backdrop-blur-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                    </button>
+                    <!-- FIM: Botão Compartilhar -->
                     <div id="header-custom-buttons-container" class="flex gap-2"></div>
 
                     <div id="details-cities-container" class="mt-4 flex flex-wrap gap-2"></div>
@@ -1765,6 +1780,12 @@
                 </form>
             </div>           
     </div>
+
+        <!-- INÍCIO: Container Exclusivo para Roteiro Público Estático -->
+        <div id="public-trip-view" class="hidden max-w-7xl mx-auto p-4 md:p-8 pb-32">
+            <!-- O HTML Estático injetado pelo JavaScript aparecerá aqui -->
+        </div>
+        <!-- FIM: Container Exclusivo -->
 
     <h4 class="text-lg font-semibold text-slate-800 mb-3">Despesas em grupo adicionadas:</h4>
 
@@ -3067,14 +3088,14 @@
                 Use os botões abaixo para enviar um convite genérico para alguém se cadastrar e participar da viagem. Depois que a pessoa se cadastrar, ela informará a você o e-mail de cadastro para que consiga incluí-la como viajante.
             </p>
             <div class="space-y-3">
-                <button id="send-email-invite-btn" class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                    <span>Enviar por E-mail</span>
-                </button>
                 <button id="send-whatsapp-invite-btn" class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
                     <span>Compartilhar no WhatsApp</span>
                 </button>
+                <button id="send-email-invite-btn" class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                    <span>Enviar por E-mail</span>
+                </button>                
             </div>
             <div class="pt-6 flex justify-end">
                 <button type="button" onclick="closeModal('invitation-choice-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
@@ -3571,6 +3592,142 @@
     </div>
     <!-- FIM: MODAL ADICIONAR/EDITAR/LER ANOTAÇÃO DO MURAL -->
 
+    <!-- INÍCIO: Modal de Compartilhamento -->
+    <div id="share-trip-modal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md m-4 overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-xl font-bold text-slate-800">Compartilhar Roteiro</h3>
+                <button onclick="closeModal('share-trip-modal')" class="text-slate-400 hover:text-slate-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-6 space-y-6">
+                <!-- Opção 1: Convidar por E-mail ou WhatsApp -->
+                <div class="border border-slate-200 rounded-xl p-4 hover:bg-slate-50 transition-colors cursor-pointer mb-4" onclick="closeModal('share-trip-modal'); openInvitationModal();">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="bg-green-100 text-green-600 p-2 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+                        </div>
+                        <h4 class="font-bold text-slate-800">Convidar por E-mail ou WhatsApp</h4>
+                    </div>
+                    <p class="text-sm text-slate-500">Convide amigos ou familiares que irão viajar com você para <b>editarem o roteiro em conjunto</b>.</p>
+                </div>           
+
+                <!-- Opção 2: Incluir por E-mail Diretamente -->
+                <div class="border border-slate-200 rounded-xl p-4 mb-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="bg-blue-100 text-blue-600 p-2 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>
+                        </div>
+                        <h4 class="font-bold text-slate-800">Incluir colaborador informando e-mail</h4>
+                    </div>
+                    <p class="text-sm text-slate-500 mb-3">Adicione diretamente o e-mail de alguém que já possua cadastro no aplicativo.</p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <!-- O datalist "frequent-travelers-list" já existe no app.html e será reaproveitado automaticamente aqui -->
+                        <input type="email" id="traveler-email-share" list="frequent-travelers-list" placeholder="email@exemplo.com" class="flex-1 px-3 py-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <button type="button" onclick="addTravelerFromShareModal()" class="bg-blue-600 text-white font-semibold px-4 py-2 text-sm rounded-md shadow-sm hover:bg-blue-700 transition-colors whitespace-nowrap">
+                            Incluir Viajante
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Opção 3: Link de Visualização Pública -->
+                <div class="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-red-100 text-red-500 p-2 rounded-lg" title="Apenas visualização (somente leitura)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </div>
+                            <h4 class="font-bold text-slate-800">Link de Visualização</h4>
+                        </div>
+                        <!-- Switch Toggle -->
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="public-link-toggle" class="sr-only peer" onchange="togglePublicLinkSettings()">
+                            <!-- Fundo do Switch -->
+                            <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-green-500 transition-colors"></div>
+                            <!-- Bolinha do Switch (Moverá a posição 'left' de 2px para 22px de forma absoluta) -->
+                            <div class="absolute top-[2px] left-[2px] bg-white border border-slate-300 rounded-full h-5 w-5 transition-all peer-checked:left-[22px]"></div>
+                        </label>
+                    </div>
+                    <p class="text-sm text-slate-500 mb-4">Crie um link somente de visualização (<b>sem poder de edição</b>), para que outras pessoas possam ver seu roteiro sem precisar fazer login (somente leitura).</p>
+                    
+                    <div id="public-link-settings" class="hidden space-y-3 pt-3 border-t border-slate-200">
+                        <input type="text" id="public-link-url" readonly class="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-xs text-slate-500 font-mono focus:outline-none">
+                        
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Senha de Acesso (Opcional)</label>
+                            <input type="text" id="public-link-password" placeholder="Deixe em branco para acesso livre" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:ring-green-500">
+                        </div>
+                        
+                        <!-- Substitua os botões dentro de #public-link-settings por este bloco: -->
+                        <div class="flex flex-col gap-2 mt-4">
+                            <div class="flex gap-2">
+                                <button id="btn-save-public-link" onclick="savePublicLinkConfig()" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">Gerar Link</button>
+                                <button onclick="copyPublicLink()" class="flex-1 bg-slate-200 text-slate-700 font-bold py-2 rounded-lg hover:bg-slate-300 transition-colors text-sm flex items-center justify-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                    Copiar
+                                </button>
+                                
+                            </div>                           
+                            <!-- Novo Botão de Snapshot sob Demanda -->
+                                <button id="btn-update-public-snapshot" onclick="updatePublicSnapshot()" class="hidden w-full bg-indigo-600 text-white font-bold py-2.5 rounded-lg hover:bg-indigo-700 transition-colors text-sm flex items-center justify-center gap-2 shadow-md">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                                    Sincronizar alterações recentes no Link
+                                </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão Flutuante de Clonagem (Aparece apenas via link público) -->
+    <div id="floating-clone-btn-container" class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[1000]">
+        <button onclick="openCloneModal()" class="px-6 py-3 bg-blue-600 text-white font-extrabold rounded-full shadow-2xl border border-blue-500 hover:bg-blue-700 hover:scale-105 transition-all flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
+            Clonar este Roteiro
+        </button>
+    </div>
+
+    <!-- Modal Clonar Roteiro -->
+    <div id="clone-trip-modal" class="fixed inset-0 z-[150] hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md m-4 overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-xl font-bold text-slate-800">Clonar Roteiro</h3>
+                <button onclick="closeModal('clone-trip-modal')" class="text-slate-400 hover:text-slate-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-slate-600">Ao clonar, copiaremos todas as atividades deste roteiro para a sua conta. Defina os detalhes da sua nova viagem:</p>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-600">Nome da Nova Viagem</label>
+                    <input type="text" id="clone-trip-name" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-blue-500" required>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-slate-600">Início</label>
+                        <input type="date" id="clone-trip-start-date" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required onchange="validateCloneDates()">
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-slate-600">Fim</label>
+                        <input type="date" id="clone-trip-end-date" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md" required onchange="validateCloneDates()">
+                    </div>
+                </div>
+                <p id="clone-date-warning" class="text-xs font-semibold text-red-500 hidden">A nova viagem deve ter pelo menos a mesma duração do roteiro original (<span id="clone-min-days">0</span> dias).</p>
+
+                <div class="pt-4 flex justify-end gap-3 border-t border-slate-100 mt-2">
+                    <button type="button" onclick="closeModal('clone-trip-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+                    <button id="btn-confirm-clone" onclick="confirmCloneTrip()" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 font-semibold shadow-md">Clonar Agora</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- FIM: Modais -->
 
     <script type="module">
         // Importações do Firebase
@@ -3610,6 +3767,17 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         const inviteTripId = urlParams.get('invite');
+
+        // --- INÍCIO: Interceptador de Link Público ---
+        const publicTripId = urlParams.get('public');
+        let isViewingPublicTrip = false;
+        let publicTripDataBackup = null; // Guardará o roteiro publico se deslogado
+
+        if (publicTripId) {
+            sessionStorage.setItem('viewingPublicTrip', publicTripId);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        // --- FIM: Interceptador de Link Público ---
 
         if (inviteTripId) {
             // Salva no "bolso" para usar depois do login
@@ -4050,8 +4218,8 @@ window.addEventListener('popstate', (event) => {
             }
         };
 
-        // NOVA FUNÇÃO AUXILIAR
-        function openInvitationModal(name = '', email = '') {
+        // Substitua a antiga "function openInvitationModal(name = '', email = '') {" por este bloco:
+        window.openInvitationModal = (name = '', email = '') => {
             const specificText = document.getElementById('invite-specific-user-text');
             const genericText = document.getElementById('invite-generic-user-text');
 
@@ -4071,7 +4239,7 @@ window.addEventListener('popstate', (event) => {
             }
 
             openModal('invitation-choice-modal');
-        }
+        };
 
         // Nova função para escutar os favoritos do usuário
         function setupFavoritesListener(userId) {
@@ -5243,6 +5411,14 @@ window.addEventListener('popstate', (event) => {
                     // CHAMA DIRETO! A função vai cuidar de exibir o modal bonitão
                     joinTripViaLink(pendingTripId, user);
                 }
+
+                // --- INÍCIO: Captura de link público para usuário JÁ LOGADO ---
+                const activePublicId = sessionStorage.getItem('viewingPublicTrip');
+                if (activePublicId) {
+                    // O setTimeout garante que o Firebase termine de fazer o setup básico antes de travarmos a tela
+                    setTimeout(() => window.initPublicTripView(activePublicId), 300);
+                }
+                // --- FIM: Captura de link público ---
               
                 //Usuário está logado
                 // --- INÍCIO: CACHE DO PERFIL E UPDATE DO LAST LOGIN ---
@@ -5556,16 +5732,29 @@ window.addEventListener('popstate', (event) => {
                 // --- FIM: VERIFICAÇÃO DE REDE E CACHE DE VIAGENS ---
 
             } else {
-                currentUserId = null; // Limpa o ID quando o usuário sai
-                currentUserLicense = { type: 'gratuito', purchasedTrips: {} }; // NOVO: Reseta no logout
-  
-                // 2. USUÁRIO ESTÁ DESLOGADO
+                currentUserId = null; 
+                currentUserLicense = { type: 'gratuito', purchasedTrips: {} };
                 console.log("Nenhum usuário logado.");
 
-                loginView.classList.remove('hidden');
-                signupView.classList.add('hidden');
-                appView.classList.add('hidden');
-
+                // --- INÍCIO: Permite visualização pública deslogada ---
+                const activePublicId = sessionStorage.getItem('viewingPublicTrip');
+                if (activePublicId) {
+                    console.log("Acesso público detectado sem login.");
+                    loginView.classList.add('hidden');
+                    signupView.classList.add('hidden');
+                    appView.classList.remove('hidden');
+                    
+                    // Removemos a exibição forçada do details-view daqui! 
+                    // A função initPublicTripView vai fazer isso no momento certo.
+                    window.initPublicTripView(activePublicId);
+                } else {
+                    // Fluxo normal de deslogado
+                    loginView.classList.remove('hidden');
+                    signupView.classList.add('hidden');
+                    appView.classList.add('hidden');
+                }
+                // --- FIM: Permite visualização pública deslogada ---
+                
                 userChecklistData = [];
                 checklistRef = null;
             }
@@ -5916,6 +6105,87 @@ window.addEventListener('popstate', (event) => {
             openModal('spending-per-person-modal');
         };       
         
+        window.addTravelerFromShareModal = async () => {
+            const emailInput = document.getElementById('traveler-email-share');
+            const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
+
+            if (!email) {
+                alert("Por favor, informe o e-mail do viajante.");
+                return;
+            }
+
+            const encodedEmail = btoa(email);
+            
+            try {
+                // Verifica se o email existe na base de usuários
+                const emailToUidRef = ref(db, `emailToUid/${encodedEmail}`);
+                const snapshot = await get(emailToUidRef);
+
+                if (!snapshot.exists()) {
+                    alert("Este e-mail não possui cadastro no aplicativo. Utilize a opção 'Convidar Colaboradores por E-mail ou WhatsApp'.");
+                    return;
+                }
+
+                const newTravelerUid = snapshot.val();
+                const trip = tripsData.find(t => t.id === currentTripId);
+                
+                // Verifica se já está na viagem
+                if (trip.members && trip.members[newTravelerUid]) {
+                    alert('Este usuário já foi adicionado a esta viagem.');
+                    return;
+                }
+
+                // Tenta buscar o nome do usuário no perfil para ficar bonito na lista
+                const profileSnap = await get(ref(db, `users/${newTravelerUid}/profile`));
+                const travelerName = profileSnap.exists() && profileSnap.val().fullName 
+                                    ? profileSnap.val().fullName 
+                                    : email.split('@')[0];
+
+                const currentTravelers = trip.travelers || [];
+                const newTraveler = { uid: newTravelerUid, name: travelerName, email: email }; 
+                const updatedTravelers = [...currentTravelers, newTraveler];
+
+                const updates = {};
+                
+                // 1. Adiciona à lista
+                updates[`/trips/${currentTripId}/travelers`] = updatedTravelers;
+                // 2. Dá permissão de editor padrão
+                updates[`/trips/${currentTripId}/members/${newTravelerUid}`] = 'editor';
+                // 3. Vincula a viagem ao usuário
+                updates[`/users/${newTravelerUid}/memberOf/${currentTripId}`] = true;
+
+                // 4. Envia Notificação
+                if (newTravelerUid !== currentUserId) {
+                    const newNotificationKey = push(ref(db, `users/${newTravelerUid}/notifications`)).key;
+                    updates[`/users/${newTravelerUid}/notifications/${newNotificationKey}`] = {
+                        message: `${currentUserProfile.fullName || 'Alguém'} adicionou você à viagem "${trip.name}".`,
+                        tripId: currentTripId,
+                        isRead: false,
+                        timestamp: serverTimestamp()
+                    };
+                }
+
+                // 5. Salva no autocomplete (histórico) do dono
+                if (currentUserId && newTravelerUid !== currentUserId) {
+                    updates[`/users/${currentUserId}/frequentTravelers/${newTravelerUid}`] = { name: travelerName, email: email };
+                }
+
+                await update(ref(db), updates);
+                
+                // Finalização Visual
+                emailInput.value = '';
+                alert(`${travelerName} foi adicionado(a) com sucesso!`);
+                
+                // Atualiza a lista caso o Modal de Edição também esteja renderizado em background
+                if (typeof renderTravelersList === 'function') {
+                    renderTravelersList(currentTripId);
+                }
+
+            } catch (error) {
+                console.error("Erro ao incluir colaborador por e-mail:", error);
+                alert("Ocorreu um erro inesperado ao tentar adicionar o colaborador.");
+            }
+        };
 
         window.addTraveler = async () => {
             const nameInput = document.getElementById('traveler-name');
@@ -17315,6 +17585,385 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 });
             }
         };
+
+        // ==========================================
+        // INÍCIO: LÓGICA DE COMPARTILHAMENTO E CLONE
+        // ==========================================
+
+        window.openShareTripModal = () => {
+            const trip = tripsData.find(t => t.id === currentTripId) || publicTripDataBackup;
+            if(!trip) return;
+
+            const toggle = document.getElementById('public-link-toggle');
+            const settings = document.getElementById('public-link-settings');
+            const urlInput = document.getElementById('public-link-url');
+            const passInput = document.getElementById('public-link-password');
+            const btnSave = document.getElementById('btn-save-public-link');
+            const btnUpdate = document.getElementById('btn-update-public-snapshot');
+
+            urlInput.value = `${window.location.origin}${window.location.pathname}?public=${currentTripId}`;
+            
+            // Preenche o status atual e controla os botões
+            if(trip.publicConfig && trip.publicConfig.isPublic) {
+                toggle.checked = true;
+                settings.classList.remove('hidden');
+                passInput.value = trip.publicConfig.password || '';
+                
+                btnSave.textContent = "Salvar Senha";
+                btnUpdate.classList.remove('hidden'); // Exibe o botão de snapshot
+            } else {
+                toggle.checked = false;
+                settings.classList.add('hidden');
+                passInput.value = '';
+                
+                btnSave.textContent = "Gerar Link Público";
+                btnUpdate.classList.add('hidden'); // Esconde o botão de snapshot
+            }
+
+            openModal('share-trip-modal');
+        };
+
+        window.togglePublicLinkSettings = async () => {
+            const isChecked = document.getElementById('public-link-toggle').checked;
+            document.getElementById('public-link-settings').classList.toggle('hidden', !isChecked);
+            
+            if(!isChecked) {
+                try {
+                    // 1. Atualiza a configuração na viagem original
+                    await update(ref(db, `trips/${currentTripId}/publicConfig`), { 
+                        isPublic: false, 
+                        password: null 
+                    });
+
+                    // 2. Remove o snapshot público explícitamente
+                    await remove(ref(db, `publicTrips/${currentTripId}`));
+
+                    // Esconde o botão de Sincronizar
+                    const btnUpdate = document.getElementById('btn-update-public-snapshot');
+                    if(btnUpdate) btnUpdate.classList.add('hidden');
+                    
+                } catch (err) {
+                    console.error("Erro ao desativar link público:", err);
+                    alert("Não foi possível desativar o link. Tente novamente.");
+                }
+            } else {
+                // LÓGICA NOVA: Se o usuário ligou o switch, tira a foto (snapshot) imediatamente e silenciosamente em background!
+                await window.updatePublicSnapshot(true); 
+            }
+        };
+
+        // Quando clica no botão Verde (agora serve apenas para salvar a senha ou forçar update manual)
+        window.savePublicLinkConfig = async () => {
+            await window.updatePublicSnapshot(false);
+        };
+
+        // A Magia do Snapshot: Atualizada com a técnica "Clone and Clean" (Garante todos os painéis)
+        window.updatePublicSnapshot = async (isSilent = false) => {
+            const isChecked = document.getElementById('public-link-toggle').checked;
+            const pass = document.getElementById('public-link-password').value.trim();
+            const trip = tripsData.find(t => t.id === currentTripId);
+
+            if (!trip) return;
+
+            const newConfig = {
+                isPublic: isChecked,
+                password: pass !== "" ? pass : null
+            };
+
+            try {
+                await update(ref(db, `trips/${currentTripId}/publicConfig`), newConfig);
+                const publicTripRef = ref(db, `publicTrips/${currentTripId}`);
+                
+                if (isChecked) {
+                    // 1. Clona a viagem INTEIRA (Isso garante que voos, transportes, hospedagens e variações venham com os nomes originais perfeitos)
+                    const publicTripData = JSON.parse(JSON.stringify(trip));
+                    
+                    // 2. DELETA explicitamente os dados sigilosos para não vazarem
+                    delete publicTripData.sharedExpenses;
+                    delete publicTripData.travelers;
+                    delete publicTripData.members;
+                    delete publicTripData.emergencyData;
+                    delete publicTripData.lastCurrency;
+
+                    // 3. Atualiza com a nova configuração de senha
+                    publicTripData.publicConfig = newConfig;
+                    
+                    await set(publicTripRef, publicTripData);
+                } else {
+                    await remove(publicTripRef);
+                }
+
+                document.getElementById('btn-save-public-link').textContent = "Salvar Senha";
+                document.getElementById('btn-update-public-snapshot').classList.remove('hidden');
+
+                if (!isSilent) {
+                    alert("Snapshot de atividades e painéis atualizado com sucesso!");
+                }
+            } catch (error) {
+                console.error("Erro ao gerar snapshot:", error);
+                if(!isSilent) alert("Ocorreu um erro ao salvar o roteiro público.");
+            }
+        };
+
+        window.copyPublicLink = () => {
+            const urlInput = document.getElementById('public-link-url');
+            navigator.clipboard.writeText(urlInput.value).then(() => {
+                alert("Link copiado para a área de transferência!");
+            });
+        };
+
+        // Fluxo quando alguém acessa o link público (Renderização Dinâmica Blindada)
+        window.initPublicTripView = async (tripId) => {
+            try {
+                const tripSnap = await get(ref(db, `publicTrips/${tripId}`));
+                
+                if (!tripSnap.exists()) {
+                    alert("Roteiro não encontrado ou o link de compartilhamento foi desativado.");
+                    sessionStorage.removeItem('viewingPublicTrip');
+                    window.location.href = 'index.html'; // Redireciona para o index
+                    return;
+                }
+
+                const trip = tripSnap.val();
+                trip.id = tripId;
+
+                // 🛡️ PROTEÇÃO CONTRA CRASH: Arrays vazios caso o Firebase tenha limpado as propriedades sem itens
+                trip.travelers = trip.travelers || [];
+                trip.members = trip.members || {};
+                trip.flights = trip.flights || [];      
+                trip.transports = trip.transports || []; 
+                trip.lodgings = trip.lodgings || [];     
+                trip.documents = trip.documents || [];   
+                trip.sharedExpenses = trip.sharedExpenses || [];
+                trip.notes = trip.notes || [];           
+                trip.pendencias = trip.pendencias || []; // Proteção nova para pendências
+                trip.variations = trip.variations || {};
+                trip.activities = trip.activities || {};
+
+                if (trip.publicConfig && trip.publicConfig.password) {
+                    const pwd = prompt("Este roteiro é protegido. Digite a senha de acesso:");
+                    if (pwd !== trip.publicConfig.password) {
+                        alert("Senha incorreta.");
+                        sessionStorage.removeItem('viewingPublicTrip');
+                        window.location.href = 'index.html'; // Redireciona para o index
+                        return;
+                    }
+                }
+
+                // Configura o ambiente
+                window.isViewingPublicTrip = true;
+                currentTripId = tripId;
+                window.publicTripDataBackup = trip;
+                
+                // Empurra a viagem temporária para o array local
+                const existingIndex = tripsData.findIndex(t => t.id === tripId);
+                if (existingIndex > -1) {
+                    tripsData[existingIndex] = trip;
+                } else {
+                    tripsData.push(trip);
+                }
+
+                // Troca as telas imediatamente
+                document.getElementById('trips-view').classList.add('hidden');
+                document.getElementById('details-view').classList.remove('hidden');
+                
+                // 🚀 Chama a função de renderizar
+                if (typeof showTripDetails === 'function') {
+                    showTripDetails(tripId);
+                } else if (typeof window.showTripDetails === 'function') {
+                    window.showTripDetails(tripId);
+                }
+
+                // Aplica o "ReadOnly" 
+                document.body.classList.add('offline-read-only');
+                
+                // Configuração do Cabeçalho e Botão Sair
+                const header = document.getElementById('details-header');
+                if (header) {
+                    // Esconde botões de edição do dono
+                    header.querySelectorAll('button').forEach(b => b.classList.add('hidden'));
+                    
+                    if (!document.getElementById('public-back-btn')) {
+                        const backBtn = document.createElement('button');
+                        backBtn.id = 'public-back-btn';
+                        backBtn.className = 'flex items-center gap-2 text-slate-200 hover:text-white font-medium transition-colors mb-4 pointer-events-auto';
+                        backBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg> Sair da Visualização`;
+                        // Botão "Sair" agora direciona para o index
+                        backBtn.onclick = () => {
+                            sessionStorage.removeItem('viewingPublicTrip');
+                            window.location.href = 'index.html'; 
+                        };
+                        header.insertBefore(backBtn, header.firstChild);
+                    }
+                }
+                
+                const cloneBtn = document.getElementById('floating-clone-btn-container');
+                if(cloneBtn) cloneBtn.classList.remove('hidden');
+
+                // 🎯 INTERCEPTA A LOGOMARCA E BOTÕES DE VOLTAR PADRÕES DO APP:
+                // Sempre que uma função do sistema tentar chamar 'showTripsView()', nós forçaremos a ida pro Index.html
+                if (!window.originalShowTripsView && typeof window.showTripsView === 'function') {
+                    window.originalShowTripsView = window.showTripsView;
+                    window.showTripsView = function() {
+                        if (window.isViewingPublicTrip) {
+                            // Direciona para o index ao invés do painel
+                            sessionStorage.removeItem('viewingPublicTrip');
+                            window.location.href = 'index.html';
+                            return; 
+                        }
+                        if (window.originalShowTripsView) window.originalShowTripsView();
+                    };
+                }
+
+                // Garante que o Firebase não sobreponha a tela caso o visitante faça login no meio do caminho
+                if (!window.originalRenderCurrentView && typeof window.renderCurrentView === 'function') {
+                    window.originalRenderCurrentView = window.renderCurrentView;
+                    window.renderCurrentView = function() {
+                        if (window.isViewingPublicTrip && window.publicTripDataBackup) {
+                            if (!tripsData.some(t => t.id === window.publicTripDataBackup.id)) {
+                                tripsData.push(window.publicTripDataBackup);
+                            }
+                        }
+                        if (window.originalRenderCurrentView) window.originalRenderCurrentView();
+                    };
+                }
+
+            } catch (error) {
+                console.error("ERRO CRÍTICO NA RENDERIZAÇÃO DA TELA PÚBLICA:", error);
+            }
+        };
+
+        window.openCloneModal = () => {
+            if (!currentUserId) {
+                alert("Para clonar este roteiro, você precisa fazer login ou se cadastrar primeiro.");
+                // Mantém a intenção de acessar a viagem após logar
+                sessionStorage.setItem('viewingPublicTrip', currentTripId);
+                window.location.href = 'index.html'; // Ou sua lógica para exibir loginView
+                return;
+            }
+
+            const trip = publicTripDataBackup || tripsData.find(t => t.id === currentTripId);
+            if(!trip) return;
+
+            // Calcula duração original
+            const startMs = new Date(trip.startDate).getTime();
+            const endMs = new Date(trip.endDate).getTime();
+            const originalDays = Math.ceil((endMs - startMs) / (1000 * 60 * 60 * 24)) + 1;
+            
+            document.getElementById('clone-min-days').textContent = originalDays;
+            document.getElementById('clone-trip-name').value = `Cópia de ${trip.name}`;
+            
+            // Dataset para validar
+            document.getElementById('clone-trip-modal').dataset.minDays = originalDays;
+            document.getElementById('clone-date-warning').classList.add('hidden');
+
+            openModal('clone-trip-modal');
+        };
+
+        window.validateCloneDates = () => {
+            const startVal = document.getElementById('clone-trip-start-date').value;
+            const endVal = document.getElementById('clone-trip-end-date').value;
+            const minDays = parseInt(document.getElementById('clone-trip-modal').dataset.minDays);
+            const btn = document.getElementById('btn-confirm-clone');
+            const warning = document.getElementById('clone-date-warning');
+
+            if(startVal && endVal) {
+                const startMs = new Date(startVal).getTime();
+                const endMs = new Date(endVal).getTime();
+                const days = Math.ceil((endMs - startMs) / (1000 * 60 * 60 * 24)) + 1;
+
+                if (days < minDays) {
+                    warning.classList.remove('hidden');
+                    btn.disabled = true;
+                    btn.classList.replace('bg-indigo-600', 'bg-slate-400');
+                } else {
+                    warning.classList.add('hidden');
+                    btn.disabled = false;
+                    btn.classList.replace('bg-slate-400', 'bg-indigo-600');
+                }
+            }
+        };
+
+        window.confirmCloneTrip = async () => {
+            const newName = document.getElementById('clone-trip-name').value.trim();
+            const newStart = document.getElementById('clone-trip-start-date').value;
+            const newEnd = document.getElementById('clone-trip-end-date').value;
+
+            if(!newName || !newStart || !newEnd) {
+                alert("Preencha todos os campos.");
+                return;
+            }
+
+            const originalTrip = publicTripDataBackup || tripsData.find(t => t.id === currentTripId);
+            if (!originalTrip) return;
+
+            const newTripId = push(ref(db, 'trips')).key;
+            const oldStartDate = new Date(originalTrip.startDate);
+            const newStartDate = new Date(newStart);
+            
+            // Calcula a diferença em dias para ajustar as atividades clonadas
+            const diffTime = newStartDate.getTime() - oldStartDate.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            // Clona apenas a base de atividades (ignora variações para manter limpo)
+            let clonedActivities = {};
+            if (originalTrip.activities) {
+                for (const key in originalTrip.activities) {
+                    const act = originalTrip.activities[key];
+                    const newActId = push(ref(db)).key; // Gera novo hash
+                    
+                    // Ajusta a data somando a diferença de dias
+                    let actDate = new Date(act.date + 'T00:00:00Z');
+                    actDate.setUTCDate(actDate.getUTCDate() + diffDays);
+                    
+                    clonedActivities[newActId] = {
+                        ...act,
+                        id: newActId,
+                        date: actDate.toISOString().split('T')[0]
+                    };
+                }
+            }
+
+            const newTripConfig = {
+                id: newTripId,
+                name: newName,
+                startDate: newStart,
+                endDate: newEnd,
+                imageUrl: originalTrip.imageUrl || '',
+                createdAt: serverTimestamp(),
+                members: { [currentUserId]: 'owner' },
+                travelers: [{ uid: currentUserId, name: currentUserProfile.fullName || "Eu", email: currentUserProfile.email }],
+                activities: clonedActivities,
+                documents: originalTrip.documents || {}, // Clona docs base se houver
+            };
+
+            try {
+                const updates = {};
+                updates[`trips/${newTripId}`] = newTripConfig;
+                updates[`users/${currentUserId}/memberOf/${newTripId}`] = true;
+                
+                await update(ref(db), updates);
+                
+                // Limpeza de estado de visualização pública
+                sessionStorage.removeItem('viewingPublicTrip');
+                isViewingPublicTrip = false;
+                document.body.classList.remove('offline-read-only');
+                document.getElementById('floating-clone-btn-container').classList.add('hidden');
+                
+                closeModal('clone-trip-modal');
+                alert("Roteiro clonado com sucesso!");
+                
+                // Retorna para a página inicial (Dashboard) sem os params públicos
+                window.location.href = window.location.pathname; 
+                
+            } catch (error) {
+                console.error("Erro ao clonar:", error);
+                alert("Ocorreu um erro ao clonar o roteiro.");
+            }
+        };
+        // ==========================================
+        // FIM: LÓGICA DE COMPARTILHAMENTO E CLONE
+        // ==========================================
 
     </script>
 
