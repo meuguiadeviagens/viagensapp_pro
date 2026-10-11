@@ -1089,6 +1089,16 @@
                                     <span>Instalar App</span>
                                 </div>
                             </a>
+                            <!-- INÍCIO: Botão Modelos/Viagens no Menu -->
+                            <a href="#" id="menu-toggle-models-btn" onclick="event.preventDefault(); toggleDashboardMode('templates');" class="block px-4 py-2 text-sm text-purple-600 font-bold hover:bg-slate-100 border-t border-slate-200 transition-colors">
+                                <div class="flex items-center justify-center gap-2">
+                                    <svg id="menu-toggle-models-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/>
+                                    </svg>
+                                    <span id="menu-toggle-models-text">Meus Modelos</span>
+                                </div>
+                            </a>
+                            <!-- FIM: Botão Modelos/Viagens no Menu -->
                             <a href="contato.html" target="_blank" class="block px-4 py-2 text-sm text-slate-700 border-t hover:bg-slate-100">Contato</a>
                             <a href="#" id="logout-btn" class="block px-4 py-2 text-sm text-red-600 hover:bg-slate-100">Sair</a>
                         </div>
@@ -1174,7 +1184,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.0.1 | 11/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v3.0.2 | 11/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -1966,6 +1976,18 @@
                         Adicionar uma cidade
                     </button>
                 </div>
+
+                <!-- INÍCIO: Checkbox Modelo -->
+                <div class="border-t pt-4 mt-4">
+                    <label class="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-slate-200">
+                        <input type="checkbox" id="trip-is-template" class="h-5 w-5 rounded border-slate-300 text-purple-600 focus:ring-purple-500">
+                        <div>
+                            <span class="text-sm font-bold text-slate-700 block">Salvar como Modelo de Roteiro</span>
+                            <span class="text-xs text-slate-500 font-normal">Ficará oculto da lista principal e servirá de base para clonar viagens.</span>
+                        </div>
+                    </label>
+                </div>
+                <!-- FIM: Checkbox Modelo -->
 
                 <div class="pt-6 flex justify-end gap-3">
                     <button type="button" onclick="closeModal('add-trip-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
@@ -3655,26 +3677,25 @@
                     <div id="public-link-settings" class="hidden space-y-3 pt-3 border-t border-slate-200">
                         <input type="text" id="public-link-url" readonly class="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-xs text-slate-500 font-mono focus:outline-none">
                         
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Senha de Acesso (Opcional)</label>
-                            <input type="text" id="public-link-password" placeholder="Deixe em branco para acesso livre" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:ring-green-500">
-                        </div>
+                        <!-- NOVO: Botão para Gerenciar Múltiplas Senhas -->
+                        <button onclick="openManagePasswordsModal()" class="w-full flex items-center justify-center gap-2 bg-slate-100 text-slate-700 font-bold py-2.5 rounded-lg hover:bg-slate-200 transition-colors text-sm border border-slate-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-round"><path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/><circle cx="16.5" cy="7.5" r=".5"/></svg>
+                            Gerenciar Senhas de Acesso
+                        </button>
                         
-                        <!-- Substitua os botões dentro de #public-link-settings por este bloco: -->
-                        <div class="flex flex-col gap-2 mt-4">
+                        <div class="flex flex-col gap-2 mt-2">
                             <div class="flex gap-2">
-                                <button id="btn-save-public-link" onclick="savePublicLinkConfig()" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">Gerar Link</button>
+                                <button id="btn-save-public-link" onclick="savePublicLinkConfig()" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">Gerar Link Público</button>
                                 <button onclick="copyPublicLink()" class="flex-1 bg-slate-200 text-slate-700 font-bold py-2 rounded-lg hover:bg-slate-300 transition-colors text-sm flex items-center justify-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                                     Copiar
                                 </button>
-                                
-                            </div>                           
-                            <!-- Novo Botão de Snapshot sob Demanda -->
-                                <button id="btn-update-public-snapshot" onclick="updatePublicSnapshot()" class="hidden w-full bg-indigo-600 text-white font-bold py-2.5 rounded-lg hover:bg-indigo-700 transition-colors text-sm flex items-center justify-center gap-2 shadow-md">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                                    Sincronizar alterações recentes no Link
-                                </button>
+                            </div>
+                            
+                            <button id="btn-update-public-snapshot" onclick="updatePublicSnapshot()" class="hidden w-full bg-indigo-600 text-white font-bold py-2.5 rounded-lg hover:bg-indigo-700 transition-colors text-sm flex items-center justify-center gap-2 shadow-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                                Sincronizar alterações recentes no Link
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -3728,6 +3749,52 @@
         </div>
     </div>
     <!-- FIM: Modais -->
+
+    <!-- INÍCIO: Modal Gerenciar Senhas Públicas -->
+    <div id="manage-passwords-modal" class="fixed inset-0 z-[120] hidden items-center justify-center modal-backdrop p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md m-4 flex flex-col max-h-[85vh] overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-xl font-bold text-slate-800">Senhas de Acesso</h3>
+                <button onclick="closeModal('manage-passwords-modal')" class="text-slate-400 hover:text-slate-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            
+            <div class="p-6 flex-grow overflow-y-auto space-y-4">
+                <p class="text-xs text-slate-500 mb-2">Crie senhas únicas para cada cliente. Se a lista estiver vazia, o roteiro terá acesso livre.</p>
+                
+                <!-- Formulário de Adição -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Identificação / Cliente</label>
+                            <input type="text" id="new-public-pwd-label" placeholder="Ex: Família Silva" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:ring-blue-500">
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Senha</label>
+                            <input type="text" id="new-public-pwd-value" placeholder="12345" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-md text-sm focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <button onclick="addPublicPassword()" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Adicionar Nova Senha
+                    </button>
+                </div>
+
+                <div class="pt-2 border-t border-slate-100">
+                    <h4 class="text-sm font-bold text-slate-700 mb-3">Senhas Ativas</h4>
+                    <div id="public-passwords-list" class="space-y-2">
+                        <!-- Senhas injetadas via JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+                <button onclick="closeModal('manage-passwords-modal')" class="px-5 py-2 bg-slate-200 text-slate-800 font-bold rounded-lg hover:bg-slate-300">Concluído</button>
+            </div>
+        </div>
+    </div>
+    <!-- FIM: Modal Gerenciar Senhas Públicas -->
 
     <script type="module">
         // Importações do Firebase
@@ -6520,14 +6587,23 @@ window.addEventListener('popstate', (event) => {
                     </a>
                 </div>`;
 
-            // --- INÍCIO DA LÓGICA DO FILTRO ---
+            // --- INÍCIO DA LÓGICA DO FILTRO E MODELOS ---
             const isNewsFilterActive = document.getElementById('filter-news-checkbox')?.checked || false;
-            let tripsToDisplay = tripsData;
             
+            // 1. Filtra primeiro baseado no modo atual (Viagens Normais vs Modelos)
+            let tripsToDisplay = tripsData.filter(trip => {
+                if (window.dashboardMode === 'templates') {
+                    return trip.isTemplate === true;
+                } else {
+                    return !trip.isTemplate; // Garante que não mostre modelos na tela normal
+                }
+            });
+            
+            // 2. Se o botão de novidades estiver ligado, aplica o segundo filtro em cima do resultado
             if (isNewsFilterActive) {
-                tripsToDisplay = tripsData.filter(trip => checkTripHasNews(trip));
+                tripsToDisplay = tripsToDisplay.filter(trip => checkTripHasNews(trip));
             }
-            // --- FIM DA LÓGICA DO FILTRO ---
+            // --- FIM DA LÓGICA DO FILTRO E MODELOS ---
 
             // Lógica para viagens destacadas (Favoritos) - SÍNCRONO
             const featuredTrips = tripsToDisplay.filter(trip => userFavoriteTrips.has(trip.id));
@@ -10356,6 +10432,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     finalTripImageUrl = `https://www.bing.com/th?id=OIP.static&q=${encodeURIComponent(citiesToInclude[0].name + " city landscape travel")}&w=1280&h=720&c=7&rs=1&p=0&qlt=90`;
                 }
 
+                // --- INÍCIO DA CAPTURA DO CHECKBOX DE MODELO ---
+                const isTemplateCheckbox = document.getElementById('trip-is-template');
+                const isTemplate = isTemplateCheckbox ? isTemplateCheckbox.checked : false;
+                // --- FIM DA CAPTURA ---
+
                 // Salva Viagem
                 const newTripData = {
                     name: tripName,
@@ -10364,6 +10445,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     endDate: new Date(endDateStr + 'T00:00:00Z').getTime(),
                     imageUrl: finalTripImageUrl,
                     featured: false,
+                    isTemplate: isTemplate, // <-- FLAG ADICIONADA AQUI!
                     members: { [user.uid]: "owner" },
                     travelers: [{ uid: user.uid, name: userProfile.fullName, email: user.email }],
                     DateAdded: serverTimestamp()
@@ -17597,7 +17679,6 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const toggle = document.getElementById('public-link-toggle');
             const settings = document.getElementById('public-link-settings');
             const urlInput = document.getElementById('public-link-url');
-            const passInput = document.getElementById('public-link-password');
             const btnSave = document.getElementById('btn-save-public-link');
             const btnUpdate = document.getElementById('btn-update-public-snapshot');
 
@@ -17607,17 +17688,13 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             if(trip.publicConfig && trip.publicConfig.isPublic) {
                 toggle.checked = true;
                 settings.classList.remove('hidden');
-                passInput.value = trip.publicConfig.password || '';
-                
-                btnSave.textContent = "Salvar Senha";
-                btnUpdate.classList.remove('hidden'); // Exibe o botão de snapshot
+                btnSave.textContent = "Atualizar Status"; // Como não tem mais input de senha aqui, mudamos o texto
+                btnUpdate.classList.remove('hidden');
             } else {
                 toggle.checked = false;
                 settings.classList.add('hidden');
-                passInput.value = '';
-                
                 btnSave.textContent = "Gerar Link Público";
-                btnUpdate.classList.add('hidden'); // Esconde o botão de snapshot
+                btnUpdate.classList.add('hidden');
             }
 
             openModal('share-trip-modal');
@@ -17657,17 +17734,19 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             await window.updatePublicSnapshot(false);
         };
 
-        // A Magia do Snapshot: Atualizada com a técnica "Clone and Clean" (Garante todos os painéis)
+        // A Magia do Snapshot: Limpo do "passInput" e preservando o objeto "passwords"
         window.updatePublicSnapshot = async (isSilent = false) => {
             const isChecked = document.getElementById('public-link-toggle').checked;
-            const pass = document.getElementById('public-link-password').value.trim();
             const trip = tripsData.find(t => t.id === currentTripId);
 
             if (!trip) return;
 
+            // Preserva o array de senhas que já existe no banco
+            const currentPasswords = trip.publicConfig?.passwords || {};
+
             const newConfig = {
                 isPublic: isChecked,
-                password: pass !== "" ? pass : null
+                passwords: currentPasswords // <- Mantemos as senhas salvas
             };
 
             try {
@@ -17675,17 +17754,14 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 const publicTripRef = ref(db, `publicTrips/${currentTripId}`);
                 
                 if (isChecked) {
-                    // 1. Clona a viagem INTEIRA (Isso garante que voos, transportes, hospedagens e variações venham com os nomes originais perfeitos)
                     const publicTripData = JSON.parse(JSON.stringify(trip));
                     
-                    // 2. DELETA explicitamente os dados sigilosos para não vazarem
                     delete publicTripData.sharedExpenses;
                     delete publicTripData.travelers;
                     delete publicTripData.members;
                     delete publicTripData.emergencyData;
                     delete publicTripData.lastCurrency;
 
-                    // 3. Atualiza com a nova configuração de senha
                     publicTripData.publicConfig = newConfig;
                     
                     await set(publicTripRef, publicTripData);
@@ -17693,11 +17769,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     await remove(publicTripRef);
                 }
 
-                document.getElementById('btn-save-public-link').textContent = "Salvar Senha";
+                document.getElementById('btn-save-public-link').textContent = "Atualizar Status";
                 document.getElementById('btn-update-public-snapshot').classList.remove('hidden');
 
                 if (!isSilent) {
-                    alert("Snapshot de atividades e painéis atualizado com sucesso!");
+                    alert("Snapshot de atividades e configurações atualizados com sucesso!");
                 }
             } catch (error) {
                 console.error("Erro ao gerar snapshot:", error);
@@ -17964,6 +18040,308 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         // ==========================================
         // FIM: LÓGICA DE COMPARTILHAMENTO E CLONE
         // ==========================================
+
+        // ==========================================
+        // GERENCIADOR DE MÚLTIPLAS SENHAS
+        // ==========================================
+
+        window.openManagePasswordsModal = () => {
+            renderPublicPasswords();
+            openModal('manage-passwords-modal');
+        };
+
+        window.renderPublicPasswords = () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const container = document.getElementById('public-passwords-list');
+            container.innerHTML = '';
+            
+            const passwordsObj = trip?.publicConfig?.passwords || {};
+            const entries = Object.entries(passwordsObj);
+
+            if(entries.length === 0) {
+                container.innerHTML = '<p class="text-sm text-slate-500 text-center py-4 bg-white rounded-lg border border-dashed border-slate-300">Nenhuma senha cadastrada.<br>O acesso ao link é livre.</p>';
+                return;
+            }
+
+            entries.forEach(([key, data]) => {
+                const item = document.createElement('div');
+                item.className = 'flex justify-between items-center p-3 bg-white border border-slate-200 rounded-xl shadow-sm';
+                item.innerHTML = `
+                    <div>
+                        <p class="text-sm font-bold text-slate-800">${data.label}</p>
+                        <p class="text-xs text-slate-500 font-mono tracking-widest mt-0.5">${data.pwd}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editPublicPassword('${key}')" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar Senha">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                        </button>
+                        <button onclick="deletePublicPassword('${key}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir Senha">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        };
+
+        // Sincroniza o objeto de senhas com a viagem privada e a versão pública (se ativada)
+        window.syncPasswordsToFirebase = async (tripId, passwordsObj) => {
+            const trip = tripsData.find(t => t.id === tripId);
+            const updates = {};
+            
+            // Atualiza na viagem original
+            updates[`trips/${tripId}/publicConfig/passwords`] = passwordsObj;
+            
+            // Se o link já está público, espelha as senhas na pasta pública imediatamente
+            if (trip.publicConfig && trip.publicConfig.isPublic) {
+                updates[`publicTrips/${tripId}/publicConfig/passwords`] = passwordsObj;
+            }
+            
+            await update(ref(db), updates);
+        };
+
+        window.addPublicPassword = async () => {
+            const label = document.getElementById('new-public-pwd-label').value.trim();
+            const pwd = document.getElementById('new-public-pwd-value').value.trim();
+            
+            if(!label || !pwd) return alert('Preencha a identificação e a senha!');
+
+            const trip = tripsData.find(t => t.id === currentTripId);
+            if(!trip.publicConfig) trip.publicConfig = {};
+            if(!trip.publicConfig.passwords) trip.publicConfig.passwords = {};
+
+            const newId = push(ref(db)).key;
+            trip.publicConfig.passwords[newId] = { label, pwd };
+
+            await window.syncPasswordsToFirebase(currentTripId, trip.publicConfig.passwords);
+            
+            document.getElementById('new-public-pwd-label').value = '';
+            document.getElementById('new-public-pwd-value').value = '';
+            renderPublicPasswords();
+        };
+
+        window.deletePublicPassword = async (key) => {
+            if(!confirm("Tem certeza que deseja apagar esta senha? O cliente não terá mais acesso.")) return;
+
+            const trip = tripsData.find(t => t.id === currentTripId);
+            delete trip.publicConfig.passwords[key];
+            
+            await window.syncPasswordsToFirebase(currentTripId, trip.publicConfig.passwords);
+            renderPublicPasswords();
+        };
+
+        window.editPublicPassword = async (key) => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const data = trip.publicConfig.passwords[key];
+            
+            const newPwd = prompt(`Nova senha para ${data.label}:`, data.pwd);
+            if(newPwd && newPwd.trim() !== "") {
+                data.pwd = newPwd.trim();
+                await window.syncPasswordsToFirebase(currentTripId, trip.publicConfig.passwords);
+                renderPublicPasswords();
+            }
+        };
+
+        // ==========================================
+        // A NOVA "CATRACA" DO LINK PÚBLICO
+        // ==========================================
+        window.initPublicTripView = async (tripId) => {
+            try {
+                const tripSnap = await get(ref(db, `publicTrips/${tripId}`));
+                
+                if (!tripSnap.exists()) {
+                    alert("Roteiro não encontrado ou o link de compartilhamento foi desativado.");
+                    sessionStorage.removeItem('viewingPublicTrip');
+                    window.location.href = 'index.html';
+                    return;
+                }
+
+                const trip = tripSnap.val();
+                trip.id = tripId;
+
+                // 🛡️ Inicializa arrays vazios
+                trip.travelers = trip.travelers || [];
+                trip.members = trip.members || {};
+                trip.flights = trip.flights || [];      
+                trip.transports = trip.transports || []; 
+                trip.lodgings = trip.lodgings || [];     
+                trip.documents = trip.documents || [];   
+                trip.sharedExpenses = trip.sharedExpenses || [];
+                trip.notes = trip.notes || [];           
+                trip.pendencias = trip.pendencias || []; 
+                trip.variations = trip.variations || {};
+                trip.activities = trip.activities || {};
+
+                // --- VERIFICAÇÃO DE MÚLTIPLAS SENHAS ---
+                const passwordsObj = trip.publicConfig?.passwords || {};
+                const validPasswords = Object.keys(passwordsObj).map(key => passwordsObj[key].pwd);
+
+                if (trip.publicConfig && validPasswords.length > 0) {
+                    const pwdInput = prompt("Este roteiro é protegido. Digite a senha de acesso:");
+                    if (!validPasswords.includes(pwdInput)) {
+                        alert("Senha incorreta ou acesso revogado.");
+                        sessionStorage.removeItem('viewingPublicTrip');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                }
+                // ---------------------------------------
+
+                window.isViewingPublicTrip = true;
+                currentTripId = tripId;
+                window.publicTripDataBackup = trip;
+                
+                const existingIndex = tripsData.findIndex(t => t.id === tripId);
+                if (existingIndex > -1) tripsData[existingIndex] = trip;
+                else tripsData.push(trip);
+
+                document.getElementById('trips-view').classList.add('hidden');
+                document.getElementById('details-view').classList.remove('hidden');
+                
+                if (typeof showTripDetails === 'function') {
+                    showTripDetails(tripId);
+                } else if (typeof window.showTripDetails === 'function') {
+                    window.showTripDetails(tripId);
+                }
+
+                document.body.classList.add('offline-read-only');
+                
+                const header = document.getElementById('details-header');
+                if (header) {
+                    header.querySelectorAll('button').forEach(b => b.classList.add('hidden'));
+                    
+                    if (!document.getElementById('public-back-btn')) {
+                        const backBtn = document.createElement('button');
+                        backBtn.id = 'public-back-btn';
+                        backBtn.className = 'flex items-center gap-2 text-slate-200 hover:text-white font-medium transition-colors mb-4 pointer-events-auto';
+                        backBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg> Sair da Visualização`;
+                        backBtn.onclick = () => {
+                            sessionStorage.removeItem('viewingPublicTrip');
+                            window.location.href = 'index.html';
+                        };
+                        header.insertBefore(backBtn, header.firstChild);
+                    }
+                }
+                
+                const cloneBtn = document.getElementById('floating-clone-btn-container');
+                if(cloneBtn) cloneBtn.classList.remove('hidden');
+
+                if (!window.originalShowTripsView && typeof window.showTripsView === 'function') {
+                    window.originalShowTripsView = window.showTripsView;
+                    window.showTripsView = function() {
+                        if (window.isViewingPublicTrip) {
+                            sessionStorage.removeItem('viewingPublicTrip');
+                            window.location.href = 'index.html';
+                            return; 
+                        }
+                        if (window.originalShowTripsView) window.originalShowTripsView();
+                    };
+                }
+
+                if (!window.originalRenderCurrentView && typeof window.renderCurrentView === 'function') {
+                    window.originalRenderCurrentView = window.renderCurrentView;
+                    window.renderCurrentView = function() {
+                        if (window.isViewingPublicTrip && window.publicTripDataBackup) {
+                            if (!tripsData.some(t => t.id === window.publicTripDataBackup.id)) {
+                                tripsData.push(window.publicTripDataBackup);
+                            }
+                        }
+                        if (window.originalRenderCurrentView) window.originalRenderCurrentView();
+                    };
+                }
+
+            } catch (error) {
+                console.error("ERRO CRÍTICO NA RENDERIZAÇÃO DA TELA PÚBLICA:", error);
+            }
+        };
+
+        // ==========================================
+        // CONTROLE DO PAINEL DE MODELOS
+        // ==========================================
+        window.dashboardMode = 'trips'; // Padrão: mostra viagens normais
+
+        window.toggleDashboardMode = (mode) => {
+            window.dashboardMode = mode;
+            
+            // Fecha o dropdown se estiver aberto
+            const menuDropdown = document.getElementById('user-menu-dropdown');
+            if(menuDropdown) menuDropdown.classList.add('hidden');
+            
+            // Elementos da tela principal
+            const upcomingTitle = document.querySelector('#upcoming-trips-container h2');
+            const pastContainer = document.getElementById('past-trips-container');
+            const addTripBtn = document.querySelector(`button[onclick="openModal('add-trip-modal')"] span`);
+            
+            // Elementos do botão no menu do usuário
+            const menuToggleBtn = document.getElementById('menu-toggle-models-btn');
+            const menuToggleText = document.getElementById('menu-toggle-models-text');
+            const menuToggleIcon = document.getElementById('menu-toggle-models-icon');
+            
+            if (mode === 'templates') {
+                // --- TELA DE MODELOS ---
+                if(upcomingTitle) upcomingTitle.innerHTML = '<span class="text-purple-600 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/></svg> Meus Modelos</span>';
+                if(pastContainer) pastContainer.classList.add('hidden');
+                if(addTripBtn) addTripBtn.textContent = "Criar Modelo";
+                
+                // Atualiza o botão do Menu para voltar para "Minhas Viagens"
+                if(menuToggleBtn) {
+                    menuToggleBtn.setAttribute('onclick', "event.preventDefault(); toggleDashboardMode('trips');");
+                    menuToggleBtn.classList.replace('text-purple-600', 'text-blue-600');
+                }
+                if(menuToggleText) menuToggleText.textContent = "Minhas Viagens";
+                if(menuToggleIcon) menuToggleIcon.innerHTML = `<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>`; // Ícone de Home
+                
+            } else {
+                // --- TELA DE VIAGENS NORMAL ---
+                if(upcomingTitle) upcomingTitle.textContent = 'Próximas Viagens';
+                if(pastContainer) pastContainer.classList.remove('hidden');
+                if(addTripBtn) addTripBtn.textContent = "Bora viajar?";
+                
+                // Atualiza o botão do Menu para ir para "Meus Modelos"
+                if(menuToggleBtn) {
+                    menuToggleBtn.setAttribute('onclick', "event.preventDefault(); toggleDashboardMode('templates');");
+                    menuToggleBtn.classList.replace('text-blue-600', 'text-purple-600');
+                }
+                if(menuToggleText) menuToggleText.textContent = "Meus Modelos";
+                if(menuToggleIcon) menuToggleIcon.innerHTML = `<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/>`; // Ícone de Quadrados/+
+            }
+            
+            // Redesenha a lista de viagens aplicando o novo filtro
+            if (typeof renderTripLists === 'function') {
+                renderTripLists();
+            }
+        };
+
+        // Garante que, ao voltar para a home (ex: clicando na logomarca), resete para Viagens normais
+        if (!window.originalShowTripsViewHookedForTemplates) {
+            const originalShow = window.showTripsView;
+            window.showTripsView = function() {
+                if (window.dashboardMode === 'templates') {
+                    window.toggleDashboardMode('trips');
+                }
+                if (originalShow) originalShow();
+            };
+            window.originalShowTripsViewHookedForTemplates = true;
+        }
+
+        // ==========================================
+        // ESPIÃO DO MODAL (AUTO-CHECK PARA MODELOS)
+        // ==========================================
+        if (!window.originalOpenModalForTemplates && typeof window.openModal === 'function') {
+            window.originalOpenModalForTemplates = window.openModal;
+            window.openModal = function(modalId) {
+                // Se o modal que está abrindo for o de Nova Viagem...
+                if (modalId === 'add-trip-modal') {
+                    const templateCheckbox = document.getElementById('trip-is-template');
+                    if (templateCheckbox) {
+                        // ...marca ou desmarca a caixinha dependendo da tela atual!
+                        templateCheckbox.checked = (window.dashboardMode === 'templates');
+                    }
+                }
+                // Continua abrindo o modal normalmente
+                window.originalOpenModalForTemplates(modalId);
+            };
+        }
 
     </script>
 
