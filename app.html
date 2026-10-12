@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -6509,6 +6509,9 @@ window.addEventListener('popstate', (event) => {
             today.setHours(0, 0, 0, 0);
 
             const ongoingTrip = tripsData.find(trip => {
+                // ---> REGRA NOVA: Ignora a viagem se ela for um modelo <---
+                if (trip.isTemplate) return false;
+
                 // CORREÇÃO DE FUSO: As datas no Firebase estão salvas como meia-noite UTC.
                 // Extraímos os componentes em UTC para evitar que o fuso local (-3h) jogue pro dia anterior.
                 const startUTC = new Date(trip.startDate);
@@ -6546,18 +6549,21 @@ window.addEventListener('popstate', (event) => {
             window.checkOngoingTripStatus();
 
             // --- INÍCIO DA LÓGICA DE VISIBILIDADE DO CHECKBOX ---
-            const hasAnyNews = tripsData.some(trip => checkTripHasNews(trip));
+            // Verifica novidades APENAS em viagens reais (ignorando os modelos)
+            const hasAnyNews = tripsData.some(trip => !trip.isTemplate && checkTripHasNews(trip));
             const newsLabel = document.getElementById('filter-news-label');
             const newsCheckbox = document.getElementById('filter-news-checkbox');
 
             if (newsLabel) {
-                if (hasAnyNews) {
-                    newsLabel.classList.remove('hidden');
-                } else {
+                // Se estiver na aba de Modelos OU se não houver novidades, ESCONDE o checkbox
+                if (window.dashboardMode === 'templates' || !hasAnyNews) {
                     newsLabel.classList.add('hidden');
                     if (newsCheckbox && newsCheckbox.checked) {
-                        newsCheckbox.checked = false;
+                        newsCheckbox.checked = false; // Desmarca para não bugar o filtro ao voltar
                     }
+                } else {
+                    // Só exibe se estiver em "Viagens" e houver novidades
+                    newsLabel.classList.remove('hidden');
                 }
             }
             // --- FIM DA LÓGICA DE VISIBILIDADE DO CHECKBOX ---
