@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -1184,7 +1184,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.0.2 | 11/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v3.0.3 | 12/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -9029,6 +9029,9 @@ let dividerHtml = '';
                     const updates = {};
                     
                     updates[`/trips/${tripId}`] = null;
+                    
+                    // Exclui o link e o snapshot público da viagem (se existir)
+                    updates[`/publicTrips/${tripId}`] = null;
 
                     if (tripToDelete.members) {
                         const memberUids = Object.keys(tripToDelete.members);
