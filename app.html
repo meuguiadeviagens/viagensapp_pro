@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -1204,7 +1204,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.0.7 | 13/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v3.0.8 | 13/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -3963,6 +3963,36 @@
         const urlParams = new URLSearchParams(window.location.search);
         const inviteTripId = urlParams.get('invite');
 
+        // =========================================================
+        // 👁️ WATCHER DE URL (Oculta o Loading e Login automaticamente)
+        // =========================================================
+        setInterval(() => {
+            // Fica observando: a URL mudou para exibir uma viagem?
+            if (window.location.hash.startsWith('#trip=')) {
+                
+                // 1. Mata a tela de carregamento público (se ela ainda estiver lá)
+                const loader = document.getElementById('public-loading-screen');
+                if (loader && loader.style.display !== 'none') {
+                    loader.classList.remove('flex');
+                    loader.classList.add('hidden');
+                    loader.style.display = 'none';
+                }
+
+                // 2. Mata a tela de Login (caso o Firebase Auth tenha tentado exibi-la)
+                // OBS: Confirme se os IDs abaixo são os mesmos do seu HTML!
+                const loginView = document.getElementById('login-view'); 
+                if (loginView && !loginView.classList.contains('hidden')) {
+                    loginView.classList.add('hidden');
+                }
+
+                // 3. Garante que o painel principal do App esteja visível
+                const appView = document.getElementById('app-view'); 
+                if (appView && appView.classList.contains('hidden')) {
+                    appView.classList.remove('hidden');
+                }
+            }
+        }, 300); // Roda a cada 300ms. Super leve, não afeta a performance.
+
         // --- INÍCIO: Interceptador de Link Público ---
         const publicTripId = urlParams.get('public');
         let isViewingPublicTrip = false;
@@ -5925,27 +5955,6 @@ window.addEventListener('popstate', (event) => {
                     }
                 }
                 // --- FIM: VERIFICAÇÃO DE REDE E CACHE DE VIAGENS ---
-
-                // =========================================================
-                // 🚀 SOLUÇÃO 2: DEEP LINKING (ABRIR VIAGEM PELA URL)
-                // =========================================================
-                // Colocamos um pequeno atraso (setTimeout) para garantir que o Firebase 
-                // já preencheu a variável 'tripsData' antes de tentarmos abrir a viagem.
-                setTimeout(() => {
-                    if (window.location.hash.startsWith('#trip=')) {
-                        const deepLinkTripId = window.location.hash.replace('#trip=', '');
-                        
-                        // Verifica se a viagem realmente pertence a esse usuário (está na memória)
-                        const tripExists = tripsData.some(t => t.id === deepLinkTripId);
-                        
-                        if (tripExists && typeof window.showTripDetails === 'function') {
-                            window.showTripDetails(deepLinkTripId);
-                        } else {
-                            console.warn("Viagem da URL não encontrada ou sem permissão de acesso.");
-                            history.replaceState(null, null, ' '); // Limpa a URL inválida silenciosamente
-                        }
-                    }
-                }, 1500); // 1.5 segundos de margem. Aumente se o seu banco de dados demorar mais para carregar.
 
             } else {
                 currentUserId = null; 
