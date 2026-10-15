@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -1204,7 +1204,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.0.8 | 13/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v3.0.9 | 15/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -9181,7 +9181,9 @@ let dividerHtml = '';
         };
 
         function showConfirmDelete(message, onConfirm) {
-            document.getElementById('confirm-delete-message').innerText = message;
+            // 🛡️ MÁGICA SÊNIOR: Usando innerHTML para que o navegador renderize a tag <strong>
+            document.getElementById('confirm-delete-message').innerHTML = message;
+            
             onConfirmAction = onConfirm;
             
             const deleteBtn = document.getElementById('confirm-delete-btn');
@@ -9292,7 +9294,12 @@ let dividerHtml = '';
                     return; 
                 }
 
-                showConfirmDelete('Tem certeza que deseja EXCLUIR esta viagem? (Esta ação é permanente e afetará todos os membros)', async () => {
+                // 🛡️ UX: Captura o nome da viagem com fallback seguro
+                const tripName = (tripToDelete && tripToDelete.name) ? `a viagem <strong>"${tripToDelete.name}</strong>"` : "esta viagem";
+                
+                // Injeta o nome dinamicamente usando crases (template literals)
+                showConfirmDelete(`Tem certeza que deseja EXCLUIR ${tripName}? (Esta ação é permanente e afetará todos os membros)`, async () => {
+
                     const updates = {};
                     
                     updates[`/trips/${tripId}`] = null;
@@ -18188,8 +18195,16 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 // Configuração do Cabeçalho e Botão Sair
                 const header = document.getElementById('details-header');
                 if (header) {
-                    // Esconde botões de edição do dono
-                    header.querySelectorAll('button').forEach(b => b.classList.add('hidden'));
+                    // 🛡️ MÁGICA ATUALIZADA: Seleciona 'button' E também 'a' (links personalizados)
+                    header.querySelectorAll('button, a').forEach(el => {
+                        const onClickAction = el.getAttribute('onclick') || '';
+                        const is3DButton = onClickAction.includes('openTrip3DPanorama');
+                        
+                        // Se NÃO for o botão de voltar, e NÃO for o 3D, esconde!
+                        if (el.id !== 'public-back-btn' && !is3DButton) {
+                            el.classList.add('hidden');
+                        }
+                    });
                     
                     if (!document.getElementById('public-back-btn')) {
                         const backBtn = document.createElement('button');
@@ -18309,8 +18324,56 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 return;
             }
 
-            const originalTrip = publicTripDataBackup || tripsData.find(t => t.id === currentTripId);
+            const originalTrip = window.publicTripDataBackup || tripsData.find(t => t.id === currentTripId);
             if (!originalTrip) return;
+
+            // =========================================================
+            // 🚀 GROWTH HACKING & VALIDAÇÃO DE LIMITE GRATUITO
+            // =========================================================
+            const newYear = new Date(newStart + 'T00:00:00').getFullYear();
+            let isSponsoredByPremium = false;
+            
+            // 1. Descobre quem é o dono original da viagem pública
+            let originalOwnerId = null;
+            if (originalTrip.members) {
+                originalOwnerId = Object.keys(originalTrip.members).find(uid => originalTrip.members[uid] === 'owner');
+            }
+
+            // 2. Vai ao Firebase e checa a licença desse dono
+            if (originalOwnerId) {
+                try {
+                    // ATENÇÃO: Confirme se o caminho da licença no seu banco é esse mesmo!
+                    const ownerLicenseSnap = await get(ref(db, `users/${originalOwnerId}/license/type`));
+                    if (ownerLicenseSnap.exists()) {
+                        const ownerLicenseType = ownerLicenseSnap.val();
+                        if (ownerLicenseType && ownerLicenseType !== 'gratuito') {
+                            isSponsoredByPremium = true;
+                            console.log("Clone liberado: O autor do modelo possui licença Premium.");
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Não foi possível verificar a licença do dono original.", err);
+                }
+            }
+
+            // 3. Aplica a trava apenas se o clonador for gratuito E o autor também for
+            if (currentUserLicense && currentUserLicense.type === 'gratuito' && !isSponsoredByPremium) {
+                const tripsInSameYear = tripsData.filter(t => {
+                    // Conta apenas viagens nas quais o usuário atual é dono
+                    const isOwner = t.members && t.members[auth.currentUser.uid] === 'owner';
+                    if (!isOwner) return false;
+                    
+                    const tDate = new Date(t.startDate);
+                    return tDate.getFullYear() === newYear;
+                });
+
+                if (tripsInSameYear.length >= 1) {
+                    alert(`⚠️ Limite do Plano Gratuito\n\nVocê já possui um roteiro criado em ${newYear} e este modelo foi disponibilizado por um usuário de conta gratuita.\n\nFaça o upgrade para clonar roteiros ilimitados!`);
+                    if (typeof openModal === 'function') openModal('upgrade-plan-modal');
+                    return; // 🛑 Bloqueia a clonagem aqui
+                }
+            }
+            // =========================================================
 
             const newTripId = push(ref(db, 'trips')).key;
             const oldStartDate = new Date(originalTrip.startDate);
@@ -18361,9 +18424,11 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 
                 // Limpeza de estado de visualização pública
                 sessionStorage.removeItem('viewingPublicTrip');
-                isViewingPublicTrip = false;
+                window.isViewingPublicTrip = false; // Corrigido para garantir acesso global
                 document.body.classList.remove('offline-read-only');
-                document.getElementById('floating-clone-btn-container').classList.add('hidden');
+                
+                const cloneBtnContainer = document.getElementById('floating-clone-btn-container');
+                if (cloneBtnContainer) cloneBtnContainer.classList.add('hidden');
                 
                 closeModal('clone-trip-modal');
                 alert("Roteiro clonado com sucesso!");
@@ -18549,6 +18614,42 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
 
                 document.body.classList.add('offline-read-only');
+
+                // =========================================================
+                // 🛡️ BLINDAGEM DE INTERFACE PÚBLICA (ESCONDE PAINÉIS E BOTÕES)
+                // =========================================================
+                if (!document.getElementById('public-view-styles')) {
+                    const style = document.createElement('style');
+                    style.id = 'public-view-styles';
+                    style.innerHTML = `
+                        /* 1. Esconde os painéis inteiros de Anotações e Despesas */
+                        .offline-read-only #notes-panel,
+                        .offline-read-only #pendencias-panel,
+                        .offline-read-only #documents-panel,
+                        .offline-read-only #shared-expenses-panel {
+                            display: none !important;
+                        }
+                        
+                        /* 2. Esconde setas de reordenar nos cards (Voos, Transportes, Hospedagens) */
+                        /* Usa seletores avançados para pegar qualquer botão que chame funções de mover dentro das listas */
+                        .offline-read-only div[id$="-list"] button[onclick*="move"],
+                        .offline-read-only div[id$="-list"] button[onclick*="Up"],
+                        .offline-read-only div[id$="-list"] button[onclick*="Down"],
+                        .offline-read-only div[id$="-list"] button[onclick*="reorder"] {
+                            display: none !important;
+                        }
+
+                        /* 3. Esconde o botão de Variações/Opções do Roteiro */
+                        /* Se a função do onclick no seu código for diferente, basta ajustar o texto entre aspas abaixo */
+                        .offline-read-only button[onclick*="Variation"],
+                        .offline-read-only button[onclick*="variation"],
+                        .offline-read-only button[onclick*="DayOptions"] {
+                            display: none !important;
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+                // =========================================================
                 
                 const header = document.getElementById('details-header');
                 if (header) {
