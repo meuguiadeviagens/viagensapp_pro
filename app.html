@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -3751,9 +3751,15 @@
                         <div class="flex flex-col gap-2 mt-2">
                             <div class="flex gap-2">
                                 <button id="btn-save-public-link" onclick="savePublicLinkConfig()" class="flex-1 bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">Gerar Link Público</button>
+                                
                                 <button onclick="copyPublicLink()" class="flex-1 bg-slate-200 text-slate-700 font-bold py-2 rounded-lg hover:bg-slate-300 transition-colors text-sm flex items-center justify-center gap-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                                     Copiar
+                                </button>
+
+                                <!-- NOVO: Botão de Compartilhar -->
+                                <button onclick="sharePublicLink()" class="bg-blue-100 text-blue-600 px-3 py-2 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center shrink-0" title="Compartilhar Link">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
                                 </button>
                             </div>
                             
@@ -18087,6 +18093,46 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         // ==========================================
         // FUNÇÃO DE COPIAR LINK PÚBLICO
         // ==========================================
+        // ==========================================
+        // 🚀 COMPARTILHAMENTO NATIVO DO LINK PÚBLICO
+        // ==========================================
+        window.sharePublicLink = async () => {
+            const urlInput = document.getElementById('public-link-url');
+            const url = urlInput ? urlInput.value : '';
+            
+            // 1. Busca a viagem atual na memória global para extrair o nome/destino
+            const currentTrip = tripsData.find(t => t.id === currentTripId);
+            const destino = currentTrip?.destination || currentTrip?.name || 'este roteiro';
+
+            if (!url) {
+                alert("Gere o link público primeiro!");
+                return;
+            }
+
+            // Tenta usar a Web Share API nativa (Celulares e Desktop moderno)
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        // O 'title' geralmente vira o Assunto do E-mail
+                        title: `Roteiro de Viagem: ${destino}`, 
+                        
+                        // 🛡️ TÁTICA SÊNIOR: Forçamos a URL e uma quebra de linha dentro do texto 
+                        // para garantir que clientes de e-mail burros não percam o link.
+                        text: `Olá! Veja o roteiro da minha viagem para ${destino}:\n\n${url}`, 
+                        
+                        // Mantemos o 'url' separado também para garantir o "card rico" no WhatsApp/Telegram
+                        url: url 
+                    });
+                } catch (err) {
+                    console.log("Compartilhamento cancelado ou falhou:", err);
+                }
+            } else {
+                // Fallback para Desktop antigo (Abre direto no WhatsApp Web)
+                const text = encodeURIComponent(`Olá! Veja o roteiro da minha viagem para ${destino}: ${url}`);
+                window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+            }
+        };
+        
         window.copyPublicLink = async () => {
             const urlInput = document.getElementById('public-link-url');
             if (!urlInput) return;
@@ -18099,7 +18145,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const link = urlInput.value;
             
             // Monta o texto personalizado
-            const textToCopy = `Olá! Veja o roteiro da minha viagem para ${destino}: ${link}`;
+            const textToCopy = `${link}`;
 
             try {
                 await navigator.clipboard.writeText(textToCopy);
