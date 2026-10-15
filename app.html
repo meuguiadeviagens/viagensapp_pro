@@ -1204,7 +1204,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.0.9 | 15/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v3.0.10 | 15/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -18672,9 +18672,10 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                         .offline-read-only #notes-panel,
                         .offline-read-only #pendencias-panel,
                         .offline-read-only #documents-panel,
-                        .offline-read-only #shared-expenses-panel {
+                        .offline-read-only #shared-expenses-panel,
+                        .offline-read-only #header-custom-buttons-container { /* <-- ADICIONADO AQUI */
                             display: none !important;
-                        }
+                        } 
                         
                         /* 2. Esconde setas de reordenar nos cards (Voos, Transportes, Hospedagens) */
                         /* Usa seletores avançados para pegar qualquer botão que chame funções de mover dentro das listas */
