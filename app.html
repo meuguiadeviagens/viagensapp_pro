@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -1204,7 +1204,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.0.10 | 15/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v3.0.11 | 15/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -6835,15 +6835,30 @@ window.addEventListener('popstate', (event) => {
             }
 
             // Separa as viagens filtradas em futuras e passadas
-            const today = new Date();
-            today.setUTCHours(0, 0, 0, 0);
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
 
             const upcomingTrips = [];
             const pastTrips = [];
 
             tripsToDisplay.forEach(trip => {
-                const tripEndDate = new Date(trip.endDate);
-                if (tripEndDate < today) {
+                // Trata a data corretamente dependendo se for número (timestamp) ou string
+                let dataFinalViagem;
+                if (typeof trip.endDate === 'number') {
+                    dataFinalViagem = new Date(trip.endDate);
+                } else {
+                    dataFinalViagem = new Date(trip.endDate + 'T00:00:00');
+                }
+                
+                // Zera as horas da data final
+                dataFinalViagem.setHours(0, 0, 0, 0);
+
+                // Cria a data de expiração adicionando 1 dia
+                const dataExpiracao = new Date(dataFinalViagem);
+                dataExpiracao.setDate(dataExpiracao.getDate() + 1);
+
+                // Compara corretamente os dias
+                if (hoje >= dataExpiracao) {
                     pastTrips.push(trip);
                 } else {
                     upcomingTrips.push(trip);
