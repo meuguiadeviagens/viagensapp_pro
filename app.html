@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -1240,7 +1240,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.0.12 | 22/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v3.0.13 | 22/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -7827,7 +7827,7 @@ window.addEventListener('popstate', (event) => {
                 }
 
                 const dayPanel = document.createElement('div');
-                dayPanel.className = 'day-panel border-t pt-6 space-y-4';
+                dayPanel.className = 'day-panel border-t border-transparent pt-6 space-y-4';
                 dayPanel.dataset.date = dayKey;
 
                 // Adiciona o ID de âncora se houver uma atividade do tipo 'Cidade' neste dia
@@ -8020,7 +8020,7 @@ window.addEventListener('popstate', (event) => {
                             <button onclick="openAddActivityModal('${dayKey}')" oncontextmenu="openSuggestionsForDay(event, '${dayKey}')" class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full hover:bg-green-200"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
                         </div>`}
                     </div>
-                    <div id="activity-list-${dayKey}" class="activity-list border-l-2 border-slate-100 pl-2 space-y-1 ${listHiddenClass}" data-date="${dayKey}">
+                    <div id="activity-list-${dayKey}" class="activity-list border-l-2 border-transparent pl-2 space-y-1 ${listHiddenClass}" data-date="${dayKey}">
                         ${eventsHtml}
                     </div>`;
 
