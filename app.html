@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -1240,7 +1240,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.0.14 | 22/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v3.0.15 | 22/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -7999,7 +7999,7 @@ window.addEventListener('popstate', (event) => {
                     <div class="flex justify-between items-center mb-2">
                         <div class="flex items-center gap-3 cursor-pointer group select-none" onclick="toggleDay('${dayKey}')" title="Clique para expandir/recolher">
                             <svg class="drag-handle" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" onclick="event.stopPropagation()"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-                            <h3 class="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">🔷 ${newDateDisplay} | ${dayCounter}/${totalTripDays}</h3>
+                            <h3 class="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">🔷 ${newDateDisplay} (${dayCounter}/${totalTripDays})</h3>
                             <svg id="chevron-${dayKey}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 transition-transform duration-300 ${chevronRotation}"><path d="m6 9 6 6 6-6"/></svg>
                         </div>
                         ${isReadOnly ? '' : `
