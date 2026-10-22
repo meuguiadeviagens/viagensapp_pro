@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -763,6 +763,42 @@
         }
         /* FIM: ESTILOS PARA O PANORAMA 3D ISOMÉTRICO */
 
+        /* Botão + atividade - Container invisível que segura o botão para não quebrar o layout */
+        .inline-add-container {
+            position: relative;
+            height: 12px; /* Espaçamento entre as atividades */
+            margin-left: -5px; /* Puxa para cima da linha amarela/azul */
+            display: flex;
+            align-items: center;
+            z-index: 10;
+        }
+
+        /* O botão em si */
+        .inline-add-btn {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            /* Oculta por padrão para não poluir, mostra no hover da área */
+            opacity: 0; 
+        }
+
+        .inline-add-container:hover .inline-add-btn,
+        .inline-add-btn:hover {
+            opacity: 1;
+            border-color: #3b82f6;
+            color: #3b82f6;
+            background-color: #eff6ff;
+            transform: scale(1.1);
+        }
+
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -1204,7 +1240,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.0.11 | 15/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v3.0.12 | 22/10/2026, 08:29</p>
             </main>
         </div>
 
@@ -7802,7 +7838,10 @@ window.addEventListener('popstate', (event) => {
                 }
 
                 // --- GERAÇÃO DO HTML DOS EVENTOS ---
-                let eventsHtml = dayEvents.map(event => {
+                let eventsHtml = '';
+                let prevTimeStr = null;
+
+                dayEvents.forEach((event, index) => {
                     const { isEditable, ...eventData } = event.data;
                     const { imageUrl, closedDays, ...restEventData } = eventData;
                     
@@ -7840,18 +7879,30 @@ window.addEventListener('popstate', (event) => {
                     const hoverClass = isDark ? 'hover:brightness-110' : 'hover:bg-slate-100'; 
                     
                     const time = event.dateTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
-
+                    
                     const isCidade = event.data.type === 'Cidade';
                     const nameMobileClasses = isCidade ? "truncate" : "line-clamp-2 md:truncate";
+
+                    // --- INJEÇÃO DO BOTÃO '+' INLINE (Visível e blindado no link público) ---
+                    if (!isReadOnly && !isReorganizing && !window.isViewingPublicTrip) {
+                        eventsHtml += `
+                            <div class="inline-add-container print:hidden relative w-full flex items-center" style="height: 0; z-index: 10;">
+                                <button onclick="openInlineAddActivityModal('${dayKey}', ${prevTimeStr ? `'${prevTimeStr}'` : 'null'}, '${time}')" 
+                                        class="absolute -left-4 top-2.5 w-5 h-5 -translate-y-1/2 rounded-full bg-slate-100 border border-slate-300 text-slate-400 flex items-center justify-center cursor-pointer transition-all opacity-40 hover:opacity-100 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50 hover:scale-110 hover:shadow-sm" title="Adicionar atividade aqui">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                </button>
+                            </div>
+                        `;
+                    }
 
                     // 1. Caso: Cidade com Imagem
                     if (event.data.type === 'Cidade' && imageUrl && imageUrl.trim() !== '') {
                         const textColorStyle = isDark ? '#ffffff' : '#000000';
-                        return `
-                        <div class="activity-item relative group cursor-pointer transition-all active:bg-gray-100 rounded-xl shadow-sm mb-6" style="margin-top: 24px;" onclick='openViewActivityModal(this)' data-iseditable="${isEditable}" data-activity-id="${eventData.id || ''}" data-imageurl="${imageUrl || ''}" ${datasetAttributes} ${closedDaysAttr}>
+                        eventsHtml += `
+                        <div class="activity-item relative group cursor-pointer transition-all active:bg-gray-100 rounded-xl shadow-sm mb-6" style="margin-top: 8px;" onclick='openViewActivityModal(this)' data-iseditable="${isEditable}" data-activity-id="${eventData.id || ''}" data-imageurl="${imageUrl || ''}" ${datasetAttributes} ${closedDaysAttr}>
                             <div class="w-full h-24 overflow-hidden rounded-t-xl bg-gray-100">
                                 <img src="${imageUrl}" class="w-full h-full object-cover">
-                                ${(isEditable && !isReadOnly) ? `
+                                ${(isEditable && !isReadOnly && !window.isViewingPublicTrip) ? `
                                 <div class="absolute top-2 right-2 flex gap-1.5 z-10 print:hidden">
                                     <button onclick="handleSafeEditClick(event, '${eventData.id}')" class="bg-white/90 text-blue-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                                     <button onclick="event.stopPropagation(); deleteActivity('${eventData.id}')" class="bg-white/90 text-red-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
@@ -7864,15 +7915,16 @@ window.addEventListener('popstate', (event) => {
                                         ${event.name} ${isNowClosed ? '⚠️' : ''}
                                     </h3>
                                     <p class="text-xs truncate" style="color: ${isDark ? '#e2e8f0' : '#475569'} !important;">
-                                        ${time} • ${event.description || 'Explorar'}
+                                        ${time}
+                                        ${event.description || 'Explorar'}
                                     </p>
                                 </div>
                             </div>
                         </div>`;
                     } else {
                         // 2. Caso: Atividade Comum
-                        return `
-                        <div class="activity-item flex items-start justify-between gap-4 p-2 rounded-md cursor-pointer transition-all active:bg-gray-100 ${hoverClass}" style="${bgColorStyle} ${borderStyle}" onclick='openViewActivityModal(this)'
+                        eventsHtml += `
+                        <div class="activity-item group flex items-start justify-between gap-4 p-2 rounded-md cursor-pointer transition-all active:bg-gray-100 ${hoverClass}" style="${bgColorStyle} ${borderStyle}" onclick='openViewActivityModal(this)'
                              data-iseditable="${isEditable}"
                              data-imageurl="${imageUrl || ''}"
                              data-activity-id="${eventData.id || ''}" data-time="${time}" data-name="${(event.name || '').replace(/"/g, '&quot;')}" ${datasetAttributes} ${closedDaysAttr}>
@@ -7890,14 +7942,28 @@ window.addEventListener('popstate', (event) => {
                                     </p>
                                 </div>
                             </div>
-                            ${(isEditable && !isReadOnly) ? `
+                            ${(isEditable && !isReadOnly && !window.isViewingPublicTrip) ? `
                             <div class="activity-actions-print flex gap-2 items-center flex-shrink-0">
                                 <button onclick="handleSafeEditClick(event, '${eventData.id}')" class="${iconColorClass} hover:text-blue-400 p-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                                 <button onclick="event.stopPropagation(); deleteActivity('${eventData.id}')" class="${iconColorClass} hover:text-red-400 p-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
                             </div>` : ''}
                         </div>`;
                     }
-                }).join('');
+                    
+                    prevTimeStr = time;
+                });
+
+                // Adiciona um botão final após a última atividade, blindado e visível
+                if (dayEvents.length > 0 && !isReadOnly && !isReorganizing && !window.isViewingPublicTrip) {
+                    eventsHtml += `
+                        <div class="inline-add-container print:hidden relative w-full flex items-center mt-3" style="height: 0; z-index: 10;">
+                            <button onclick="openInlineAddActivityModal('${dayKey}', '${prevTimeStr}', null)" 
+                                    class="absolute -left-4 top-2.5 w-5 h-5 -translate-y-1/2 rounded-full bg-slate-100 border border-slate-300 text-slate-400 flex items-center justify-center cursor-pointer transition-all opacity-40 hover:opacity-100 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50 hover:scale-110 hover:shadow-sm" title="Adicionar atividade no fim do dia">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </button>
+                        </div>
+                    `;
+                }
 
                 if (dayEvents.length === 0) eventsHtml = '<p class="text-sm text-slate-400 py-2 ml-4">Nenhuma atividade para este dia.</p>';
 
@@ -19129,6 +19195,52 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 console.error("Erro ao mover modelo:", error);
                 alert("Ocorreu um erro ao tentar alterar a categoria.");
             }
+        };
+
+        window.openInlineAddActivityModal = (date, prevTime, nextTime) => {
+            let newTime = "12:00"; // Fallback
+
+            // Converte HH:MM para minutos totais
+            const timeToMinutes = (t) => {
+                const [h, m] = t.split(':').map(Number);
+                return h * 60 + m;
+            };
+
+            // Converte minutos totais de volta para HH:MM
+            const minutesToTime = (m) => {
+                // Evita horas negativas ou maiores que 23:59
+                if (m < 0) m = 0;
+                if (m > 1439) m = 1439; 
+                const h = Math.floor(m / 60).toString().padStart(2, '0');
+                const min = (m % 60).toString().padStart(2, '0');
+                return `${h}:${min}`;
+            };
+
+            if (prevTime && nextTime) {
+                // Está entre duas atividades: calcula a metade
+                const min1 = timeToMinutes(prevTime);
+                const min2 = timeToMinutes(nextTime);
+                newTime = minutesToTime(Math.floor((min1 + min2) / 2));
+            } else if (prevTime) {
+                // É o último botão do dia: soma 1 minuto à última atividade
+                newTime = minutesToTime(timeToMinutes(prevTime) + 1);
+            } else if (nextTime) {
+                // É o primeiro botão do dia: subtrai 1 minuto da primeira atividade
+                newTime = minutesToTime(timeToMinutes(nextTime) - 1);
+            }
+
+            // Preenche o modal nativo e abre
+            document.getElementById('activity-date').value = date;
+            document.getElementById('activity-time').value = newTime;
+            
+            // Limpa campos anteriores por segurança
+            document.getElementById('activity-name').value = '';
+            document.getElementById('activity-description').value = '';
+            
+            openModal('add-activity-modal');
+            
+            // Foca no campo de nome automaticamente
+            setTimeout(() => document.getElementById('activity-name').focus(), 100);
         };
 
     </script>
