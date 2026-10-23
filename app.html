@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -1240,7 +1240,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.0.15 | 22/10/2026, 08:29</p>
+                <p class="text-center text-sm text-slate-500 mt-8">v3.0.16 | 22/10/2026, 08:29</p> <!-- (G) -->
             </main>
         </div>
 
@@ -18146,11 +18146,21 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 if (isChecked) {
                     const publicTripData = JSON.parse(JSON.stringify(trip));
                     
+                    // ========================================================
+                    // 🛡️ SANITIZAÇÃO DE DADOS (IMPEDE VAZAMENTO NO LINK PÚBLICO)
+                    // Remove do JSON todos os dados sensíveis antes de enviar ao DB
+                    // ========================================================
                     delete publicTripData.sharedExpenses;
                     delete publicTripData.travelers;
                     delete publicTripData.members;
                     delete publicTripData.emergencyData;
                     delete publicTripData.lastCurrency;
+                    
+                    // -- Adicionados para maior segurança --
+                    delete publicTripData.documents; // Apaga os links/arquivos de documentos
+                    delete publicTripData.pendencias; // Apaga as tarefas pendentes
+                    delete publicTripData.notes; // Apaga o painel de anotações inteiro
+                    // ========================================================
 
                     publicTripData.publicConfig = newConfig;
                     
