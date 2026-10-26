@@ -1240,7 +1240,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.0.17 | 26/10/2026, 08:29</p> <!-- (G) -->
+                <p class="text-center text-sm text-slate-500 mt-8">v3.1.01 | 26/10/2026, 08:29</p> <!-- (G) -->
             </main>
         </div>
 
@@ -1913,9 +1913,9 @@
                         </label>
                     </div>   
 
-                    <button id="toggle-all-sections-btn" onclick="toggleAllChecklistSections()" class="w-full sm:w-auto py-3 sm:py-2 px-4 text-sm font-bold text-blue-600 border border-blue-200 bg-blue-50 sm:bg-transparent sm:border-transparent rounded-lg hover:bg-blue-100 transition-colors">
-                        ▲ <!-- Recolher Tudo -->
-                    </button>             
+                    <button id="toggle-all-sections-btn" data-state="expanded" onclick="toggleAllChecklistSections()" class="w-full sm:w-auto py-3 sm:py-2 px-4 text-sm font-bold text-blue-600 border border-blue-200 bg-blue-50 sm:bg-transparent sm:border-transparent rounded-lg hover:bg-blue-100 transition-colors">
+                        ▲
+                    </button>           
                 </div>
 
             </header>
@@ -13467,22 +13467,33 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             return logEntries.some(entry => entry.timestamp > lastViewedTimestamp);
         }
 
-        // Função para expandir ou recolher todas as categorias
+        // ===============================================
+        // BOTÃO GLOBAL: EXPANDIR / RECOLHER TODAS
+        // ===============================================
         window.toggleAllChecklistSections = () => {
-            const btn = document.getElementById('toggle-all-sections-btn');
             const sections = document.querySelectorAll('.checklist-section-item');
-            const isCurrentlyCollapsing = btn.textContent.includes('Recolher');
+            const btn = document.getElementById('toggle-all-sections-btn');
+            
+            if (sections.length === 0) return;
 
+            // 1. A Fonte da Verdade: Verifica se existe pelo menos UMA categoria aberta na tela.
+            // Se houver, a intenção geral do botão será RECOLHER todas.
+            // Se todas já estiverem recolhidas, a intenção será EXPANDIR todas.
+            const isAnyExpanded = Array.from(sections).some(section => !section.classList.contains('collapsed'));
+
+            // 2. Aplica a ação diretamente manipulando a classe (igual a sua função individual faz)
             sections.forEach(section => {
-                if (isCurrentlyCollapsing) {
-                    section.classList.add('collapsed');
+                if (isAnyExpanded) {
+                    section.classList.add('collapsed'); // Recolhe a categoria
                 } else {
-                    section.classList.remove('collapsed');
+                    section.classList.remove('collapsed'); // Expande a categoria
                 }
             });
 
-            // Atualiza o texto do botão
-            btn.textContent = isCurrentlyCollapsing ? "▼" : "▲";
+            // 3. Atualiza o ícone do botão (▲ = indica que as categorias estão abertas e podem ser recolhidas)
+            if (btn) {
+                btn.textContent = isAnyExpanded ? "▼" : "▲";
+            }
         };
 
         // ===================================================================
