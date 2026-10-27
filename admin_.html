@@ -505,6 +505,26 @@
             </div>
         </div>
 
+        <!-- NOVO MODAL: SELECIONAR ATRAÇÃO DO BANCO -->
+        <div id="select-attraction-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-md m-4 max-h-[80vh] flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-slate-800" id="select-attraction-title">Selecionar Atração</h3>
+                    <button onclick="closeModal('select-attraction-modal')" class="text-slate-400 hover:text-slate-600">✕</button>
+                </div>
+                
+                <p class="text-sm text-slate-500 mb-3">Clique em uma atração disponível para enviá-la para o dia selecionado.</p>
+                
+                <div id="select-attraction-list" class="flex-grow overflow-y-auto space-y-2 border p-3 rounded-lg bg-slate-50 min-h-[200px]">
+                    <!-- Lista injetada aqui -->
+                </div>
+                
+                <div class="pt-4 flex justify-end">
+                    <button type="button" onclick="closeModal('select-attraction-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
     <div id="edit-license-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
         <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-lg m-4 max-h-[90vh] overflow-y-auto">
             <h3 class="text-xl sm:text-2xl font-semibold mb-2">Editar Licença</h3>
@@ -2185,7 +2205,17 @@
 
         document.getElementById('edit-activity-suggestion-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const index = parseInt(document.getElementById('suggestion-activity-index').value);
+            const rawIndex = document.getElementById('suggestion-activity-index').value;
+            let isContextual = false;
+            let targetDay = null;
+            let index = -1;
+
+            if (rawIndex.startsWith('new_contextual_')) {
+                isContextual = true;
+                targetDay = parseInt(rawIndex.split('_')[2]);
+            } else {
+                index = parseInt(rawIndex);
+            }
             
             // Pega as atividades atuais, garantindo que seja um array
             let currentActivities = [...(suggestedItinerariesData[selectedCityId]?.activities || [])];
@@ -2205,15 +2235,23 @@
                 // Nota: Não salvamos 'day' ou 'time' aqui, pois isso é gerido no modal de roteiro (drag & drop)
             };
 
-            // Se estiver editando, preserva o dia e hora que já existiam
-            if (index !== -1 && currentActivities[index]) {
-                newActivityData.day = currentActivities[index].day || null;
-                newActivityData.time = currentActivities[index].time || null;
-            }
-
-            if (index === -1) {
+            if (isContextual) {
+                newActivityData.isDaySpecific = true;
+                newActivityData.day = targetDay;
+                // Se quiser que já entre com um horário padrão (opcional)
+                newActivityData.time = "08:00"; 
+                currentActivities.push(newActivityData);
+            } else if (index === -1) {
                 currentActivities.push(newActivityData);
             } else {
+                // Lógica de edição existente preservando as flags do Contexto e Horários
+                if (currentActivities[index]) {
+                    newActivityData.day = currentActivities[index].day || null;
+                    newActivityData.time = currentActivities[index].time || null;
+                    if (currentActivities[index].isDaySpecific) {
+                        newActivityData.isDaySpecific = true;
+                    }
+                }
                 currentActivities[index] = newActivityData;
             }
 
@@ -2937,10 +2975,16 @@
                 
                 dayDiv.innerHTML = `
                     <div class="flex justify-between items-center mb-3">
-                        <h4 class="font-bold text-slate-700 flex items-center gap-2">
-                            <span class="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">${i}</span>
-                            Dia ${i}
-                        </h4>
+                        <div class="flex items-center gap-3">
+                            <h4 class="font-bold text-slate-700 flex items-center gap-2">
+                                <span class="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">${i}</span>
+                                Dia ${i}
+                            </h4>
+                            <div class="flex gap-1">
+                                <button onclick="openDaySpecificActivityModal(${i})" class="text-[10px] bg-indigo-100 text-indigo-700 font-semibold px-2 py-1 rounded hover:bg-indigo-200 transition-colors uppercase tracking-wide" title="Criar logística (ex: Metrô, Café)">+ Info</button>
+                                <button onclick="openSelectAttractionModal(${i})" class="text-[10px] bg-emerald-100 text-emerald-700 font-semibold px-2 py-1 rounded hover:bg-emerald-200 transition-colors uppercase tracking-wide" title="Escolher atração da lista">+ Atração</button>
+                            </div>
+                        </div>
                         ${countBadge}
                     </div>
                     <div class="space-y-2 min-h-[80px] border-2 border-dashed border-slate-200 rounded-lg p-2 bg-white/50" 
@@ -2948,7 +2992,7 @@
                         ${dayActivities.map(act => renderMiniActivity(act, true)).join('') || 
                         `<div class="h-full flex items-center justify-center text-xs text-slate-400 italic pointer-events-none">
                             Arraste atrações aqui para criar o Dia ${i}
-                         </div>`}
+                        </div>`}
                     </div>
                 `;
                 container.appendChild(dayDiv);
@@ -2970,6 +3014,23 @@
             `;
             container.appendChild(bankDiv);
         }  
+
+        window.openDaySpecificActivityModal = (dayNumber) => {
+            // 1. Limpa o formulário existente
+            const form = document.getElementById('edit-activity-suggestion-form');
+            form.reset();
+            
+            // 2. Define o título para deixar claro onde está criando
+            document.getElementById('suggestion-modal-title').textContent = `Adicionar Logística - Dia ${dayNumber}`;
+            
+            // 3. Hack tático no index: vamos passar um valor especial para o submit saber que é contextual
+            document.getElementById('suggestion-activity-index').value = `new_contextual_${dayNumber}`;
+            
+            // 4. Pré-seleciona um ícone que faça sentido (ex: metrô/sun, restaurante, etc)
+            document.getElementById('suggestion-activity-icon').value = 'sun'; // Ajuste para o ícone de transporte que preferir
+            
+            openModal('edit-activity-suggestion-modal');
+        };
         
         window.deleteActivitySuggestion = (index) => {
             // Converte para array antes de tentar acessar pelo index
@@ -3024,13 +3085,20 @@
             // Define os botões de ação lateral
             let actionButtons = '';
             if (isInsideDay) {
-                // Dentro do dia: Link + Remover do dia
+                // NOVO: Adiciona o botão de editar apenas se for atividade contextual (Logística)
+                const editBtn = act.isDaySpecific 
+                    ? `<button onclick="event.stopPropagation(); openEditActivitySuggestionModal(${act.index})" 
+                               class="text-blue-400 hover:text-blue-600 p-1" title="Editar Logística">✏️</button>` 
+                    : '';
+
+                // Dentro do dia: Link + (Editar se logística) + Remover do dia/Excluir
                 actionButtons = `
                     <div class="flex items-center gap-1 ml-2">
                         ${linkBtn}
+                        ${editBtn}
                         <button onclick="event.stopPropagation(); unassignActivity(${act.index})" 
                                class="text-amber-500 hover:text-amber-700 font-bold px-2 py-1 rounded hover:bg-amber-50" 
-                               title="Tirar deste dia">
+                               title="${act.isDaySpecific ? 'Excluir Logística permanentemente' : 'Tirar deste dia'}">
                                ➖
                        </button>
                     </div>`;
@@ -3046,6 +3114,9 @@
 
             // O escape de aspas é necessário caso a atividade tenha apóstrofos no nome (ex: "Sant'Ana")
             const safeName = act.name ? act.name.replace(/'/g, "\\'") : '';
+            const contextBadge = act.isDaySpecific 
+                ? `<span class="bg-amber-100 text-amber-800 text-[9px] font-bold px-1.5 py-0.5 rounded ml-2 uppercase">Logística</span>` 
+                : '';
 
             return `
                 <div draggable="true" 
@@ -3059,6 +3130,7 @@
                             ${ICONS[act.icon] || ICONS.passeio}
                         </div>
                         <span class="name-span text-sm font-medium truncate pointer-events-none">${act.name}</span>
+                        ${contextBadge}
                     </div>
                     
                     <div class="flex items-center flex-shrink-0 ml-2">
@@ -3120,7 +3192,7 @@
             }
         };
 
-        // --- NOVA FUNÇÃO: APENAS TIRA DO DIA (NÃO EXCLUI) ---
+        // --- NOVA FUNÇÃO: TIRA DO DIA OU EXCLUI (SE FOR CONTEXTUAL) ---
         window.unassignActivity = async (index) => {
             try {
                 // 1. Pega a lista atual
@@ -3128,20 +3200,28 @@
                 let currentData = snapshot.val() || {};
                 let activities = currentData.activities ? Object.values(currentData.activities) : [];
 
-                // 2. Apenas limpa o dia e a hora (NÃO REMOVE DO ARRAY)
-                if (activities[index]) {
+                if (!activities[index]) return;
+
+                // 2. Se for Logística (Info do dia), deleta permanentemente
+                if (activities[index].isDaySpecific) {
+                    showConfirmDelete(`Tem certeza que deseja excluir esta informação logística permanentemente?`, async () => {
+                        activities.splice(index, 1);
+                        const cleanActivities = activities.filter(a => a !== null && a !== undefined);
+                        await set(ref(db, `suggestedItineraries/${currentItineraryCityId}/activities`), cleanActivities);
+                        renderItineraryDays(cleanActivities);
+                        closeModal('confirm-delete-modal');
+                    });
+                } 
+                // 3. Se for atração normal, apenas devolve para a lista "Sem Dia Definido"
+                else {
                     activities[index].day = null;
                     activities[index].time = null;
+                    await set(ref(db, `suggestedItineraries/${currentItineraryCityId}/activities`), activities);
+                    renderItineraryDays(activities);
                 }
 
-                // 3. Salva a alteração
-                await set(ref(db, `suggestedItineraries/${currentItineraryCityId}/activities`), activities);
-
-                // 4. Atualiza a tela
-                renderItineraryDays(activities);
-
             } catch (error) {
-                console.error("Erro ao desvincular:", error);
+                console.error("Erro ao desvincular/excluir:", error);
             }
         };
 
@@ -3466,10 +3546,83 @@
             let newValue = currentValue + amount;
             if (newValue < 0) newValue = 0; // Impede créditos negativos
             input.value = newValue;
-        };        
+        };      
+        
+        //Modal para incluir atividades disponíveis dos dias de roteiros
+        window.openSelectAttractionModal = async (dayNumber) => {
+            document.getElementById('select-attraction-title').textContent = `Adicionar Atração - Dia ${dayNumber}`;
+            const listContainer = document.getElementById('select-attraction-list');
+            listContainer.innerHTML = '<p class="text-sm text-slate-400 text-center py-4 animate-pulse">Carregando atrações disponíveis...</p>';
+            openModal('select-attraction-modal');
+
+            try {
+                // Pega os dados atuais do banco
+                const snapshot = await get(ref(db, `suggestedItineraries/${currentItineraryCityId}`));
+                const cityData = snapshot.val() || {};
+                const rawActivities = cityData.activities || [];
+                const activitiesArray = Array.isArray(rawActivities) ? rawActivities : Object.values(rawActivities);
+                
+                // Filtra as atividades que NÃO estão em nenhum dia (day == null/undefined) E que não sejam contexto
+                const unassigned = activitiesArray
+                    .map((act, idx) => ({ ...act, originalIndex: idx }))
+                    .filter(act => act && act.name && !act.day && !act.isDaySpecific);
+
+                if (unassigned.length === 0) {
+                    listContainer.innerHTML = '<p class="text-sm text-slate-500 text-center py-4 font-medium">Todas as atrações cadastradas já estão incluídas no roteiro.</p>';
+                    return;
+                }
+
+                listContainer.innerHTML = '';
+                
+                // Renderiza a lista de opções clicáveis
+                unassigned.forEach(act => {
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center justify-between p-3 bg-white border rounded shadow-sm cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition-colors group';
+                    
+                    item.innerHTML = `
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <span class="text-blue-500 flex-shrink-0 bg-blue-50 p-1.5 rounded-full group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">${ICONS[act.icon] || ICONS.passeio}</span>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-semibold text-slate-700 truncate">${act.name}</span>
+                                <span class="text-[10px] text-slate-400">${act.type || 'Passeio'}</span>
+                            </div>
+                        </div>
+                        <span class="text-emerald-600 bg-emerald-100 rounded-full w-6 h-6 flex items-center justify-center font-bold ml-2 shadow-sm group-hover:bg-emerald-600 group-hover:text-white transition-colors">＋</span>
+                    `;
+                    item.onclick = () => assignActivityToDay(act.originalIndex, dayNumber);
+                    listContainer.appendChild(item);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar atrações:", error);
+                listContainer.innerHTML = '<p class="text-sm text-red-500 text-center py-4">Erro ao carregar lista.</p>';
+            }
+        };
+
+        window.assignActivityToDay = async (index, targetDay) => {
+            try {
+                const snapshot = await get(ref(db, `suggestedItineraries/${currentItineraryCityId}`));
+                let activities = snapshot.val()?.activities || [];
+                activities = Array.isArray(activities) ? activities : Object.values(activities);
+
+                if (activities[index]) {
+                    activities[index].day = targetDay;
+                    // Insere um horário padrão se a atração estiver sem horário
+                    if (!activities[index].time || activities[index].time.trim() === "") {
+                        activities[index].time = "08:00"; 
+                    }
+                    
+                    await set(ref(db, `suggestedItineraries/${currentItineraryCityId}/activities`), activities);
+                    renderItineraryDays(activities);
+                    closeModal('select-attraction-modal');
+                }
+            } catch (error) {
+                console.error("Erro ao atribuir atração:", error);
+                alert("Erro ao adicionar a atração ao dia.");
+            }
+        };
 
     </script>
-<br><center><p>V. 1.4.0 - 13/08/2026 08:42</p></center><br>
+<br><center><p>V. 1.4.1 (G) - 27/10/2026 08:42</p></center><br>
 
 <script>
     // Força a desinstalação de qualquer Service Worker antigo que tenha ficado em cache
