@@ -1240,7 +1240,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.1.01 | 26/10/2026, 08:29</p> <!-- (G) -->
+                <p class="text-center text-sm text-slate-500 mt-8">v3.1.02 | 26/10/2026, 08:29</p> <!-- (G) -->
             </main>
         </div>
 
@@ -7741,11 +7741,24 @@ window.addEventListener('popstate', (event) => {
                 });
             }
 
-            // Adiciona Atividades
+            // Adiciona Atividades (Filtrando as de logística se houver)
             if (trip.activities) {
                 Object.values(trip.activities).forEach(a => {
+                    // PULA a atividade se ela for restrita à logística do dia (isDaySpecific)
+                    if (a.isDaySpecific) return;
+                    
                     const activityIcon = ICONS[a.icon] || ICONS.default;
-                    if(a.date && a.time) allEvents.push({ dateTime: new Date(`${a.date}T${a.time}`), name: a.name || 'Atividade', description: a.description || '', icon: activityIcon, data: { isEditable: true, ...a } });
+                    // Força um horário falso (24:00) para ordenação caso a atividade não tenha horário definido
+                    const timeForSort = a.time || '24:00'; 
+                    if(a.date) {
+                        allEvents.push({ 
+                            dateTime: new Date(`${a.date}T${timeForSort}`), 
+                            name: a.name || 'Atividade', 
+                            description: a.description || '', 
+                            icon: activityIcon, 
+                            data: { isEditable: true, ...a } 
+                        });
+                    }
                 });
             }
 
@@ -7808,9 +7821,14 @@ window.addEventListener('popstate', (event) => {
                     const variationActivities = Object.values(trip.variations[dayKey][activeVariationId].activities || {});
                     
                     variationActivities.forEach(a => {
+                        // PULA a atividade se ela for restrita à logística do dia
+                        if (a.isDaySpecific) return;
+
                         const activityIcon = ICONS[a.icon] || ICONS.default;
+                        const timeForSort = a.time || '24:00'; 
+                        
                         dayEvents.push({ 
-                            dateTime: new Date(`${a.date}T${a.time}`), 
+                            dateTime: new Date(`${a.date}T${timeForSort}`), 
                             name: a.name || 'Atividade', 
                             description: a.description || '', 
                             icon: activityIcon, 
@@ -9926,7 +9944,9 @@ let dividerHtml = '';
                 return;
             }
 
-            const activities = suggestedItinerariesData[cityId].activities;
+            // Filtra removendo as atividades marcadas com 'isDaySpecific' (Logística)
+            const rawActivities = suggestedItinerariesData[cityId].activities || [];
+            const activities = rawActivities.filter(a => !a.isDaySpecific);
             activities.forEach((activity, index) => {
                 const item = document.createElement('div');
                 item.className = 'flex items-start gap-3 p-2 rounded hover:bg-slate-100'; // Alterado para items-start
@@ -15243,7 +15263,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         // --- FUNÇÃO DE PREPARAÇÃO (CORRIGIDA: IGNORA ATIVIDADES SEM DIA) ---
         window.prepareDaysSelection = async function(selectedCities) {
-            console.log("Preparando seleção (Ignorando atividades não alocadas)...");
+            console.log("Preparando seleção (Ignorando atividades não alocadas e logística)...");
             
             const tripId = window.pendingImportTripId || window.currentTripId || currentTripId;
             if (!tripId) {
@@ -15315,7 +15335,10 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     const daysMap = {};
                     if (suggestion && suggestion.activities) {
                         Object.values(suggestion.activities).forEach(act => {
-                            // --- CORREÇÃO AQUI: Verifica estritamente se tem dia ---
+                            // --- O SEGREDO AQUI: PULA A LOGÍSTICA ---
+                            if (act.isDaySpecific) return;
+                            
+                            // --- CORREÇÃO: Verifica estritamente se tem dia ---
                             if (act.day && parseInt(act.day) > 0) {
                                 const dayNum = parseInt(act.day);
                                 if (!daysMap[dayNum]) daysMap[dayNum] = [];
@@ -15355,13 +15378,14 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                             if (suggestedDateObj > maxDateObj) suggestedDateObj = maxDateObj;
                             const suggestedDateStr = suggestedDateObj.toISOString().split('T')[0];
 
+                            // Aqui a array já vem filtrada sem logística, o map vai criar um texto limpo
                             const resumeHtml = daysMap[dayNum].map(a => `• ${a.name}`).join('<br>');
 
                             const cacheKey = `${selectedCity.id}-${dayNum}`;
                             window.itineraryPreviewCache[cacheKey] = {
                                 cityName: selectedCity.cityName,
                                 dayNum: dayNum,
-                                activities: daysMap[dayNum]
+                                activities: daysMap[dayNum] // Salva o array já limpo
                             };
 
                             htmlContent += `
@@ -15420,6 +15444,12 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 const confirmBtn = document.getElementById('confirm-import-btn');
                 const newBtn = confirmBtn.cloneNode(true);
                 confirmBtn.parentNode.replaceChild(newBtn, confirmBtn);
+                
+                // --- INFORMAÇÃO CRUCIAL (NÃO MUDE ISSO SE ESTIVER FUNCIONANDO) ---
+                // A função window.finalizeImportGranular vai pegar os dados do banco 
+                // para salvar na viagem do usuário. A logística *está* lá e *será importada* 
+                // normalmente junto com o dia, mesmo ela não aparecendo mais no resumo visual 
+                // graças à filtragem que fizemos agora pouco.
                 newBtn.onclick = () => window.finalizeImportGranular(tripId, allSuggestions);
 
             } catch (error) {
@@ -15567,15 +15597,20 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
             if (!data) return console.error("Dados de preview não encontrados");
 
-            // 1. Atualiza Títulos
+            // --- MÁGICA AQUI: Filtra a logística e ordena cronologicamente ---
+            const atividadesReais = data.activities
+                .filter(act => !act.isDaySpecific)
+                .sort((a, b) => (a.time || '24:00').localeCompare(b.time || '24:00'));
+
+            // 1. Atualiza Títulos (usando a contagem filtrada)
             document.getElementById('preview-modal-title').innerText = `Dia ${data.dayNum} - ${data.cityName}`;
-            document.getElementById('preview-modal-subtitle').innerText = `${data.activities.length} atividades planejadas`;
+            document.getElementById('preview-modal-subtitle').innerText = `${atividadesReais.length} atividades planejadas`;
 
             const contentDiv = document.getElementById('preview-modal-content');
             contentDiv.innerHTML = '';
 
-            // 2. Gera Lista de Atividades
-            data.activities.forEach(act => {
+            // 2. Gera Lista de Atividades (Usando a array filtrada e ordenada)
+            atividadesReais.forEach(act => {
                 // Ícone padrão baseado no tipo (simples)
                 let iconBg = 'bg-blue-100 text-blue-600';
                 let iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>`; // Pin
