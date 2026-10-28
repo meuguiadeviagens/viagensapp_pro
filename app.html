@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html>
 <html lang="pt-BR"><head>
 
         <!-- Google tag (gtag.js) -->
@@ -1117,7 +1117,8 @@
                         </button>
                         <div id="user-menu-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-100">
                             <a href="#" id="edit-profile-btn" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Alterar meus dados</a>
-                            <a href="#" onclick="openModal('notifications-modal')" class="flex justify-center items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
+                            <!-- Modificado: Adicionado hide menu e preventDefault -->
+                            <a href="#" onclick="event.preventDefault(); document.getElementById('user-menu-dropdown').classList.add('hidden'); openModal('notifications-modal');" class="flex justify-center items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">
                                 <span>Notificações</span>
                                 <span id="notification-menu-badge" class="hidden bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span>
                             </a>
@@ -1240,7 +1241,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.1.02 | 26/10/2026, 08:29</p> <!-- (G) -->
+                <p class="text-center text-sm text-slate-500 mt-8">v3.1.03 | 28/10/2026, 08:29</p> <!-- (G) -->
             </main>
         </div>
 
