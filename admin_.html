@@ -425,9 +425,15 @@
                 <form id="edit-activity-suggestion-form" class="space-y-4">
                     <input type="hidden" id="suggestion-activity-index">
                     <input type="hidden" id="suggestion-activity-icon" value="passeio">
-                    <div>
-                        <label for="suggestion-activity-name" class="block text-sm font-medium text-slate-600">Nome da Atividade</label>
-                        <input type="text" id="suggestion-activity-name" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="col-span-2">
+                            <label for="suggestion-activity-name" class="block text-sm font-medium text-slate-600">Nome da Atividade</label>
+                            <input type="text" id="suggestion-activity-name" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md" required>
+                        </div>
+                        <div class="col-span-1">
+                            <label for="suggestion-activity-time" class="block text-sm font-medium text-slate-600">Horário</label>
+                            <input type="time" id="suggestion-activity-time" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md focus:ring-blue-500 border-gray-300">
+                        </div>
                     </div>
                     <div>
                         <label for="suggestion-activity-type" class="block text-sm font-medium text-slate-600">Tipo</label>
@@ -2209,6 +2215,7 @@
                 indexInput.value = index;
                 const activity = suggestedItinerariesData[selectedCityId].activities[index];
                 document.getElementById('suggestion-activity-name').value = activity.name;
+                document.getElementById('suggestion-activity-time').value = activity.time || '';
                 document.getElementById('suggestion-activity-type').value = activity.type;
                 document.getElementById('suggestion-activity-description').value = activity.description || '';
                 document.getElementById('suggestion-activity-link').value = activity.link || '';
@@ -2264,6 +2271,8 @@
 
             const closedDaysCheckboxes = document.querySelectorAll('#closed-days-picker input[name="closedDay"]:checked');
             const closedDays = Array.from(closedDaysCheckboxes).map(cb => cb.value);
+            // Capture o horário digitado
+            const inputTime = document.getElementById('suggestion-activity-time').value;
 
             const newActivityData = {
                 name: document.getElementById('suggestion-activity-name').value,
@@ -2280,16 +2289,15 @@
             if (isContextual) {
                 newActivityData.isDaySpecific = true;
                 newActivityData.day = targetDay;
-                // Se quiser que já entre com um horário padrão (opcional)
-                newActivityData.time = "08:00"; 
+                newActivityData.time = inputTime || "08:00"; // Usa o que o admin digitou
                 currentActivities.push(newActivityData);
             } else if (index === -1) {
+                newActivityData.time = inputTime || null; // Salva o horário para sugestões normais
                 currentActivities.push(newActivityData);
             } else {
-                // Lógica de edição existente preservando as flags do Contexto e Horários
                 if (currentActivities[index]) {
                     newActivityData.day = currentActivities[index].day || null;
-                    newActivityData.time = currentActivities[index].time || null;
+                    newActivityData.time = inputTime || currentActivities[index].time || null;
                     if (currentActivities[index].isDaySpecific) {
                         newActivityData.isDaySpecific = true;
                     }
@@ -3071,6 +3079,9 @@
             
             // 4. Pré-seleciona um ícone que faça sentido (ex: metrô/sun, restaurante, etc)
             document.getElementById('suggestion-activity-icon').value = 'sun'; // Ajuste para o ícone de transporte que preferir
+
+            // NOVO: Define um horário padrão limpo
+            document.getElementById('suggestion-activity-time').value = '08:00';
             
             openModal('edit-activity-suggestion-modal');
         };
@@ -3665,7 +3676,7 @@
         };
 
     </script>
-<br><center><p>V. 1.4.2 (G) - 28/10/2026 08:42</p></center><br>
+<br><center><p>V. 1.4.3 (G) - 28/10/2026 08:42</p></center><br>
 
 <script>
     // Força a desinstalação de qualquer Service Worker antigo que tenha ficado em cache
