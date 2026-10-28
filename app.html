@@ -1241,7 +1241,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.1.05 | 28/10/2026, 08:29</p> <!-- (G) -->
+                <p class="text-center text-sm text-slate-500 mt-8">v3.1.06 | 28/10/2026, 08:29</p> <!-- (G) -->
             </main>
         </div>
 
@@ -19381,23 +19381,45 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     const trip = tripsData.find(t => t.id === currentTripId);
                     const updates = {};
                     
-                    // Mapeia os IDs e encontra onde eles estão (Raiz ou Variações)
-                    batchDeleteSelection.forEach(activityId => {
-                        // Verifica se está na raiz
-                        if (trip.activities && trip.activities[activityId]) {
-                            updates[`trips/${currentTripId}/activities/${activityId}`] = null;
-                        } 
-                        // Se houver variações, varre para deletar de lá também
-                        if (trip.variations) {
-                            for (const dateKey in trip.variations) {
-                                for (const varId in trip.variations[dateKey]) {
-                                    if (trip.variations[dateKey][varId].activities && trip.variations[dateKey][varId].activities[activityId]) {
-                                        updates[`trips/${currentTripId}/variations/${dateKey}/${varId}/activities/${activityId}`] = null;
+                    // 1. Processa a raiz (Atividades originais)
+                    if (trip.activities) {
+                        const isArray = Array.isArray(trip.activities);
+                        const activitiesList = isArray ? trip.activities : Object.values(trip.activities);
+
+                        // Mantém apenas as atividades que NÃO estão na lista de exclusão
+                        const remainingActivities = activitiesList.filter(a => a && !batchDeleteSelection.has(a.id));
+
+                        if (isArray) {
+                            updates[`trips/${currentTripId}/activities`] = remainingActivities;
+                        } else {
+                            const newActivitiesObj = {};
+                            remainingActivities.forEach(a => { newActivitiesObj[a.id] = a; });
+                            updates[`trips/${currentTripId}/activities`] = newActivitiesObj;
+                        }
+                    }
+                    
+                    // 2. Processa as Variações (se houver)
+                    if (trip.variations) {
+                        for (const dateKey in trip.variations) {
+                            for (const varId in trip.variations[dateKey]) {
+                                const varObj = trip.variations[dateKey][varId];
+                                if (varObj.activities) {
+                                    const isVarArray = Array.isArray(varObj.activities);
+                                    const varActList = isVarArray ? varObj.activities : Object.values(varObj.activities);
+
+                                    const remainingVarActivities = varActList.filter(a => a && !batchDeleteSelection.has(a.id));
+
+                                    if (isVarArray) {
+                                        updates[`trips/${currentTripId}/variations/${dateKey}/${varId}/activities`] = remainingVarActivities;
+                                    } else {
+                                        const newVarObj = {};
+                                        remainingVarActivities.forEach(a => { newVarObj[a.id] = a; });
+                                        updates[`trips/${currentTripId}/variations/${dateKey}/${varId}/activities`] = newVarObj;
                                     }
                                 }
                             }
                         }
-                    });
+                    }
                     
                     // Executa todas as exclusões no Firebase de uma vez (Atômico)
                     await update(ref(db), updates);
@@ -19409,7 +19431,6 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     cancelBatchDelete();
                     closeModal('confirm-delete-modal');
                     
-                    // A re-renderização é automática por causa do onValue do Firebase!
                 } catch (error) {
                     console.error("Erro na exclusão em lote:", error);
                     alert("Ocorreu um erro ao excluir as atividades.");
