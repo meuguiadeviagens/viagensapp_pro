@@ -1241,7 +1241,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.1.06 | 28/10/2026, 08:29</p> <!-- (G) -->
+                <p class="text-center text-sm text-slate-500 mt-8">v3.1.07 | 29/10/2026, 08:29</p> <!-- (G) -->
             </main>
         </div>
 
@@ -1281,6 +1281,18 @@
             </button>
         </div>
 
+        <!-- Menu Flutuante de Opções da Atividade -->
+        <div id="activity-options-menu" class="hidden fixed z-[2000] bg-white shadow-xl rounded-lg border border-slate-200 py-1 w-36 animate-in fade-in zoom-in duration-150">
+            <button id="btn-opt-edit" class="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 flex items-center gap-3 font-medium transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                Editar
+            </button>
+            <button id="btn-opt-delete" class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 font-medium transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                Excluir
+            </button>
+        </div>
+
         <div id="floating-reorg-actions" class="hidden fixed bottom-20 right-12 z-[2000] flex gap-3 shadow-2xl rounded-full p-1 bg-white/80 backdrop-blur-sm border border-slate-200">
             <button onclick="toggleReorganizationMode(true)" class="px-5 py-3 bg-slate-100 text-red-600 font-bold rounded-full hover:bg-red-100 transition-all flex items-center gap-2 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -1293,12 +1305,12 @@
         </div>
 
         <!-- Barra Flutuante de Exclusão em Lote -->
-        <div id="floating-batch-delete-actions" class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-[2000] flex gap-3 shadow-2xl rounded-full p-1.5 bg-white/95 backdrop-blur-md border border-red-200">
-            <button onclick="cancelBatchDelete()" class="px-5 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-full hover:bg-slate-200 transition-all flex items-center gap-2 shadow-sm">
+        <div id="floating-batch-delete-actions" class="hidden fixed bottom-20 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 z-[2000] flex justify-center gap-2 sm:gap-3 shadow-2xl rounded-full p-1.5 bg-white/95 backdrop-blur-md border border-red-200">
+            <button onclick="cancelBatchDelete()" class="px-4 sm:px-5 py-2 sm:py-2.5 bg-slate-100 text-slate-700 font-bold rounded-full hover:bg-slate-200 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-sm text-sm sm:text-base whitespace-nowrap">
                 Cancelar
             </button>
-            <button onclick="confirmBatchDelete()" class="px-6 py-2.5 bg-red-600 text-white font-bold rounded-full hover:bg-red-700 transition-all flex items-center gap-2 shadow-md hover:scale-105">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+            <button onclick="confirmBatchDelete()" class="px-4 sm:px-6 py-2 sm:py-2.5 bg-red-600 text-white font-bold rounded-full hover:bg-red-700 transition-all flex items-center justify-center gap-1.5 sm:gap-2 shadow-md hover:scale-105 text-sm sm:text-base whitespace-nowrap">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" class="sm:w-[18px] sm:h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                 <span id="batch-delete-count">Apagar 0 itens</span>
             </button>
         </div>
@@ -7929,9 +7941,10 @@ window.addEventListener('popstate', (event) => {
                             <div class="w-full h-18 sm:h-26 overflow-hidden rounded-t-xl bg-gray-100 relative">
                                 <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-cover">
                                 ${(isEditable && !isReadOnly && !window.isViewingPublicTrip) ? `
-                                <div class="absolute top-2 right-2 flex gap-1.5 z-10 print:hidden">
-                                    <button onclick="handleSafeEditClick(event, '${eventData.id}')" class="bg-white/90 text-blue-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
-                                    <button onclick="event.stopPropagation(); if(typeof isBatchDeleteMode !== 'undefined' && isBatchDeleteMode) { toggleBatchSelection('${eventData.id}'); } else { deleteActivity('${eventData.id}'); }" oncontextmenu="event.preventDefault(); event.stopPropagation(); startBatchDeleteMode('${eventData.id}');" class="bg-white/90 text-red-600 p-1 rounded-full shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
+                                <div class="absolute top-2 right-2 flex z-10 print:hidden">
+                                    <button onclick="openActivityOptionsMenu(event, '${eventData.id}')" oncontextmenu="event.preventDefault(); event.stopPropagation(); startBatchDeleteMode('${eventData.id}');" class="bg-white/90 text-slate-600 p-1.5 rounded-full shadow-sm hover:text-blue-700 hover:bg-white transition-all" title="Opções da Cidade">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                                    </button>
                                 </div>` : ''}
                             </div>
                             <div class="p-3 rounded-b-xl flex items-center gap-3 border-x border-b border-gray-100/50" style="${bgColorStyle}">
@@ -7970,13 +7983,9 @@ window.addEventListener('popstate', (event) => {
                                 </div>
                             </div>
                             ${(isEditable && !isReadOnly && !window.isViewingPublicTrip) ? `
-                            <div class="activity-actions-print flex gap-2 items-center flex-shrink-0">
-                                <button onclick="handleSafeEditClick(event, '${eventData.id}')" class="${iconColorClass} hover:text-blue-400 p-1"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
-                                <button 
-                                    onclick="event.stopPropagation(); if(typeof isBatchDeleteMode !== 'undefined' && isBatchDeleteMode) { toggleBatchSelection('${eventData.id}'); } else { deleteActivity('${eventData.id}'); }" 
-                                    oncontextmenu="event.preventDefault(); event.stopPropagation(); startBatchDeleteMode('${eventData.id}');"
-                                    class="${iconColorClass} hover:text-red-400 p-1 transition-colors" title="Excluir (Segure ou clique c/ botão direito para exclusão múltipla)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                            <div class="activity-actions-print flex items-center flex-shrink-0 ml-2">
+                                <button onclick="openActivityOptionsMenu(event, '${eventData.id}')" oncontextmenu="event.preventDefault(); event.stopPropagation(); startBatchDeleteMode('${eventData.id}');" class="${iconColorClass} hover:text-blue-600 p-1.5 transition-colors" title="Opções da Atividade">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                                 </button>
                             </div>` : ''}
                         </div>`;
@@ -19437,6 +19446,80 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
             });
         };
+
+        // --- LÓGICA DO MENU DE OPÇÕES (3 PONTINHOS) ---
+        window.currentOptionsActivityId = null;
+
+        window.openActivityOptionsMenu = (e, activityId) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Se já estiver no modo de exclusão em lote, o clique apenas seleciona o item
+            if (typeof isBatchDeleteMode !== 'undefined' && isBatchDeleteMode) {
+                toggleBatchSelection(activityId);
+                return;
+            }
+
+            window.currentOptionsActivityId = activityId;
+            const menu = document.getElementById('activity-options-menu');
+            
+            // Torna visível mas transparente para medir
+            menu.style.visibility = 'hidden';
+            menu.classList.remove('hidden');
+            
+            const menuWidth = menu.offsetWidth;
+            const menuHeight = menu.offsetHeight;
+            const padding = 10;
+            
+            // Posiciona à esquerda do botão
+            let leftPos = e.clientX - menuWidth + 10;
+            if (leftPos < padding) leftPos = padding;
+            
+            // Posiciona um pouco abaixo do clique
+            let topPos = e.clientY + 10;
+            if (topPos + menuHeight + padding > window.innerHeight) {
+                topPos = e.clientY - menuHeight - 10; // Joga para cima se faltar espaço na tela
+            }
+
+            menu.style.left = `${leftPos}px`;
+            menu.style.top = `${topPos}px`;
+            menu.style.visibility = 'visible';
+        };
+
+        // Fecha o menu se clicar fora dele
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('activity-options-menu');
+            if (menu && !menu.classList.contains('hidden') && !e.target.closest('#activity-options-menu')) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // Ações dos botões dentro do menu
+        document.getElementById('btn-opt-edit').addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('activity-options-menu').classList.add('hidden');
+            if (window.currentOptionsActivityId) {
+                handleSafeEditClick(e, window.currentOptionsActivityId);
+            }
+        });
+
+        document.getElementById('btn-opt-delete').addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('activity-options-menu').classList.add('hidden');
+            if (window.currentOptionsActivityId) {
+                deleteActivity(window.currentOptionsActivityId);
+            }
+        });
+
+        // Habilita o "Excluir em Lote" segurando o clique no botão "Excluir" do menu
+        document.getElementById('btn-opt-delete').addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('activity-options-menu').classList.add('hidden');
+            if (window.currentOptionsActivityId) {
+                startBatchDeleteMode(window.currentOptionsActivityId);
+            }
+        });
 
     </script>
 
