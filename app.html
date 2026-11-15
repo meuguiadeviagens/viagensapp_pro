@@ -1241,7 +1241,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.1.08 | 29/10/2026, 08:29</p> <!-- (G) -->
+                <p class="text-center text-sm text-slate-500 mt-8">v3.1.09 | 15/11/2026, 08:29</p> <!-- (G) -->
             </main>
         </div>
 
@@ -1805,6 +1805,10 @@
                         </button>
                         <button onclick="showSpendingPerPerson()" class="w-full max-w-sm bg-orange-500 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-orange-600 transition-transform hover:scale-105">
                             Verificar despesas por pessoa
+                        </button>
+                        <button onclick="openExpenseSettingsModal()" class="w-full max-w-sm bg-slate-700 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-slate-800 transition-transform hover:scale-105 flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                            Configurações de Rateio
                         </button>
                     </div> <br>
    
@@ -3131,6 +3135,24 @@
             </div>
         </div>
         <!-- FIM: Modal Gerenciar Categorias de Modelos -->
+
+        <!-- INÍCIO: MODAL CONFIGURAÇÕES DE RATEIO -->
+        <div id="expense-settings-modal" class="fixed inset-0 z-[150] hidden items-center justify-center modal-backdrop p-4">
+            <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-lg m-4 flex flex-col max-h-[90vh]">
+                <h3 class="text-2xl font-semibold mb-2 text-slate-800">Configurações de Rateio</h3>
+                <p class="text-sm text-slate-500 mb-6">Agrupe membros de uma mesma família em uma cota única ou isente pessoas (ex: crianças) da divisão de despesas.</p>
+
+                <div id="expense-settings-list" class="flex-grow overflow-y-auto space-y-3 pr-2 mb-4">
+                    <!-- Injetado via JS -->
+                </div>
+
+                <div class="pt-4 border-t flex justify-end gap-3 shrink-0">
+                    <button type="button" onclick="closeModal('expense-settings-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Cancelar</button>
+                    <button type="button" onclick="saveExpenseSettings()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold shadow-md transition-colors">Salvar Configurações</button>
+                </div>
+            </div>
+        </div>
+        <!-- FIM: MODAL CONFIGURAÇÕES DE RATEIO -->
 
         <!-- INÍCIO: MODAL EDITAR MINHA DESPESA -->
         <div id="edit-my-expense-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop p-4">
@@ -5169,65 +5191,65 @@ window.addEventListener('popstate', (event) => {
             const travelers = trip.travelers || [];
             const expenses = trip.sharedExpenses || [];
             
-            // 1. Pegar os novos containers
+            // 1. Pegar os containers
             const payersContainer = document.getElementById('expense-payers-checkboxes');
             const participantsContainer = document.getElementById('expense-participants-checkboxes');
             const expenseListContainer = document.getElementById('shared-expenses-list');
 
-            // 2. Popula os campos do formulário de ADIÇÃO
-            // Lê do objeto trip ou usa BRL se não existir
+            // 2. Popula a moeda e limpa checkboxes
             const savedCurrency = trip.lastCurrency || "BRL"; 
-            // Passamos essa variável como 3º parâmetro
             populateCurrencySelect('expense-currency', 'expense-currency-custom', savedCurrency);
-            payersContainer.innerHTML = ''; // <-- Limpa o novo container
+            payersContainer.innerHTML = ''; 
             participantsContainer.innerHTML = '';
 
             if (travelers.length === 0) {
                 participantsContainer.innerHTML = '<p class="text-sm text-slate-400 col-span-full">Cadastre viajantes para adicionar despesas.</p>';
-                payersContainer.innerHTML = '<p class="text-sm text-slate-400 col-span-full">Cadastre viajantes para adicionar despesas.</p>'; // <-- Adiciona msg aqui tbm
+                payersContainer.innerHTML = '<p class="text-sm text-slate-400 col-span-full">Cadastre viajantes para adicionar despesas.</p>'; 
             } else {
-                travelers.forEach(traveler => {
-                    const safeName = traveler.name.replace(/\s+/g, '-');
+                // AQUI ESTÁ A MÁGICA DO AGRUPAMENTO
+                const { entityMap, uniqueEntities } = window.buildExpenseEntities(trip);
+                
+                // Descobre a qual entidade o usuário logado pertence
+                const currentUserTraveler = travelers.find(t => t.uid === currentUserId);
+                const currentUserEntity = currentUserTraveler ? entityMap[currentUserTraveler.name] : null;
 
-                    // --- INÍCIO DA ALTERAÇÃO PARA MARCAR O USUÁRIO COMO PAGADOR ---
-                    // Verifica se este viajante é o usuário logado
-                    const isCurrentUser = (traveler.uid === currentUserId);
-                    // Se for, cria a string 'checked', senão deixa vazia
-                    const checkedAttr = isCurrentUser ? 'checked' : '';
-                    // ---------------------------
+                if (uniqueEntities.length === 0) {
+                    participantsContainer.innerHTML = '<p class="text-sm text-slate-400 col-span-full">Nenhuma pessoa elegível.</p>';
+                    payersContainer.innerHTML = '<p class="text-sm text-slate-400 col-span-full">Nenhuma pessoa elegível.</p>';
+                } else {
+                    uniqueEntities.forEach(entityName => {
+                        const safeName = entityName.replace(/[\s\W]+/g, '-');
+                        
+                        const isCurrentUserEntity = (entityName === currentUserEntity);
+                        const checkedAttr = isCurrentUserEntity ? 'checked' : '';
+                        
+                        // Checkbox de PAGADOR (Credor)
+                        const payerCheckboxDiv = document.createElement('div');
+                        payerCheckboxDiv.className = 'flex items-center gap-2';
+                        payerCheckboxDiv.innerHTML = `<input type="checkbox" id="payer-${safeName}" value="${entityName}" ${checkedAttr} onchange="window.updatePayerSplitView()" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"><label for="payer-${safeName}" class="text-sm text-slate-700">${entityName}</label>`;
+                        payersContainer.appendChild(payerCheckboxDiv);
+                        
+                        // Checkbox de PARTICIPANTE (Devedor)
+                        const participantCheckboxDiv = document.createElement('div');
+                        participantCheckboxDiv.className = 'flex items-center gap-2';
+                        participantCheckboxDiv.innerHTML = `<input type="checkbox" id="participant-${safeName}" value="${entityName}" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"><label for="participant-${safeName}" class="text-sm text-slate-700">${entityName}</label>`;
+                        participantsContainer.appendChild(participantCheckboxDiv);
+                    });
                     
-                    // 3. Popula os checkboxes de PAGADORES
-                    const payerCheckboxDiv = document.createElement('div');
-                    payerCheckboxDiv.className = 'flex items-center gap-2';
-                    // Note que adicionei ${checkedAttr} dentro da string do input abaixo:
-                    payerCheckboxDiv.innerHTML = `<input type="checkbox" id="payer-${safeName}" value="${traveler.name}" ${checkedAttr} onchange="window.updatePayerSplitView()" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"><label for="payer-${safeName}" class="text-sm text-slate-700">${traveler.name}</label>`;
-                    payersContainer.appendChild(payerCheckboxDiv);
-                    
-                    // 4. Popula os checkboxes de PARTICIPANTES (como antes)
-                    const participantCheckboxDiv = document.createElement('div');
-                    participantCheckboxDiv.className = 'flex items-center gap-2';
-                    participantCheckboxDiv.innerHTML = `<input type="checkbox" id="participant-${safeName}" value="${traveler.name}" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"><label for="participant-${safeName}" class="text-sm text-slate-700">${traveler.name}</label>`;
-                    participantsContainer.appendChild(participantCheckboxDiv);
-                });
-                
-                const selectAllParticipantsCheckbox = document.getElementById('select-all-participants');
-                selectAllParticipantsCheckbox.checked = true;
-                selectAllParticipantsCheckbox.dispatchEvent(new Event('change'));                
-                
+                    const selectAllParticipantsCheckbox = document.getElementById('select-all-participants');
+                    selectAllParticipantsCheckbox.checked = true;
+                    selectAllParticipantsCheckbox.dispatchEvent(new Event('change'));                
+                }
             }
 
-            // 2. AGRUPA despesas por moeda e renderiza a lista
+            // 3. AGRUPA despesas por moeda e renderiza a lista
             expenseListContainer.innerHTML = '';
             if (expenses.length === 0) {
-                // Preenche a mensagem de lista vazia
                 expenseListContainer.innerHTML = '<p class="text-slate-500 text-sm text-center py-2">Nenhuma despesa de grupo adicionada.</p>';
             } else {
-                // Lógica de agrupamento por moeda
                 const expensesByCurrency = expenses.reduce((acc, expense) => {
                     const currency = expense.currency || 'BRL';
-                    if (!acc[currency]) {
-                        acc[currency] = [];
-                    }
+                    if (!acc[currency]) acc[currency] = [];
                     acc[currency].push(expense);
                     return acc;
                 }, {});
@@ -5239,44 +5261,31 @@ window.addEventListener('popstate', (event) => {
                 });
 
                 sortedCurrencies.forEach(currency => {
-                    // --- NOVO CÁLCULO DE TOTAL ---
                     const currencyExpensesList = expensesByCurrency[currency];
                     const totalVal = currencyExpensesList.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
                     const totalDisplay = formatCurrency(totalVal, currency);
-                    // -----------------------------
 
-                    // Adiciona o cabeçalho da moeda
                     const currencyHeader = document.createElement('h5');
                     currencyHeader.className = 'text-base font-semibold text-slate-700 mt-4 first:mt-0';
-                    
-                    // --- ATUALIZAÇÃO DO TEXTO ---
                     currencyHeader.textContent = `${currency} (Total: ${totalDisplay})`; 
-                    // ----------------------------
-
                     expenseListContainer.appendChild(currencyHeader);
                     
-                    // VAI ORDENAR POR DATA DE CADASTRO (expense.id) EM ORDEM DECRESCENTE
                     const currencyExpenses = expensesByCurrency[currency].sort((a, b) => b.id - a.id);
                     
                     currencyExpenses.forEach(expense => {
                         const expenseElement = document.createElement('div');
-                        // Define as classes do item da lista
                         expenseElement.className = 'flex justify-between items-center p-3 rounded-md bg-slate-50 border border-slate-200';
                         
-                        // 6. Lida com dados antigos (payerName) E novos (payers) para exibir na lista
                         let payersText = 'N/A';
                         if (Array.isArray(expense.payers)) {
                             if (expense.payers.length > 0 && typeof expense.payers[0] === 'object') {
-                                // Novo formato: [{name, amount}, ...]
                                 payersText = expense.payers.map(p => p.name).join(', ');
                             } else {
-                                // Formato antigo: [name1, name2, ...] ou payerName
                                 const oldPayers = expense.payers || (expense.payerName ? [expense.payerName] : []);
                                 payersText = oldPayers.join(', ');
                             }
                         }
                         
-                        // NOVO: Formata o ID (timestamp) como data/hora
                         let createdDate = '';
                         if (expense.id) {
                             const date = new Date(parseInt(expense.id, 10));
@@ -5294,13 +5303,13 @@ window.addEventListener('popstate', (event) => {
                             </div>
                             <div class="flex items-center gap-1">
                                 <button onclick="openExpenseDetailsModal('${expense.id}')" title="Ver detalhes" class="text-slate-500 hover:text-blue-600 p-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                                 </button>
                                 <button onclick="openEditExpenseModal('${expense.id}')" title="Editar" class="text-slate-500 hover:text-green-600 p-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                                 </button>
                                 <button onclick="deleteSharedExpense('${expense.id}')" title="Excluir" class="text-slate-500 hover:text-red-600 p-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                                 </button>
                             </div>`;
                         expenseListContainer.appendChild(expenseElement);
@@ -5387,72 +5396,80 @@ window.addEventListener('popstate', (event) => {
             payersContainer.innerHTML = '';
             participantsContainer.innerHTML = '';
 
-            // 2. Lida com dados antigos (payerName) E novos (payers)
-            let payersList = []; // Array de nomes
-            let payersMap = new Map(); // Mapa de name -> amount
+            const { entityMap, uniqueEntities } = window.buildExpenseEntities(trip);
             
+            let entityPayersList = []; 
+            let entityPayersMap = new Map(); 
+            
+            // Traduz os pagadores antigos (nomes individuais) para as novas entidades (Grupos)
             if (Array.isArray(expense.payers)) {
                 if (expense.payers.length > 0 && typeof expense.payers[0] === 'object') {
-                    // Novo formato: [{name, amount}, ...]
                     expense.payers.forEach(p => {
-                        payersList.push(p.name);
-                        payersMap.set(p.name, p.amount);
+                        const eName = entityMap[p.name] || p.name;
+                        if (eName !== 'isento') {
+                            if (!entityPayersList.includes(eName)) entityPayersList.push(eName);
+                            const currentAmount = entityPayersMap.get(eName) || 0;
+                            entityPayersMap.set(eName, currentAmount + p.amount);
+                        }
                     });
                 } else {
-                    // Formato antigo: [name1, name2, ...] ou payerName
-                    payersList = expense.payers || (expense.payerName ? [expense.payerName] : []);
-                    // Converte para o map, assumindo divisão igualitária
-                    const splitAmount = (expense.amount && payersList.length > 0) ? (expense.amount / payersList.length) : 0;
-                    payersList.forEach(name => {
-                        payersMap.set(name, splitAmount);
+                    const oldPayers = expense.payers || (expense.payerName ? [expense.payerName] : []);
+                    const splitAmount = (expense.amount && oldPayers.length > 0) ? (expense.amount / oldPayers.length) : 0;
+                    oldPayers.forEach(name => {
+                        const eName = entityMap[name] || name;
+                        if (eName !== 'isento') {
+                            if (!entityPayersList.includes(eName)) entityPayersList.push(eName);
+                            const currentAmount = entityPayersMap.get(eName) || 0;
+                            entityPayersMap.set(eName, currentAmount + splitAmount);
+                        }
                     });
                 }
             }
 
-            // Popula as listas de viajantes no modal de edição
-            (trip.travelers || []).forEach(traveler => {
-                const safeName = traveler.name.replace(/\s+/g, '-');
+            // Traduz os participantes antigos para as novas entidades
+            const entityParticipants = new Set();
+            (expense.participants || []).forEach(pName => {
+                const eName = entityMap[pName] || pName;
+                if (eName !== 'isento') entityParticipants.add(eName);
+            });
+
+            // Cria os checkboxes usando apenas as Entidades Únicas
+            uniqueEntities.forEach(entityName => {
+                const safeName = entityName.replace(/[\s\W]+/g, '-');
                 
-                // 3. Popula os checkboxes de PAGADORES (edição)
-                const isPayer = payersList.includes(traveler.name);
+                const isPayer = entityPayersList.includes(entityName);
                 const payerCheckboxDiv = document.createElement('div');
                 payerCheckboxDiv.className = 'flex items-center gap-2';
                 payerCheckboxDiv.innerHTML = `
-                    <input type="checkbox" id="edit-payer-${safeName}" value="${traveler.name}" ${isPayer ? 'checked' : ''} onchange="window.updateEditPayerSplitView()" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <label for="edit-payer-${safeName}" class="text-sm text-slate-700">${traveler.name}</label>
+                    <input type="checkbox" id="edit-payer-${safeName}" value="${entityName}" ${isPayer ? 'checked' : ''} onchange="window.updateEditPayerSplitView()" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <label for="edit-payer-${safeName}" class="text-sm text-slate-700">${entityName}</label>
                 `;
                 payersContainer.appendChild(payerCheckboxDiv);
 
-
-                // Adiciona os checkboxes e marca os que participaram
-                const isParticipant = expense.participants.includes(traveler.name);
+                const isParticipant = entityParticipants.has(entityName);
                 const participantCheckboxDiv = document.createElement('div');
                 participantCheckboxDiv.className = 'flex items-center gap-2';
                 participantCheckboxDiv.innerHTML = `
-                    <input type="checkbox" id="edit-participant-${safeName}" value="${traveler.name}" ${isParticipant ? 'checked' : ''} class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <label for="edit-participant-${safeName}" class="text-sm text-slate-700">${traveler.name}</label>
+                    <input type="checkbox" id="edit-participant-${safeName}" value="${entityName}" ${isParticipant ? 'checked' : ''} class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <label for="edit-participant-${safeName}" class="text-sm text-slate-700">${entityName}</label>
                 `;
                 participantsContainer.appendChild(participantCheckboxDiv);
             });
 
             openModal('edit-expense-modal');
 
-            // --- INÍCIO DA NOVA LÓGICA DE POPULAÇÃO ---
-            // Força a criação dos inputs de divisão (se houver > 1 pagador)
             window.updateEditPayerSplitView(); 
 
-            // Agora, se os inputs foram criados, preenche com os valores salvos
-            if (payersMap.size > 0 && payersList.length > 1) {
+            // Preenche os valores corretos caso haja múltiplos credores (já traduzidos para entidades)
+            if (entityPayersMap.size > 0 && entityPayersList.length > 1) {
                 document.querySelectorAll('#edit-expense-payers-split-container .edit-payer-split-input').forEach(input => {
-                    const payerName = input.dataset.payerName;
-                    if (payersMap.has(payerName)) {
-                        input.value = (payersMap.get(payerName)).toFixed(2);
+                    const payerName = input.dataset.payerName; // Isso agora é a Entidade
+                    if (entityPayersMap.has(payerName)) {
+                        input.value = (entityPayersMap.get(payerName)).toFixed(2);
                     }
                 });
-                // Re-valida o total
                 window.validateEditPayerSplitTotal();
             }
-            // --- FIM DA NOVA LÓGICA DE POPULAÇÃO ---
 
         };
 
@@ -6324,81 +6341,7 @@ window.addEventListener('popstate', (event) => {
             } else {
                 alert('Erro: não foi possível encontrar a despesa para atualizar.');
             }
-        });
-
-        window.showSpendingPerPerson = () => {
-            const trip = tripsData.find(t => t.id === currentTripId);
-            const travelers = trip.travelers || [];
-            const resultsContainer = document.getElementById('spending-per-person-results');
-            resultsContainer.innerHTML = '';
-
-            // Passo 1: Agrupar despesas por moeda
-            const expensesByCurrency = (trip.sharedExpenses || []).reduce((acc, expense) => {
-                const currency = expense.currency || 'BRL';
-                if (!acc[currency]) {
-                    acc[currency] = [];
-                }
-                acc[currency].push(expense);
-                return acc;
-            }, {});
-
-            // Ordena as moedas para uma exibição consistente
-            const sortedCurrencies = Object.keys(expensesByCurrency).sort((a, b) => {
-                if (a === 'BRL') return -1;
-                if (b === 'BRL') return 1;
-                return a.localeCompare(b);
-            });
-
-            if (sortedCurrencies.length === 0) {
-                resultsContainer.innerHTML = '<p class="text-center text-slate-600">Nenhuma despesa de grupo foi adicionada para verificar.</p>';
-                openModal('spending-per-person-modal');
-                return;
-            }
-
-            // Passo 2: Calcular a responsabilidade de cada pessoa para cada moeda
-            sortedCurrencies.forEach(currency => {
-                const currencyExpenses = expensesByCurrency[currency];
-
-                const responsibilityTotals = {};
-                travelers.forEach(t => {
-                    responsibilityTotals[t.name] = 0;
-                });
-
-                currencyExpenses.forEach(expense => {
-                    const numberOfParticipants = expense.participants.length;
-                    if (numberOfParticipants > 0) {
-                        const share = expense.amount / numberOfParticipants;
-                        expense.participants.forEach(participantName => {
-                            if (responsibilityTotals.hasOwnProperty(participantName)) {
-                                responsibilityTotals[participantName] += share;
-                            }
-                        });
-                    }
-                });
-
-                const sortedResponsibilities = Object.entries(responsibilityTotals).sort(([, a], [, b]) => b - a);
-                
-                // Passo 3: Exibir os resultados agrupados por moeda
-                const currencyHeader = document.createElement('div');
-                currencyHeader.innerHTML = `<h4 class="text-lg font-bold text-blue-900 bg-blue-100 px-3 py-2 rounded-md mt-4 first:mt-0">${currency}</h4>`;
-                resultsContainer.appendChild(currencyHeader);
-
-                sortedResponsibilities.forEach(([name, total]) => {
-                    // Só exibe pessoas que tiveram algum custo
-                    if (total > 0.01) {
-                        const spendingEl = document.createElement('div');
-                        spendingEl.className = 'flex justify-between items-center p-2 bg-slate-50 rounded-md text-base';
-                        spendingEl.innerHTML = `
-                            <span class="font-medium text-slate-700">${name}</span>
-                            <span class="font-bold text-slate-800">${formatCurrency(total, currency)}</span>
-                        `;
-                        resultsContainer.appendChild(spendingEl);
-                    }
-                });
-            });
-
-            openModal('spending-per-person-modal');
-        };       
+        });             
         
         window.addTravelerFromShareModal = async () => {
             const emailInput = document.getElementById('traveler-email-share');
@@ -11658,27 +11601,227 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
         });
 
+        // =====================================================================
+        // INÍCIO: SISTEMA DE PROCESSAMENTO DE DESPESAS COM COTAS E GRUPOS
+        // =====================================================================
+
+        // 1. FUNÇÃO AJUDANTE: Cria as "Entidades Financeiras" (Grupos ou Indivíduos)
+        window.buildExpenseEntities = (trip) => {
+            const travelers = trip.travelers || [];
+            const settings = trip.expenseSettings || {};
+            const entityMap = {}; 
+            
+            // Mapeia quem é quem
+            travelers.forEach(t => {
+                const s = settings[t.uid] || { group: 'individual', weight: 1 };
+                if (s.weight === 0 || s.group === 'none' || s.group === 'isento') {
+                    entityMap[t.name] = 'isento'; 
+                } else if (s.group && s.group !== 'individual') {
+                    // Se pertence a um grupo, a "entidade" que vai aparecer na tela será o próprio NOME do grupo!
+                    entityMap[t.name] = s.group;
+                } else {
+                    entityMap[t.name] = t.name; 
+                }
+            });
+
+            // Pega as entidades únicas válidas (sem os isentos)
+            const uniqueEntities = [...new Set(Object.values(entityMap))].filter(e => e !== 'isento');
+            
+            return { entityMap, uniqueEntities };
+        };
+
+        // 2. CÁLCULO DE RESUMO DE CONTAS
+        window.calculateExpenseSummary = () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            if (!trip) return;
+            const resultsContainer = document.getElementById('expense-summary-results');
+            resultsContainer.innerHTML = '';
+
+            const expensesByCurrency = (trip.sharedExpenses || []).reduce((acc, expense) => {
+                const currency = expense.currency || 'BRL';
+                if (!acc[currency]) acc[currency] = [];
+                acc[currency].push(expense);
+                return acc;
+            }, {});
+            
+            const sortedCurrencies = Object.keys(expensesByCurrency).sort((a, b) => a === 'BRL' ? -1 : b === 'BRL' ? 1 : a.localeCompare(b));
+
+            if (sortedCurrencies.length === 0) {
+                resultsContainer.innerHTML = '<p class="text-center text-slate-600">Nenhuma despesa de grupo foi adicionada para calcular o resumo.</p>';
+                openModal('expense-summary-modal');
+                return;
+            }
+
+            const paidSettlements = trip.paidSettlements || [];
+            
+            // TRADUÇÃO DAS COTAS:
+            const { entityMap, uniqueEntities } = window.buildExpenseEntities(trip);
+
+            sortedCurrencies.forEach(currency => {
+                const currencyExpenses = expensesByCurrency[currency];
+
+                // Zera os balanços baseados nas ENTIDADES (Agrupadas), não mais por viajante isolado
+                const balances = {};
+                uniqueEntities.forEach(eName => { balances[eName] = 0; });
+
+                currencyExpenses.forEach(expense => {
+                    
+                    // --- Crédito: Quem Pagou? ---
+                    const payers = expense.payers || (expense.payerName ? [expense.payerName] : []);
+                    if (payers.length > 0) {
+                        if (typeof payers[0] === 'object') { // Novo formato
+                            payers.forEach(p => {
+                                const eName = entityMap[p.name] || p.name; // Fallback se a pessoa foi deletada
+                                if (eName !== 'isento') {
+                                    if (balances[eName] === undefined) balances[eName] = 0;
+                                    balances[eName] += p.amount;
+                                }
+                            });
+                        } else { // Formato Antigo
+                            const amountPerPayer = (expense.amount && payers.length > 0) ? (expense.amount / payers.length) : 0;
+                            payers.forEach(payerName => {
+                                const eName = entityMap[payerName] || payerName;
+                                if (eName !== 'isento') {
+                                    if (balances[eName] === undefined) balances[eName] = 0;
+                                    balances[eName] += amountPerPayer;
+                                }
+                            });
+                        }
+                    }
+                    
+                    // --- Débito: Quem Participou? ---
+                    const involvedEntities = new Set();
+                    expense.participants.forEach(pName => {
+                        const eName = entityMap[pName] || pName;
+                        if (eName !== 'isento') involvedEntities.add(eName);
+                    });
+
+                    // Divide a despesa pelas COTAS únicas envolvidas
+                    if (involvedEntities.size > 0) {
+                        const share = expense.amount / involvedEntities.size;
+                        involvedEntities.forEach(eName => {
+                            if (balances[eName] === undefined) balances[eName] = 0;
+                            balances[eName] -= share; 
+                        });
+                    }
+                });
+
+                // Resolve os devedores vs credores
+                const creditors = [];
+                const debtors = [];
+                Object.entries(balances).forEach(([name, balance]) => {
+                    if (balance > 0.01) creditors.push({ name, amount: balance });
+                    else if (balance < -0.01) debtors.push({ name, amount: -balance });
+                });
+
+                creditors.sort((a, b) => b.amount - a.amount);
+                debtors.sort((a, b) => b.amount - a.amount);
+
+                const transactions = [];
+                let i = 0, j = 0;
+                while (i < debtors.length && j < creditors.length) {
+                    const amountToTransfer = Math.min(debtors[i].amount, creditors[j].amount);
+                    if (amountToTransfer > 0.01) {
+                        transactions.push({ from: debtors[i].name, to: creditors[j].name, amount: amountToTransfer });
+                    }
+                    debtors[i].amount -= amountToTransfer;
+                    creditors[j].amount -= amountToTransfer;
+                    if (debtors[i].amount < 0.01) i++;
+                    if (creditors[j].amount < 0.01) j++;
+                }
+                
+                // Renderização do HTML (Mesmo código que o seu)
+                const currencyHeader = document.createElement('div');
+                currencyHeader.innerHTML = `<h4 class="text-lg font-bold text-blue-900 bg-blue-100 px-3 py-2 rounded-md mt-4 first:mt-0">${currency}</h4>`;
+                resultsContainer.appendChild(currencyHeader);
+
+                if (transactions.length === 0) {
+                    const noTransactionsEl = document.createElement('p');
+                    noTransactionsEl.className = 'text-sm text-slate-500 p-2';
+                    noTransactionsEl.textContent = 'Nenhum acerto de contas necessário para esta moeda.';
+                    resultsContainer.appendChild(noTransactionsEl);
+                } else {
+                    transactions.forEach(t => {
+                        const transactionId = `${t.from}_${t.to}_${currency}`;
+                        const isPaid = paidSettlements.includes(transactionId);
+                        const transactionEl = document.createElement('div');
+                        transactionEl.className = `transaction-item flex items-center justify-between p-3 bg-slate-50 rounded-lg ${isPaid ? 'paid-transaction' : ''}`;
+                        transactionEl.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" onchange="toggleSettlementPaid(this, '${t.from}', '${t.to}', '${currency}')" 
+                                    ${isPaid ? 'checked' : ''} class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                                <div class="flex items-center gap-3">
+                                    <span class="font-bold text-slate-800">${t.from}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-500"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                                    <span class="font-bold text-slate-800">${t.to}</span>
+                                </div>
+                            </div>
+                            <span class="text-lg font-bold text-indigo-600">${formatCurrency(t.amount, currency)}</span>
+                        `;
+                        resultsContainer.appendChild(transactionEl);
+                    });
+                }
+
+                const summaryTotals = {};
+                uniqueEntities.forEach(eName => { summaryTotals[eName] = 0; });
+                transactions.forEach(t => {
+                    if (summaryTotals[t.to] === undefined) summaryTotals[t.to] = 0;
+                    if (summaryTotals[t.from] === undefined) summaryTotals[t.from] = 0;
+                    summaryTotals[t.to] += t.amount;
+                    summaryTotals[t.from] -= t.amount;
+                });
+
+                const summaryContainer = document.createElement('div');
+                summaryContainer.className = 'mt-5 pt-4 border-t-2 border-slate-200';
+                let hasSummaryContent = false;
+                const summaryList = document.createElement('div');
+                summaryList.className = 'space-y-1';
+
+                Object.keys(summaryTotals).sort().forEach(name => {
+                    const total = summaryTotals[name];
+                    if (Math.abs(total) > 0.01) {
+                        hasSummaryContent = true;
+                        const summaryLine = document.createElement('div');
+                        summaryLine.className = 'flex justify-between items-center text-sm p-1.5 bg-slate-100 rounded';
+                        const actionText = total > 0 ? 'Receberá ao todo' : 'Pagará ao todo';
+                        const textClass = total > 0 ? 'text-green-700' : 'text-red-700';
+                        summaryLine.innerHTML = `
+                            <span class="font-medium text-slate-700">${name}</span>
+                            <span class="font-bold ${textClass}">${actionText}: ${formatCurrency(Math.abs(total), currency)}</span>
+                        `;
+                        summaryList.appendChild(summaryLine);
+                    }
+                });
+
+                if (hasSummaryContent) {
+                    summaryContainer.innerHTML = '<h5 class="text-base font-semibold text-slate-800 mb-2">Resumo por Cota:</h5>';
+                    summaryContainer.appendChild(summaryList);
+                    resultsContainer.appendChild(summaryContainer);
+                }
+            }); 
+            openModal('expense-summary-modal');
+        };
+
+        // 3. EXPLICAÇÃO DE DESPESAS (Detalhado por Entidade/Cota)
         window.showExpenseExplanation = () => {
             const trip = tripsData.find(t => t.id === currentTripId);
             if (!trip) return;
 
-            const travelers = trip.travelers || [];
             const expenses = trip.sharedExpenses || [];
             const contentContainer = document.getElementById('expense-explanation-content');
             contentContainer.innerHTML = '';
 
-            if (travelers.length === 0 || expenses.length === 0) {
-                contentContainer.innerHTML = '<p class="text-center text-slate-600">Não há viajantes ou despesas suficientes para gerar a explicação.</p>';
+            if (expenses.length === 0) {
+                contentContainer.innerHTML = '<p class="text-center text-slate-600">Não há despesas suficientes para gerar a explicação.</p>';
                 openModal('expense-explanation-modal');
                 return;
             }
 
-            // 1. Agrupa as despesas por moeda
+            const { entityMap, uniqueEntities } = window.buildExpenseEntities(trip);
+            
             const expensesByCurrency = expenses.reduce((acc, expense) => {
                 const currency = expense.currency || 'BRL';
-                if (!acc[currency]) {
-                    acc[currency] = [];
-                }
+                if (!acc[currency]) acc[currency] = [];
                 acc[currency].push(expense);
                 return acc;
             }, {});
@@ -11686,70 +11829,62 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const sortedCurrencies = Object.keys(expensesByCurrency).sort((a, b) => a === 'BRL' ? -1 : b === 'BRL' ? 1 : a.localeCompare(b));
             let finalHtml = '';
 
-            // 2. Itera sobre cada moeda
             sortedCurrencies.forEach(currency => {
                 finalHtml += `<div class="mb-6"><h4 class="text-xl font-bold text-blue-900 bg-blue-100 px-3 py-2 rounded-md mb-3 sticky top-0">${currency}</h4>`;
                 const currencyExpenses = expensesByCurrency[currency];
                 
-                // 3. Calcula totais para cada viajante DENTRO da moeda atual
-                const travelerDetails = {};
-                travelers.forEach(t => {
-                    travelerDetails[t.name] = {
-                        totalPaid: 0,
-                        totalOwed: 0,
-                        expensesPaidList: []
-                    };
+                const entityDetails = {};
+                uniqueEntities.forEach(eName => {
+                    entityDetails[eName] = { totalPaid: 0, totalOwed: 0, expensesPaidList: [] };
                 });
 
                 currencyExpenses.forEach(expense => {
-                // 1. Lida com dados antigos (payerName) E novos (payers)
-                const payers = expense.payers || (expense.payerName ? [expense.payerName] : []);
-                    
+                    // Pagamentos
+                    const payers = expense.payers || (expense.payerName ? [expense.payerName] : []);
                     if (payers.length > 0) {
                         if (typeof payers[0] === 'object') {
-                            // Novo formato: [{name, amount}, ...]
                             payers.forEach(p => {
-                                if (travelerDetails[p.name]) {
-                                    travelerDetails[p.name].totalPaid += p.amount;
-                                    travelerDetails[p.name].expensesPaidList.push({
-                                        description: expense.description,
-                                        amount: p.amount
-                                    });
+                                const eName = entityMap[p.name] || p.name;
+                                if (eName !== 'isento') {
+                                    if (!entityDetails[eName]) entityDetails[eName] = { totalPaid: 0, totalOwed: 0, expensesPaidList: [] };
+                                    entityDetails[eName].totalPaid += p.amount;
+                                    entityDetails[eName].expensesPaidList.push({ description: expense.description, amount: p.amount });
                                 }
                             });
                         } else {
-                            // Formato antigo: [name1, name2, ...] ou payerName
                             const amountPerPayer = (expense.amount && payers.length > 0) ? (expense.amount / payers.length) : 0;
                             payers.forEach(payerName => {
-                                if (travelerDetails[payerName]) {
-                                    travelerDetails[payerName].totalPaid += amountPerPayer;
-                                    travelerDetails[payerName].expensesPaidList.push({
-                                        description: `${expense.description} (dividido por ${payers.length})`,
-                                        amount: amountPerPayer
-                                    });
+                                const eName = entityMap[payerName] || payerName;
+                                if (eName !== 'isento') {
+                                    if (!entityDetails[eName]) entityDetails[eName] = { totalPaid: 0, totalOwed: 0, expensesPaidList: [] };
+                                    entityDetails[eName].totalPaid += amountPerPayer;
+                                    entityDetails[eName].expensesPaidList.push({ description: `${expense.description} (dividido)`, amount: amountPerPayer });
                                 }
                             });
                         }
                     }
 
-                    // Adiciona à cota-parte (total DEVIDO) de cada participante
-                    const share = expense.amount / expense.participants.length;
-                    expense.participants.forEach(participantName => {
-                        if (travelerDetails[participantName]) {
-                            travelerDetails[participantName].totalOwed += share;
-                        }
+                    // Débitos
+                    const involvedEntities = new Set();
+                    expense.participants.forEach(pName => {
+                        const eName = entityMap[pName] || pName;
+                        if (eName !== 'isento') involvedEntities.add(eName);
                     });
+
+                    if (involvedEntities.size > 0) {
+                        const share = expense.amount / involvedEntities.size;
+                        involvedEntities.forEach(eName => {
+                            if (!entityDetails[eName]) entityDetails[eName] = { totalPaid: 0, totalOwed: 0, expensesPaidList: [] };
+                            entityDetails[eName].totalOwed += share;
+                        });
+                    }
                 });
 
-                // 4. Monta o HTML da explicação para cada viajante
-                travelers.forEach(traveler => {
-                    const details = travelerDetails[traveler.name];
+                Object.keys(entityDetails).forEach(eName => {
+                    const details = entityDetails[eName];
                     const balance = details.totalPaid - details.totalOwed;
 
-                    // Só mostra o viajante se ele pagou ou deveu algo nesta moeda
-                    if (Math.abs(details.totalPaid) < 0.01 && Math.abs(details.totalOwed) < 0.01) {
-                        return; 
-                    }
+                    if (Math.abs(details.totalPaid) < 0.01 && Math.abs(details.totalOwed) < 0.01) return; 
 
                     let expensesListHtml = '';
                     if (details.expensesPaidList.length > 0) {
@@ -11774,198 +11909,99 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     finalHtml += `
                         <div class="p-3 border-b border-slate-200 last:border-b-0">
                             <p class="text-base text-slate-800">
-                                <strong class="font-bold">${traveler.name}</strong> pagou um total de <strong class="font-semibold">${formatCurrency(details.totalPaid, currency)}</strong>.
+                                <strong class="font-bold">${eName}</strong> pagou um total de <strong class="font-semibold">${formatCurrency(details.totalPaid, currency)}</strong>.
                             </p>
                             ${expensesListHtml}
                             <p class="text-base text-slate-800 mt-2">
-                                Sua cota-parte total em todas as despesas era de <strong class="font-semibold">${formatCurrency(details.totalOwed, currency)}</strong>, portanto, ${balanceHtml}
+                                A cota-parte total em despesas era de <strong class="font-semibold">${formatCurrency(details.totalOwed, currency)}</strong>, portanto, ${balanceHtml}
                             </p>
                         </div>
                     `;
                 });
                 
-                finalHtml += `</div>`; // Fecha a div da moeda
+                finalHtml += `</div>`;
             });
 
             contentContainer.innerHTML = finalHtml;
             openModal('expense-explanation-modal');
         };
-        
-        window.calculateExpenseSummary = () => {
+
+        // 4. VERIFICAR GASTOS POR COTA
+        window.showSpendingPerPerson = () => {
             const trip = tripsData.find(t => t.id === currentTripId);
-            const travelers = trip.travelers || [];
-            const resultsContainer = document.getElementById('expense-summary-results');
+            const resultsContainer = document.getElementById('spending-per-person-results');
             resultsContainer.innerHTML = '';
 
-            // 1. Agrupa despesas por moeda (como você já fez)
             const expensesByCurrency = (trip.sharedExpenses || []).reduce((acc, expense) => {
                 const currency = expense.currency || 'BRL';
                 if (!acc[currency]) acc[currency] = [];
                 acc[currency].push(expense);
                 return acc;
             }, {});
-            
+
             const sortedCurrencies = Object.keys(expensesByCurrency).sort((a, b) => a === 'BRL' ? -1 : b === 'BRL' ? 1 : a.localeCompare(b));
 
             if (sortedCurrencies.length === 0) {
-                resultsContainer.innerHTML = '<p class="text-center text-slate-600">Nenhuma despesa de grupo foi adicionada para calcular o resumo.</p>';
-                openModal('expense-summary-modal');
+                resultsContainer.innerHTML = '<p class="text-center text-slate-600">Nenhuma despesa de grupo foi adicionada para verificar.</p>';
+                openModal('spending-per-person-modal');
                 return;
             }
 
-            const paidSettlements = trip.paidSettlements || [];
+            const { entityMap, uniqueEntities } = window.buildExpenseEntities(trip);
 
-            // 2. Itera sobre CADA MOEDA
             sortedCurrencies.forEach(currency => {
                 const currencyExpenses = expensesByCurrency[currency];
 
-                // 3. Zera os balanços para esta moeda
-                const balances = {};
-                travelers.forEach(t => { balances[t.name] = 0; });
+                const responsibilityTotals = {};
+                uniqueEntities.forEach(eName => { responsibilityTotals[eName] = 0; });
 
-                // 4. PRIMEIRO LOOP: Processa TODAS as despesas da moeda
                 currencyExpenses.forEach(expense => {
-                    
-                    // --- Início da Lógica dos Pagadores (Crédito) ---
-                    const payers = expense.payers || (expense.payerName ? [expense.payerName] : []);
-                    if (payers.length > 0) {
-                        if (typeof payers[0] === 'object') {
-                            // Novo formato: [{name, amount}, ...]
-                            payers.forEach(p => {
-                                if (balances[p.name] !== undefined) {
-                                    balances[p.name] += p.amount; // Adiciona o valor exato que a pessoa pagou
-                                }
-                            });
-                        } else {
-                            // Formato antigo: [name1, name2, ...] ou payerName
-                            const amountPerPayer = (expense.amount && payers.length > 0) ? (expense.amount / payers.length) : 0;
-                            payers.forEach(payerName => {
-                                if (balances[payerName] !== undefined) {
-                                    balances[payerName] += amountPerPayer; // Adiciona o valor dividido
-                                }
-                            });
-                        }
-                    }
-                    // --- Fim da Lógica dos Pagadores ---
-                    
-                    // --- Início da Lógica dos Participantes (Débito) ---
-                    // (Esta era a parte que estava faltando)
-                    const share = expense.amount / expense.participants.length;
-                    expense.participants.forEach(participantName => {
-                        if (balances[participantName] !== undefined) {
-                            balances[participantName] -= share; // Subtrai do balanço
-                        }
+                    const involvedEntities = new Set();
+                    expense.participants.forEach(pName => {
+                        const eName = entityMap[pName] || pName;
+                        if (eName !== 'isento') involvedEntities.add(eName);
                     });
-                    // --- Fim da Lógica dos Participantes ---
 
-                }); // <-- FIM DO LOOP de despesas
-
-                // 5. SEGUNDO: Calcula as transações (AGORA FORA DO LOOP DE DESPESAS)
-                const creditors = [];
-                const debtors = [];
-                Object.entries(balances).forEach(([name, balance]) => {
-                    if (balance > 0.01) creditors.push({ name, amount: balance });
-                    else if (balance < -0.01) debtors.push({ name, amount: -balance });
+                    if (involvedEntities.size > 0) {
+                        const share = expense.amount / involvedEntities.size;
+                        involvedEntities.forEach(eName => {
+                            if (responsibilityTotals[eName] === undefined) responsibilityTotals[eName] = 0;
+                            responsibilityTotals[eName] += share;
+                        });
+                    }
                 });
 
-                // Ordena para otimizar (maior devedor paga maior credor)
-                creditors.sort((a, b) => b.amount - a.amount);
-                debtors.sort((a, b) => b.amount - a.amount);
-
-                const transactions = [];
-                let i = 0, j = 0;
-                while (i < debtors.length && j < creditors.length) {
-                    const amountToTransfer = Math.min(debtors[i].amount, creditors[j].amount);
-                    if (amountToTransfer > 0.01) {
-                        transactions.push({ from: debtors[i].name, to: creditors[j].name, amount: amountToTransfer });
-                    }
-                    debtors[i].amount -= amountToTransfer;
-                    creditors[j].amount -= amountToTransfer;
-                    if (debtors[i].amount < 0.01) i++;
-                    if (creditors[j].amount < 0.01) j++;
-                }
+                const sortedResponsibilities = Object.entries(responsibilityTotals).sort(([, a], [, b]) => b - a);
                 
-                // 6. Renderiza o HTML (como você já fez)
                 const currencyHeader = document.createElement('div');
                 currencyHeader.innerHTML = `<h4 class="text-lg font-bold text-blue-900 bg-blue-100 px-3 py-2 rounded-md mt-4 first:mt-0">${currency}</h4>`;
                 resultsContainer.appendChild(currencyHeader);
 
-                if (transactions.length === 0) {
-                    const noTransactionsEl = document.createElement('p');
-                    noTransactionsEl.className = 'text-sm text-slate-500 p-2';
-                    noTransactionsEl.textContent = 'Nenhum acerto de contas necessário para esta moeda.';
-                    resultsContainer.appendChild(noTransactionsEl);
-                } else {
-                    transactions.forEach(t => {
-                        const transactionId = `${t.from}_${t.to}_${currency}`;
-                        const isPaid = paidSettlements.includes(transactionId);
-
-                        const transactionEl = document.createElement('div');
-                        transactionEl.className = `transaction-item flex items-center justify-between p-3 bg-slate-50 rounded-lg ${isPaid ? 'paid-transaction' : ''}`;
-                        
-                        transactionEl.innerHTML = `
-                            <div class="flex items-center gap-3">
-                                <input type="checkbox" onchange="toggleSettlementPaid(this, '${t.from}', '${t.to}', '${currency}')" 
-                                       ${isPaid ? 'checked' : ''} 
-                                       class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
-                                
-                                <div class="flex items-center gap-3">
-                                    <span class="font-bold text-slate-800">${t.from}</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-500"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                                    <span class="font-bold text-slate-800">${t.to}</span>
-                                </div>
-                            </div>
-                            <span class="text-lg font-bold text-indigo-600">${formatCurrency(t.amount, currency)}</span>
-                        `;
-                        resultsContainer.appendChild(transactionEl);
-                    });
-                }
-
-                // --- Lógica do Resumo por Pessoa ---
-                const summaryTotals = {};
-                travelers.forEach(t => { summaryTotals[t.name] = 0; });
-
-                transactions.forEach(t => {
-                    summaryTotals[t.to] += t.amount;
-                    summaryTotals[t.from] -= t.amount;
-                });
-
-                const summaryContainer = document.createElement('div');
-                summaryContainer.className = 'mt-5 pt-4 border-t-2 border-slate-200';
-                let hasSummaryContent = false;
-
-                const summaryList = document.createElement('div');
-                summaryList.className = 'space-y-1';
-
-                Object.keys(summaryTotals).sort().forEach(name => {
-                    const total = summaryTotals[name];
-                    if (Math.abs(total) > 0.01) {
-                        hasSummaryContent = true;
-                        const summaryLine = document.createElement('div');
-                        summaryLine.className = 'flex justify-between items-center text-sm p-1.5 bg-slate-100 rounded';
-
-                        const actionText = total > 0 ? 'Receberá ao todo' : 'Pagará ao todo';
-                        const textClass = total > 0 ? 'text-green-700' : 'text-red-700';
-
-                        summaryLine.innerHTML = `
+                sortedResponsibilities.forEach(([name, total]) => {
+                    if (total > 0.01) {
+                        const spendingEl = document.createElement('div');
+                        spendingEl.className = 'flex justify-between items-center p-2 bg-slate-50 rounded-md text-base';
+                        spendingEl.innerHTML = `
                             <span class="font-medium text-slate-700">${name}</span>
-                            <span class="font-bold ${textClass}">
-                                ${actionText}: ${formatCurrency(Math.abs(total), currency)}
-                            </span>
+                            <span class="font-bold text-slate-800">${formatCurrency(total, currency)}</span>
                         `;
-                        summaryList.appendChild(summaryLine);
+                        resultsContainer.appendChild(spendingEl);
                     }
                 });
+            });
 
-                if (hasSummaryContent) {
-                    summaryContainer.innerHTML = '<h5 class="text-base font-semibold text-slate-800 mb-2">Resumo por Pessoa:</h5>';
-                    summaryContainer.appendChild(summaryList);
-                    resultsContainer.appendChild(summaryContainer);
-                }
-            }); // <-- FIM DO LOOP de moedas
-
-            openModal('expense-summary-modal');
+            openModal('spending-per-person-modal');
         };
+
+        // NOTA PARA O FORMULÁRIO DE ADIÇÃO (document.getElementById('add-expense-form').addEventListener('submit'...):
+        // Você NÃO precisa alterar o bloco de Submit original! 
+        // Manter a captura dos nomes de forma individualizada no formulário assegura a 
+        // retrocompatibilidade do banco de dados e permite que o sistema novo crie as 
+        // associações matemáticas em tempo real sem bagunçar os dados históricos.
+
+        // =====================================================================
+        // FIM: SISTEMA DE PROCESSAMENTO DE DESPESAS
+        // =====================================================================
 
         // --- LISTENER PARA O CHECKBOX "MARCAR TODOS" ---
         document.getElementById('select-all-participants').addEventListener('change', function(e) {
@@ -19548,6 +19584,165 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 startBatchDeleteMode(window.currentOptionsActivityId);
             }
         });
+
+        // --- INÍCIO: LÓGICA DE CONFIGURAÇÕES DE RATEIO (COM AUTOCOMPLETE DE GRUPOS) ---
+        window.openExpenseSettingsModal = () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            if (!trip) return;
+
+            const travelers = trip.travelers || [];
+            const container = document.getElementById('expense-settings-list');
+            container.innerHTML = '';
+
+            const settings = trip.expenseSettings || {};
+
+            // 1. Extrai os grupos únicos que JÁ EXISTEM salvos na viagem
+            const existingGroups = new Set();
+            Object.values(settings).forEach(s => {
+                if (s.weight === 1 && s.group !== 'individual' && s.group !== 'isento' && s.group !== 'none') {
+                    existingGroups.add(s.group);
+                }
+            });
+            const groupsArray = Array.from(existingGroups);
+
+            if (travelers.length === 0) {
+                container.innerHTML = '<p class="text-sm text-slate-400">Nenhum viajante na viagem.</p>';
+            } else {
+                travelers.forEach(traveler => {
+                    const userSetting = settings[traveler.uid] || { group: 'individual', weight: 1 };
+                    
+                    // 2. Determina o que deve vir selecionado por padrão
+                    let selectValue = 'individual';
+                    if (userSetting.weight === 0) {
+                        selectValue = 'isento';
+                    } else if (userSetting.group !== 'individual' && userSetting.group !== 'isento' && userSetting.group !== 'none') {
+                        selectValue = `existing_${userSetting.group}`;
+                    }
+
+                    // 3. Constrói as opções do menu (injetando os grupos existentes)
+                    let optionsHtml = `<option value="individual" ${selectValue === 'individual' ? 'selected' : ''}>Cota Individual (Padrão)</option>`;
+                    
+                    groupsArray.forEach(g => {
+                        const safeG = g.replace(/"/g, '&quot;');
+                        optionsHtml += `<option value="existing_${safeG}" ${selectValue === `existing_${g}` ? 'selected' : ''}>Agrupar com: ${safeG}</option>`;
+                    });
+                    
+                    optionsHtml += `<option value="grupo_custom">➕ Criar Novo Grupo...</option>`;
+                    optionsHtml += `<option value="isento" ${selectValue === 'isento' ? 'selected' : ''}>Isento (Não participa)</option>`;
+
+                    const div = document.createElement('div');
+                    div.className = 'flex flex-col md:flex-row md:items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-md gap-2';
+                    
+                    div.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-slate-800">${traveler.name}</p>
+                            <p class="text-xs text-slate-500">${traveler.email || 'Sem email cadastrado'}</p>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <select id="config-role-${traveler.uid}" onchange="toggleCustomGroupInput('${traveler.uid}')" class="config-role-select text-sm bg-white border border-slate-300 rounded-md shadow-sm w-full md:w-auto p-2 outline-none focus:ring-2 focus:ring-blue-500" data-traveler-uid="${traveler.uid}">
+                                ${optionsHtml}
+                            </select>
+                            <input type="text" id="custom-group-${traveler.uid}" onblur="handleCustomGroupBlur(this)" placeholder="Nome do Grupo (ex: Família Silva)" class="custom-group-input hidden text-sm bg-white border border-slate-300 rounded-md shadow-sm w-full p-2 outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            openModal('expense-settings-modal');
+        };
+
+        // Mostra/Esconde o input de texto
+        window.toggleCustomGroupInput = (uid) => {
+            const select = document.getElementById(`config-role-${uid}`);
+            const input = document.getElementById(`custom-group-${uid}`);
+            
+            if (select.value === 'grupo_custom') {
+                input.classList.remove('hidden');
+                input.classList.add('block');
+                input.focus();
+            } else {
+                input.classList.add('hidden');
+                input.classList.remove('block');
+                input.value = ''; // Limpa se desistir
+            }
+        };
+
+        // MAGIA DA UX: Espalha o grupo digitado para os outros selects em tempo real
+        window.handleCustomGroupBlur = (inputElement) => {
+            const newGroup = inputElement.value.trim();
+            if (!newGroup) return;
+
+            document.querySelectorAll('.config-role-select').forEach(select => {
+                // Ignora o select da própria pessoa que está digitando
+                if (select.id.replace('config-role-', '') === inputElement.id.replace('custom-group-', '')) return;
+
+                const existingValue = `existing_${newGroup}`;
+                let exists = Array.from(select.options).some(opt => opt.value === existingValue);
+
+                if (!exists) {
+                    // Insere a nova opção logo acima da opção "➕ Criar Novo Grupo..."
+                    const newOption = new Option(`Agrupar com: ${newGroup}`, existingValue);
+                    const customOptIndex = Array.from(select.options).findIndex(o => o.value === 'grupo_custom');
+                    
+                    if (customOptIndex > -1) {
+                        select.add(newOption, customOptIndex);
+                    } else {
+                        select.add(newOption);
+                    }
+                }
+            });
+        };
+
+        window.saveExpenseSettings = async () => {
+            if (!currentTripId) return;
+            
+            const { ref, set } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js"); 
+            const db = getDatabase();
+
+            const selects = document.querySelectorAll('#expense-settings-list select');
+            const newSettings = {};
+
+            selects.forEach(select => {
+                const uid = select.dataset.travelerUid;
+                const val = select.value;
+
+                if (val === 'isento') {
+                    newSettings[uid] = { group: 'none', weight: 0 };
+                } else if (val === 'grupo_custom') {
+                    // Lê o que o usuário digitou no input
+                    const customInput = document.getElementById(`custom-group-${uid}`);
+                    const groupName = customInput.value.trim();
+                    if (groupName) {
+                        newSettings[uid] = { group: groupName, weight: 1 };
+                    } else {
+                        newSettings[uid] = { group: 'individual', weight: 1 };
+                    }
+                } else if (val.startsWith('existing_')) {
+                    // Remove o prefixo que usamos apenas para a interface
+                    const groupName = val.replace('existing_', '');
+                    newSettings[uid] = { group: groupName, weight: 1 };
+                } else {
+                    newSettings[uid] = { group: 'individual', weight: 1 };
+                }
+            });
+
+            try {
+                const tripRef = ref(db, `trips/${currentTripId}/expenseSettings`);
+                await set(tripRef, newSettings);
+                
+                const trip = tripsData.find(t => t.id === currentTripId);
+                if (trip) trip.expenseSettings = newSettings;
+                
+                closeModal('expense-settings-modal');
+            } catch (error) {
+                console.error("Erro ao salvar configurações de rateio:", error);
+                alert("Não foi possível salvar as configurações.");
+            }
+        };
+
+        // --- FIM: LÓGICA DE CONFIGURAÇÕES DE RATEIO ---
+
 
     </script>
 
