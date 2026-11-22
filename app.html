@@ -1241,7 +1241,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.1.09 | 15/11/2026, 08:29</p> <!-- (G) -->
+                <p class="text-center text-sm text-slate-500 mt-8">v3.1.10 | 22/11/2026, 08:29</p> <!-- (G) -->
             </main>
         </div>
 
@@ -1789,7 +1789,12 @@
             </section>
             <section id="shared-expenses-panel" class="mt-8 bg-white p-6 rounded-xl shadow-lg">
                 <div class="flex justify-between items-center cursor-pointer" onclick="toggleGenericPanel('shared-expenses-panel')">
-                    <h2 class="text-2xl font-semibold">Divisão de Despesas do Grupo</h2>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-2xl font-semibold">Divisão de Despesas do Grupo</h2>
+                        <button type="button" onclick="event.stopPropagation(); openExpenseSettingsModal()" title="Configurações de Rateio" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1.5 rounded-full transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                        </button>
+                    </div>
                     <button class="panel-toggle-btn text-slate-500 hover:text-slate-800 p-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"></path></svg>
                     </button>
@@ -1800,21 +1805,17 @@
                         <button onclick="calculateExpenseSummary()" class="w-full max-w-sm bg-blue-600 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-blue-700 transition-transform hover:scale-105">
                             Calcular Resumo Final de Contas
                         </button>
-                        <button onclick="showExpenseExplanation()" class="w-full max-w-sm bg-teal-500 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-teal-600 transition-transform hover:scale-105">
+                        <button onclick="showExpenseExplanation()" class="w-full max-w-sm bg-slate-100 text-slate-700 border border-slate-200 font-semibold px-6 py-3 rounded-lg shadow-sm hover:bg-slate-200 transition-colors">
                             Explicar Resumo de Contas
                         </button>
-                        <button onclick="showSpendingPerPerson()" class="w-full max-w-sm bg-orange-500 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-orange-600 transition-transform hover:scale-105">
+                        <button onclick="showSpendingPerPerson()" class="w-full max-w-sm bg-slate-100 text-slate-700 border border-slate-200 font-semibold px-6 py-3 rounded-lg shadow-sm hover:bg-slate-200 transition-colors">
                             Verificar despesas por pessoa
-                        </button>
-                        <button onclick="openExpenseSettingsModal()" class="w-full max-w-sm bg-slate-700 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-slate-800 transition-transform hover:scale-105 flex items-center justify-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-                            Configurações de Rateio
                         </button>
                     </div> <br>
    
                     <div id="add-expense-panel" class="bg-slate-50 border border-slate-200 rounded-lg mb-6 collapsed">
             <div class="flex justify-between items-center cursor-pointer p-4" onclick="toggleGenericPanel('add-expense-panel')">
-                <h3 class="font-semibold text-lg text-slate-800">Adicionar Nova Despesa</h3>
+                <h3 class="font-semibold text-lg text-slate-800">➕Adicionar Nova Despesa</h3>
                 <button class="panel-toggle-btn text-slate-500 hover:text-slate-800 p-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"></path></svg>
                 </button>
@@ -2958,8 +2959,12 @@
             <p class="text-sm text-slate-500 mb-4">Este é o jeito mais simples de acertar as contas. Cada pessoa só precisa fazer um pagamento para quem ela deve.</p>
             <div id="expense-summary-results" class="space-y-3">
                 </div>
-            <div class="pt-6 flex justify-end">
-                <button type="button" onclick="closeModal('expense-summary-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Fechar</button>
+            <div class="pt-6 flex flex-col sm:flex-row justify-end gap-3">
+                <button type="button" onclick="shareExpenseSummaryWhatsApp()" class="flex items-center justify-center gap-2 px-5 py-2 bg-green-500 text-white font-semibold rounded-md hover:bg-green-600 transition-colors shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+                    <span>Compartilhar no WhatsApp</span>
+                </button>
+                <button type="button" onclick="closeModal('expense-summary-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Fechar</button>
             </div>
         </div>
     </div>
@@ -3071,23 +3076,22 @@
                         <input type="text" id="my-expense-description" placeholder="Ex: Jantar" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required>
                     </div>
 
-                    <!-- 2. Categoria (Mobile: 50%, Desktop: 1/7) -->
-                    <div class="col-span-2 md:col-span-1">
-                        <label for="my-expense-category" class="block text-xs font-medium text-slate-600">Categoria</label>
-                        <select id="my-expense-category" onchange="handleCategoryAction(this, 'add')" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required></select>
+                    <!-- 2. Valor (Mobile: 50%, Desktop: 2/7) -->
+                    <div class="col-span-2 md:col-span-2">
+                        <label for="my-expense-amount" class="block text-xs font-medium text-slate-600">Valor</label>
+                        <input type="number" id="my-expense-amount" min="0.01" step="0.01" placeholder="120.00" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required>
                     </div>
 
                     <!-- 3. Moeda (Mobile: 50%, Desktop: 1/7) -->
                     <div class="col-span-2 md:col-span-1">
-                        <!-- A CORREÇÃO ESTÁ AQUI: </label> em vez de </a> -->
                         <label for="my-expense-currency" class="block text-xs font-medium text-slate-600">Moeda</label>
                         <select id="my-expense-currency" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required></select>
                     </div>
 
-                    <!-- 4. Valor (Mobile: 50%, Desktop: 2/7) -->
-                    <div class="col-span-2 md:col-span-2">
-                        <label for="my-expense-amount" class="block text-xs font-medium text-slate-600">Valor</label>
-                        <input type="number" id="my-expense-amount" min="0.01" step="0.01" placeholder="120.00" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required>
+                    <!-- 4. Categoria (Mobile: 50%, Desktop: 1/7) -->
+                    <div class="col-span-2 md:col-span-1">
+                        <label for="my-expense-category" class="block text-xs font-medium text-slate-600">Categoria</label>
+                        <select id="my-expense-category" onchange="handleCategoryAction(this, 'add')" class="mt-1 block w-full px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm" required></select>
                     </div>
                     
                     <!-- Botão (Linha inteira) -->
@@ -6671,7 +6675,8 @@ window.addEventListener('popstate', (event) => {
         window.checkOngoingTripStatus = () => {
             const toast = document.getElementById('ongoing-trip-toast');
             const nameEl = document.getElementById('ongoing-trip-name');
-            const clickArea = document.getElementById('ongoing-trip-click-area');
+            const openBtn = document.getElementById('ongoing-trip-open-btn');
+            const todayBtn = document.getElementById('ongoing-trip-today-btn');
             
             if (!toast || tripsData.length === 0) return;
 
@@ -6699,16 +6704,26 @@ window.addEventListener('popstate', (event) => {
                 nameEl.textContent = ongoingTrip.name;
                 toast.classList.remove('hidden');
                 
-                clickArea.onclick = () => {
-                    showTripDetails(ongoingTrip.id);
-                    // Tenta rolar para o dia atual se a função existir
-                    setTimeout(() => {
-                        if (typeof window.scrollToCurrentDay === 'function') {
-                            window.scrollToCurrentDay();
-                        }
-                    }, 600);
-                    toast.classList.add('hidden'); // Opcional: esconde após clicar
-                };
+                // Botão 1: Abre apenas a viagem no topo (sem rolar para o roteiro)
+                if (openBtn) {
+                    openBtn.onclick = () => {
+                        showTripDetails(ongoingTrip.id);
+                        toast.classList.add('hidden');
+                    };
+                }
+
+                // Botão 2: Abre a viagem e rola direto para o roteiro do dia atual
+                if (todayBtn) {
+                    todayBtn.onclick = () => {
+                        showTripDetails(ongoingTrip.id);
+                        setTimeout(() => {
+                            if (typeof window.scrollToCurrentDay === 'function') {
+                                window.scrollToCurrentDay();
+                            }
+                        }, 600);
+                        toast.classList.add('hidden');
+                    };
+                }
             } else {
                 toast.classList.add('hidden');
             }
@@ -11800,6 +11815,140 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 }
             }); 
             openModal('expense-summary-modal');
+        };
+
+        //Mensagem para outros viajantes sobre o resumo final das despesas (acerto de contas, cobrança)
+        window.shareExpenseSummaryWhatsApp = () => {
+            const trip = tripsData.find(t => t.id === currentTripId);
+            if (!trip) return;
+
+            const expenses = trip.sharedExpenses || [];
+            if (expenses.length === 0) {
+                alert('Nenhuma despesa de grupo foi adicionada para compartilhar.');
+                return;
+            }
+
+            const { entityMap, uniqueEntities } = window.buildExpenseEntities(trip);
+
+            // Agrupa despesas por moeda
+            const expensesByCurrency = expenses.reduce((acc, expense) => {
+                const currency = expense.currency || 'BRL';
+                if (!acc[currency]) acc[currency] = [];
+                acc[currency].push(expense);
+                return acc;
+            }, {});
+
+            const sortedCurrencies = Object.keys(expensesByCurrency).sort((a, b) =>
+                a === 'BRL' ? -1 : b === 'BRL' ? 1 : a.localeCompare(b)
+            );
+
+            let msg = `*Resumo Financeiro - ${trip.name}*\n\n`;
+            msg += `Olá, viajantes! Segue o balanço atualizado das despesas em grupo da nossa viagem:\n`;
+
+            sortedCurrencies.forEach(currency => {
+                const currencyExpenses = expensesByCurrency[currency];
+                const totalSpent = currencyExpenses.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+
+                const balances = {};
+                const totalPaidByEntity = {};
+                uniqueEntities.forEach(eName => {
+                    balances[eName] = 0;
+                    totalPaidByEntity[eName] = 0;
+                });
+
+                currencyExpenses.forEach(expense => {
+                    // Crédito (Quem pagou)
+                    const payers = expense.payers || (expense.payerName ? [expense.payerName] : []);
+                    if (payers.length > 0) {
+                        if (typeof payers[0] === 'object') {
+                            payers.forEach(p => {
+                                const eName = entityMap[p.name] || p.name;
+                                if (eName !== 'isento') {
+                                    if (balances[eName] === undefined) balances[eName] = 0;
+                                    if (totalPaidByEntity[eName] === undefined) totalPaidByEntity[eName] = 0;
+                                    balances[eName] += p.amount;
+                                    totalPaidByEntity[eName] += p.amount;
+                                }
+                            });
+                        } else {
+                            const amountPerPayer = (expense.amount && payers.length > 0) ? (expense.amount / payers.length) : 0;
+                            payers.forEach(payerName => {
+                                const eName = entityMap[payerName] || payerName;
+                                if (eName !== 'isento') {
+                                    if (balances[eName] === undefined) balances[eName] = 0;
+                                    if (totalPaidByEntity[eName] === undefined) totalPaidByEntity[eName] = 0;
+                                    balances[eName] += amountPerPayer;
+                                    totalPaidByEntity[eName] += amountPerPayer;
+                                }
+                            });
+                        }
+                    }
+
+                    // Débito (Quem participou)
+                    const involvedEntities = new Set();
+                    (expense.participants || []).forEach(pName => {
+                        const eName = entityMap[pName] || pName;
+                        if (eName !== 'isento') involvedEntities.add(eName);
+                    });
+
+                    if (involvedEntities.size > 0) {
+                        const share = expense.amount / involvedEntities.size;
+                        involvedEntities.forEach(eName => {
+                            if (balances[eName] === undefined) balances[eName] = 0;
+                            balances[eName] -= share;
+                        });
+                    }
+                });
+
+                // Otimização de acertos (Credores vs Devedores)
+                const creditors = [];
+                const debtors = [];
+                Object.entries(balances).forEach(([name, balance]) => {
+                    if (balance > 0.01) creditors.push({ name, amount: balance });
+                    else if (balance < -0.01) debtors.push({ name, amount: -balance });
+                });
+
+                creditors.sort((a, b) => b.amount - a.amount);
+                debtors.sort((a, b) => b.amount - a.amount);
+
+                const transactions = [];
+                let i = 0, j = 0;
+                while (i < debtors.length && j < creditors.length) {
+                    const amountToTransfer = Math.min(debtors[i].amount, creditors[j].amount);
+                    if (amountToTransfer > 0.01) {
+                        transactions.push({ from: debtors[i].name, to: creditors[j].name, amount: amountToTransfer });
+                    }
+                    debtors[i].amount -= amountToTransfer;
+                    creditors[j].amount -= amountToTransfer;
+                    if (debtors[i].amount < 0.01) i++;
+                    if (creditors[j].amount < 0.01) j++;
+                }
+
+                // Montagem do bloco da moeda
+                msg += `\n*Moeda: ${currency}*\n`;
+                msg += `• Total gasto pelo grupo: *${formatCurrency(totalSpent, currency)}*\n\n`;
+
+                msg += `*Total pago até agora:*\n`;
+                Object.entries(totalPaidByEntity)
+                    .sort(([, a], [, b]) => b - a)
+                    .forEach(([name, paid]) => {
+                        msg += `• ${name}: ${formatCurrency(paid, currency)}\n`;
+                    });
+
+                msg += `\n*Acertos para fechamento:*\n`;
+                if (transactions.length === 0) {
+                    msg += `✅ Tudo certo! Nenhum acerto necessário nesta moeda.\n`;
+                } else {
+                    transactions.forEach(t => {
+                        msg += `*${t.from}* ➔ *${t.to}*: ${formatCurrency(t.amount, currency)}\n`;
+                    });
+                }
+            });
+
+            msg += `\n_O detalhamento de cada compra pode ser conferido diretamente no app NaoVouSozinho.com._`;
+
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+            window.open(whatsappUrl, '_blank');
         };
 
         // 3. EXPLICAÇÃO DE DESPESAS (Detalhado por Entidade/Cota)
@@ -19778,19 +19927,32 @@ window.saveDivider = async function(tripId, categoryKey, value) {
         </div>   
         
         <div id="ongoing-trip-toast" class="hidden fixed bottom-20 left-6 right-6 sm:left-auto sm:w-96 z-[5000] animate-bounce-slow">
-            <div class="bg-indigo-600 text-white p-4 rounded-2xl shadow-2xl border border-indigo-400 flex items-center justify-between gap-4">
-                <div class="flex items-center gap-3 cursor-pointer flex-1" id="ongoing-trip-click-area">
-                    <div class="bg-white/20 p-2 rounded-full backdrop-blur-sm flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <div class="bg-indigo-600 text-white p-4 rounded-2xl shadow-2xl border border-indigo-400 flex flex-col gap-3">
+                <!-- Cabeçalho do Toast -->
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="bg-white/20 p-2 rounded-full backdrop-blur-sm flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-xs font-bold uppercase tracking-wider text-indigo-200 leading-none mb-1">Viagem em andamento</p>
+                            <h3 id="ongoing-trip-name" class="font-bold text-sm truncate leading-tight"></h3>
+                        </div>
                     </div>
-                    <div class="min-w-0">
-                        <p class="text-xs font-bold uppercase tracking-wider text-indigo-200 leading-none mb-1">Viagem em andamento. Clique para ver o roteiro de hoje!</p>
-                        <h3 id="ongoing-trip-name" class="font-bold text-sm truncate leading-tight"></h3>
-                    </div>
+                    <button onclick="document.getElementById('ongoing-trip-toast').classList.add('hidden')" class="text-indigo-200 hover:text-white transition-colors p-1 -mt-1 -mr-1" title="Fechar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
                 </div>
-                <button onclick="document.getElementById('ongoing-trip-toast').classList.add('hidden')" class="text-indigo-200 hover:text-white transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                </button>
+
+                <!-- Botões de Ação -->
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    <button id="ongoing-trip-open-btn" type="button" class="px-3 py-2 bg-white/15 hover:bg-white/25 text-white text-xs font-bold rounded-xl transition-colors text-center">
+                        Abrir Viagem
+                    </button>
+                    <button id="ongoing-trip-today-btn" type="button" class="px-3 py-2 bg-white hover:bg-indigo-50 text-indigo-700 text-xs font-bold rounded-xl transition-colors shadow-sm text-center">
+                        Roteiro de Hoje
+                    </button>
+                </div>
             </div>
         </div>
 
