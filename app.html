@@ -1241,7 +1241,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.1.10 | 22/11/2026, 08:29</p> <!-- (G) -->
+                <p class="text-center text-sm text-slate-500 mt-8">v3.1.11 | 23/11/2026, 08:29</p> <!-- (G) -->
             </main>
         </div>
 
@@ -1614,11 +1614,15 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-marked"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path><polyline points="10 2 10 10 14 7 18 10 18 2"></polyline></svg>
                         <span>Índice</span>
                     </button>
-                    <button id="expenses-menu-btn" onclick="toggleExpensesMenu()" class="flex items-center gap-2 text-sm bg-white/20 text-white font-semibold px-4 py-2 rounded-lg hover:bg-white/30 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-receipt-text"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M11 16H8"/></svg>
-                        <span>Despesas</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
-                    </button>                    
+                    <div id="expenses-menu-btn" class="inline-flex items-stretch rounded-lg overflow-hidden bg-white/20 text-white text-sm font-semibold">
+                        <button type="button" onclick="document.getElementById('expenses-menu')?.classList.add('hidden'); scrollToSectionAndClose('shared-expenses-panel', null);" class="flex items-center gap-2 pl-4 pr-3 py-2 hover:bg-white/20 transition-colors cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-receipt-text"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M11 16H8"/></svg>
+                            <span>Despesas</span>
+                        </button>
+                        <button type="button" onclick="toggleExpensesMenu()" title="Mais opções de despesas e carteiras" class="flex items-center justify-center px-2.5 py-2 border-l border-white/25 hover:bg-white/20 transition-colors cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                    </div>                  
                     <button onclick="scrollToItinerary(); window.scrollToCurrentDay();" class="flex items-center gap-2 text-sm bg-cyan-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-cyan-400 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list-collapse"><path d="m3 10 2.5-2.5L3 5"></path><path d="m3 19 2.5-2.5L3 14"></path><path d="M10 6h11"></path><path d="M10 12h11"></path><path d="M10 18h11"></path></svg>
                         <span>Roteiro</span>
@@ -1801,80 +1805,38 @@
                 </div>
                 <div class="panel-content mt-4">
 
-                    <div class="mt-6 pt-4 border-t flex flex-col items-center gap-3">
-                        <button onclick="calculateExpenseSummary()" class="w-full max-w-sm bg-blue-600 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-blue-700 transition-transform hover:scale-105">
-                            Calcular Resumo Final de Contas
-                        </button>
-                        <button onclick="showExpenseExplanation()" class="w-full max-w-sm bg-slate-100 text-slate-700 border border-slate-200 font-semibold px-6 py-3 rounded-lg shadow-sm hover:bg-slate-200 transition-colors">
-                            Explicar Resumo de Contas
-                        </button>
-                        <button onclick="showSpendingPerPerson()" class="w-full max-w-sm bg-slate-100 text-slate-700 border border-slate-200 font-semibold px-6 py-3 rounded-lg shadow-sm hover:bg-slate-200 transition-colors">
-                            Verificar despesas por pessoa
-                        </button>
+                    <div class="mt-6 pt-4 border-t flex justify-center">
+                        <div id="expense-summary-split-container" class="relative w-full max-w-sm">
+                            <!-- Split Button -->
+                            <div class="flex w-full rounded-lg shadow-lg overflow-hidden">
+                                <button type="button" onclick="calculateExpenseSummary()" class="flex-1 bg-blue-600 text-white font-bold px-5 py-3 hover:bg-blue-700 transition-colors text-center cursor-pointer">
+                                    Calcular Resumo Final de Contas
+                                </button>
+                                <button type="button" id="expense-summary-dropdown-btn" onclick="toggleExpenseSummaryMenu(event)" title="Mais opções de resumo" class="bg-blue-600 text-white px-4 py-3 hover:bg-blue-700 border-l border-blue-400/50 transition-colors flex items-center justify-center cursor-pointer">
+                                    <svg id="expense-summary-dropdown-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200"><path d="m6 9 6 6 6-6"/></svg>
+                                </button>
+                            </div>
+
+                            <!-- Popup / Dropdown -->
+                            <div id="expense-summary-dropdown" class="hidden absolute right-0 top-full mt-2 w-full bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50">
+                                <button type="button" onclick="closeExpenseSummaryMenu(); showExpenseExplanation();" class="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-2.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                                    Explicar Resumo de Contas
+                                </button>
+                                <button type="button" onclick="closeExpenseSummaryMenu(); showSpendingPerPerson();" class="w-full text-left px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors flex items-center gap-2.5 border-t border-slate-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                    Verificar despesas por pessoa
+                                </button>
+                            </div>
+                        </div>
                     </div> <br>
    
-                    <div id="add-expense-panel" class="bg-slate-50 border border-slate-200 rounded-lg mb-6 collapsed">
-            <div class="flex justify-between items-center cursor-pointer p-4" onclick="toggleGenericPanel('add-expense-panel')">
-                <h3 class="font-semibold text-lg text-slate-800">➕Adicionar Nova Despesa</h3>
-                <button class="panel-toggle-btn text-slate-500 hover:text-slate-800 p-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"></path></svg>
-                </button>
-            </div>       
-            
-            <div id="add-expense-content" class="px-4 pb-4">
-                <form id="add-expense-form" class="space-y-4 border-t pt-4">
-                    <div>
-                        <label for="expense-description" class="block text-sm font-medium text-slate-600">Descrição</label>
-                        <input type="text" id="expense-description" placeholder="Ex: Mercado" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="expense-amount" class="block text-sm font-medium text-slate-600">Valor Total</label>
-                            <input type="number" id="expense-amount" placeholder="150.00" min="0.01" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
-                        </div>
-                        <div>
-                            <label for="expense-currency" class="block text-sm font-medium text-slate-600">Moeda</label>
-                            <select id="expense-currency" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required=""></select>
-                            <input type="text" id="expense-currency-custom" maxlength="6" placeholder="Ex: ARS" class="hidden mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm">
-                        </div>
-                    </div>
-                    
-                    <div class="bg-green-50 p-3 rounded-md border border-green-200">
-                        <label class="block text-sm font-medium text-slate-700 font-semibold">Quem Pagou? (Credores)</label>
-                        <div id="expense-payers-checkboxes" class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-                            </div>
-                        
-                        <div id="expense-payers-split-container" class="hidden space-y-3 mt-4 p-3 bg-green-100 border border-green-300 rounded-md">
-                            <h4 class="text-sm font-semibold text-slate-700">Dividir o valor pago entre os credores:</h4>
-                            <div id="expense-payers-split-inputs" class="space-y-2">
-                                </div>
-                            <div class="text-right text-sm font-medium">
-                                <span class="text-slate-600">Total dividido: </span>
-                                <span id="expense-payers-split-total" class="font-bold text-slate-800">R$ 0,00</span>
-                                <p id="expense-payers-split-warning" class="text-red-600 font-semibold hidden">O total dividido não bate com o Valor Total da despesa!</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-red-50 p-3 rounded-md border border-red-200 mt-4">
-                        <div class="flex justify-between items-center">
-                            <label class="block text-sm font-medium text-slate-700 font-semibold">Quem deve pagar? (Incluir o credor também se for o caso)</label>
-                            <div class="flex items-center gap-2">
-                                <input type="checkbox" id="select-all-participants" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                                <label for="select-all-participants" class="text-sm font-medium text-slate-600 cursor-pointer">Marcar Todos</label>
-                            </div>
-                        </div>
-                        <div id="expense-participants-checkboxes" class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
-                            </div>
-                    </div>
-
-                    <div class="text-right">
-                        <button type="submit" class="bg-indigo-600 text-white font-semibold px-5 py-2 rounded-lg shadow-md hover:bg-indigo-700 transition-colors">Adicionar Despesa</button>
-                    </div>
-                </form>
-            </div>           
-    </div>
+        <div id="add-expense-panel" class="mb-6 flex justify-center">
+            <button type="button" onclick="openModal('add-expense-modal')" class="w-full max-w-sm bg-green-600 text-white font-bold px-6 py-3 rounded-lg shadow-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Adicionar Despesa</span>
+            </button>
+        </div>           
 
         <!-- INÍCIO: Container Exclusivo para Roteiro Público Estático -->
         <div id="public-trip-view" class="hidden max-w-7xl mx-auto p-4 md:p-8 pb-32">
@@ -2966,6 +2928,64 @@
                 </button>
                 <button type="button" onclick="closeModal('expense-summary-modal')" class="px-6 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Fechar</button>
             </div>
+        </div>
+    </div>
+
+    <div id="add-expense-modal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-lg m-4 overflow-y-auto max-h-screen">
+            <h3 class="text-2xl font-semibold mb-6 text-slate-800">Adicionar Nova Despesa</h3>
+            <form id="add-expense-form" class="space-y-4">
+                <div>
+                    <label for="expense-description" class="block text-sm font-medium text-slate-600">Descrição</label>
+                    <input type="text" id="expense-description" placeholder="Ex: Mercado" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="expense-amount" class="block text-sm font-medium text-slate-600">Valor Total</label>
+                        <input type="number" id="expense-amount" placeholder="150.00" min="0.01" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required="">
+                    </div>
+                    <div>
+                        <label for="expense-currency" class="block text-sm font-medium text-slate-600">Moeda</label>
+                        <select id="expense-currency" class="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm" required=""></select>
+                        <input type="text" id="expense-currency-custom" maxlength="6" placeholder="Ex: ARS" class="hidden mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm">
+                    </div>
+                </div>
+                
+                <div class="bg-green-50 p-3 rounded-md border border-green-200">
+                    <label class="block text-sm font-medium text-slate-700 font-semibold">Quem Pagou? (Credores)</label>
+                    <div id="expense-payers-checkboxes" class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+                    </div>
+                    
+                    <div id="expense-payers-split-container" class="hidden space-y-3 mt-4 p-3 bg-green-100 border border-green-300 rounded-md">
+                        <h4 class="text-sm font-semibold text-slate-700">Dividir o valor pago entre os credores:</h4>
+                        <div id="expense-payers-split-inputs" class="space-y-2">
+                        </div>
+                        <div class="text-right text-sm font-medium">
+                            <span class="text-slate-600">Total dividido: </span>
+                            <span id="expense-payers-split-total" class="font-bold text-slate-800">R$ 0,00</span>
+                            <p id="expense-payers-split-warning" class="text-red-600 font-semibold hidden">O total dividido não bate com o Valor Total da despesa!</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-red-50 p-3 rounded-md border border-red-200 mt-4">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-sm font-medium text-slate-700 font-semibold">Quem deve pagar? (Incluir o credor também se for o caso)</label>
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="select-all-participants" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="select-all-participants" class="text-sm font-medium text-slate-600 cursor-pointer">Marcar Todos</label>
+                        </div>
+                    </div>
+                    <div id="expense-participants-checkboxes" class="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
+                    </div>
+                </div>
+
+                <div class="pt-6 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('add-expense-modal')" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300 transition-colors">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 text-white font-semibold px-5 py-2 rounded-md shadow-md hover:bg-indigo-700 transition-colors">Adicionar Despesa</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -4974,6 +4994,9 @@ window.addEventListener('popstate', (event) => {
                 
                 // Painel de Divisão de Despesas
                 '#add-expense-panel',
+                // Painel de Divisão de Despesas
+                '#add-expense-panel',
+                '#expense-summary-split-container',
                 '#shared-expenses-panel button[onclick*="calculateExpenseSummary"]',
                 '#shared-expenses-panel button[onclick*="showExpenseExplanation"]',
                 '#shared-expenses-panel button[onclick*="showSpendingPerPerson"]',
@@ -11578,7 +11601,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             document.getElementById('select-all-participants').checked = true;
             document.getElementById('select-all-participants').dispatchEvent(new Event('change'));
 
-            document.getElementById('add-expense-panel').classList.add('collapsed');
+            closeModal('add-expense-modal');
         });
 
 
@@ -11950,6 +11973,38 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
             window.open(whatsappUrl, '_blank');
         };
+
+        // --- CONTROLE DO SPLIT BUTTON DE RESUMO DE DESPESAS, para exibir em popup os outros botões de explicação ---
+        window.toggleExpenseSummaryMenu = (event) => {
+            if (event) event.stopPropagation();
+            const menu = document.getElementById('expense-summary-dropdown');
+            const icon = document.getElementById('expense-summary-dropdown-icon');
+            if (!menu) return;
+
+            const isHidden = menu.classList.toggle('hidden');
+            if (icon) {
+                icon.classList.toggle('rotate-180', !isHidden);
+            }
+        };
+
+        window.closeExpenseSummaryMenu = () => {
+            const menu = document.getElementById('expense-summary-dropdown');
+            const icon = document.getElementById('expense-summary-dropdown-icon');
+            if (menu && !menu.classList.contains('hidden')) {
+                menu.classList.add('hidden');
+            }
+            if (icon) {
+                icon.classList.remove('rotate-180');
+            }
+        };
+
+        // Fecha o dropdown ao clicar fora dele
+        document.addEventListener('click', (e) => {
+            const container = document.getElementById('expense-summary-split-container');
+            if (container && !container.contains(e.target)) {
+                window.closeExpenseSummaryMenu();
+            }
+        });
 
         // 3. EXPLICAÇÃO DE DESPESAS (Detalhado por Entidade/Cota)
         window.showExpenseExplanation = () => {
