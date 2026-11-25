@@ -1241,7 +1241,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.1.12 | 25/11/2026, 08:29</p> <!-- (G) -->
+                <p class="text-center text-sm text-slate-500 mt-8">v3.1.13 | 25/11/2026, 08:29</p> <!-- (G) -->
             </main>
         </div>
 
@@ -16365,6 +16365,15 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                     }
                     
                     updates[`/users/${user.uid}/memberOf/${tripId}`] = true;
+
+                    // Registra a entrada nas "Novidades" da viagem
+                    const newLogKey = push(ref(db, `trips/${tripId}/activityLog`)).key;
+                    updates[`/trips/${tripId}/activityLog/${newLogKey}`] = {
+                        timestamp: serverTimestamp(),
+                        userId: user.uid,
+                        userName: userName.split(' ')[0],
+                        action: "entrou na viagem pelo link de convite."
+                    };
 
                     // Salva no banco
                     await update(ref(db), updates);
