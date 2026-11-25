@@ -1241,7 +1241,7 @@
                         </div>
                 </div>
                 
-                <p class="text-center text-sm text-slate-500 mt-8">v3.1.11 | 23/11/2026, 08:29</p> <!-- (G) -->
+                <p class="text-center text-sm text-slate-500 mt-8">v3.1.12 | 25/11/2026, 08:29</p> <!-- (G) -->
             </main>
         </div>
 
@@ -11645,7 +11645,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         // 1. FUNÇÃO AJUDANTE: Cria as "Entidades Financeiras" (Grupos ou Indivíduos)
         window.buildExpenseEntities = (trip) => {
-            const travelers = trip.travelers || [];
+            const travelers = [...(trip.travelers || []), ...(trip.manualTravelers || [])];
             const settings = trip.expenseSettings || {};
             const entityMap = {}; 
             
@@ -19789,12 +19789,95 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             }
         });
 
-        // --- INÍCIO: LÓGICA DE CONFIGURAÇÕES DE RATEIO (COM AUTOCOMPLETE DE GRUPOS) ---
+        // --- INÍCIO: LÓGICA DE CONFIGURAÇÕES DE RATEIO (COM VIAJANTES MANUAIS E AUTOCOMPLETE DE GRUPOS) ---
+        let tempManualTravelers = [];
+
+        // Função auxiliar para montar cada linha de viajante (com numeração à esquerda)
+        function createTravelerSettingRow(traveler, indexNumber, settings, groupsArray, isManual = false) {
+            const userSetting = settings[traveler.uid] || { group: 'individual', weight: 1 };
+
+            let selectValue = 'individual';
+            if (userSetting.weight === 0) {
+                selectValue = 'isento';
+            } else if (userSetting.group !== 'individual' && userSetting.group !== 'isento' && userSetting.group !== 'none') {
+                selectValue = `existing_${userSetting.group}`;
+            }
+
+            let optionsHtml = `<option value="individual" ${selectValue === 'individual' ? 'selected' : ''}>Cota Individual (Padrão)</option>`;
+            groupsArray.forEach(g => {
+                const safeG = g.replace(/"/g, '&quot;');
+                optionsHtml += `<option value="existing_${safeG}" ${selectValue === `existing_${g}` ? 'selected' : ''}>Agrupar com: ${safeG}</option>`;
+            });
+            optionsHtml += `<option value="grupo_custom">➕ Criar Novo Grupo...</option>`;
+            optionsHtml += `<option value="isento" ${selectValue === 'isento' ? 'selected' : ''}>Isento (Não participa)</option>`;
+
+            const div = document.createElement('div');
+            div.id = `setting-row-${traveler.uid}`;
+            div.className = 'flex flex-col md:flex-row md:items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-md gap-2';
+
+            const subtitleHtml = isManual
+                ? `<p class="text-xs text-amber-600 font-medium">Adicionado manualmente</p>`
+                : `<p class="text-xs text-slate-500">${traveler.email || 'Sem email cadastrado'}</p>`;
+
+            const removeBtnHtml = isManual
+                ? `<button type="button" onclick="removeManualTravelerFromSettings('${traveler.uid}')" title="Remover viajante manual" class="text-slate-400 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 transition-colors shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                </button>`
+                : '';
+
+            div.innerHTML = `
+                <div class="flex items-center gap-3 min-w-0">
+                    <span class="traveler-row-number flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-xs font-bold shrink-0">
+                        ${indexNumber}
+                    </span>
+                    <div class="min-w-0">
+                        <p class="font-semibold text-slate-800 truncate">${traveler.name}</p>
+                        ${subtitleHtml}
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="flex flex-col gap-2 flex-1">
+                        <select id="config-role-${traveler.uid}" onchange="toggleCustomGroupInput('${traveler.uid}')" class="config-role-select text-sm bg-white border border-slate-300 rounded-md shadow-sm w-full md:w-auto p-2 outline-none focus:ring-2 focus:ring-blue-500" data-traveler-uid="${traveler.uid}">
+                            ${optionsHtml}
+                        </select>
+                        <input type="text" id="custom-group-${traveler.uid}" onblur="handleCustomGroupBlur(this)" placeholder="Nome do Grupo (ex: Família Silva)" class="custom-group-input hidden text-sm bg-white border border-slate-300 rounded-md shadow-sm w-full p-2 outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    ${removeBtnHtml}
+                </div>
+            `;
+
+            return div;
+        }
+
+        // Reenumera os viajantes manuais após adicionar ou remover
+        function updateManualTravelersNumbers() {
+            const manualList = document.getElementById('manual-travelers-settings-list');
+            const countBadge = document.getElementById('manual-travelers-count');
+            if (!manualList) return;
+
+            const rows = manualList.querySelectorAll('[id^="setting-row-"]');
+            rows.forEach((row, idx) => {
+                const badge = row.querySelector('.traveler-row-number');
+                if (badge) badge.textContent = idx + 1;
+            });
+
+            if (countBadge) countBadge.textContent = rows.length;
+
+            const emptyMsg = document.getElementById('manual-travelers-empty-msg');
+            if (emptyMsg) {
+                emptyMsg.classList.toggle('hidden', rows.length > 0);
+            }
+        }
+
         window.openExpenseSettingsModal = () => {
             const trip = tripsData.find(t => t.id === currentTripId);
             if (!trip) return;
 
             const travelers = trip.travelers || [];
+            tempManualTravelers = Array.isArray(trip.manualTravelers)
+                ? trip.manualTravelers.map(m => ({ ...m }))
+                : [];
+
             const container = document.getElementById('expense-settings-list');
             container.innerHTML = '';
 
@@ -19809,58 +19892,116 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             });
             const groupsArray = Array.from(existingGroups);
 
+            // 2. SEÇÃO 1: VIAJANTES CADASTRADOS
+            const registeredSection = document.createElement('div');
+            registeredSection.className = 'space-y-2';
+            registeredSection.innerHTML = `
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Viajantes Cadastrados (${travelers.length})
+                </h4>
+                <div id="registered-travelers-settings-list" class="space-y-2"></div>
+            `;
+            container.appendChild(registeredSection);
+
+            const registeredList = registeredSection.querySelector('#registered-travelers-settings-list');
             if (travelers.length === 0) {
-                container.innerHTML = '<p class="text-sm text-slate-400">Nenhum viajante na viagem.</p>';
+                registeredList.innerHTML = '<p class="text-sm text-slate-400">Nenhum viajante cadastrado na viagem.</p>';
             } else {
-                travelers.forEach(traveler => {
-                    const userSetting = settings[traveler.uid] || { group: 'individual', weight: 1 };
-                    
-                    // 2. Determina o que deve vir selecionado por padrão
-                    let selectValue = 'individual';
-                    if (userSetting.weight === 0) {
-                        selectValue = 'isento';
-                    } else if (userSetting.group !== 'individual' && userSetting.group !== 'isento' && userSetting.group !== 'none') {
-                        selectValue = `existing_${userSetting.group}`;
-                    }
-
-                    // 3. Constrói as opções do menu (injetando os grupos existentes)
-                    let optionsHtml = `<option value="individual" ${selectValue === 'individual' ? 'selected' : ''}>Cota Individual (Padrão)</option>`;
-                    
-                    groupsArray.forEach(g => {
-                        const safeG = g.replace(/"/g, '&quot;');
-                        optionsHtml += `<option value="existing_${safeG}" ${selectValue === `existing_${g}` ? 'selected' : ''}>Agrupar com: ${safeG}</option>`;
-                    });
-                    
-                    optionsHtml += `<option value="grupo_custom">➕ Criar Novo Grupo...</option>`;
-                    optionsHtml += `<option value="isento" ${selectValue === 'isento' ? 'selected' : ''}>Isento (Não participa)</option>`;
-
-                    const div = document.createElement('div');
-                    div.className = 'flex flex-col md:flex-row md:items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-md gap-2';
-                    
-                    div.innerHTML = `
-                        <div>
-                            <p class="font-semibold text-slate-800">${traveler.name}</p>
-                            <p class="text-xs text-slate-500">${traveler.email || 'Sem email cadastrado'}</p>
-                        </div>
-                        <div class="flex flex-col gap-2">
-                            <select id="config-role-${traveler.uid}" onchange="toggleCustomGroupInput('${traveler.uid}')" class="config-role-select text-sm bg-white border border-slate-300 rounded-md shadow-sm w-full md:w-auto p-2 outline-none focus:ring-2 focus:ring-blue-500" data-traveler-uid="${traveler.uid}">
-                                ${optionsHtml}
-                            </select>
-                            <input type="text" id="custom-group-${traveler.uid}" onblur="handleCustomGroupBlur(this)" placeholder="Nome do Grupo (ex: Família Silva)" class="custom-group-input hidden text-sm bg-white border border-slate-300 rounded-md shadow-sm w-full p-2 outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                    `;
-                    container.appendChild(div);
+                travelers.forEach((traveler, index) => {
+                    registeredList.appendChild(
+                        createTravelerSettingRow(traveler, index + 1, settings, groupsArray, false)
+                    );
                 });
             }
 
+            // 3. SEÇÃO 2: VIAJANTES ADICIONADOS MANUALMENTE
+            const manualSection = document.createElement('div');
+            manualSection.className = 'space-y-2 pt-4 mt-4 border-t border-slate-200';
+            manualSection.innerHTML = `
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Viajantes Adicionados Manualmente (<span id="manual-travelers-count">${tempManualTravelers.length}</span>)
+                </h4>
+                <div class="flex gap-2 mb-2">
+                    <input type="text" id="new-manual-traveler-name" placeholder="Nome do viajante não cadastrado..." class="flex-1 px-3 py-2 text-sm bg-white border border-slate-300 rounded-md shadow-sm outline-none focus:ring-2 focus:ring-blue-500" onkeydown="if(event.key==='Enter'){ event.preventDefault(); addManualTravelerToSettings(); }">
+                    <button type="button" onclick="addManualTravelerToSettings()" class="px-3 py-2 bg-slate-800 text-white text-sm font-semibold rounded-md hover:bg-slate-900 transition-colors shrink-0">
+                        + Incluir
+                    </button>
+                </div>
+                <div id="manual-travelers-settings-list" class="space-y-2">
+                    <p id="manual-travelers-empty-msg" class="text-sm text-slate-400 ${tempManualTravelers.length > 0 ? 'hidden' : ''}">
+                        Nenhum viajante adicionado manualmente.
+                    </p>
+                </div>
+            `;
+            container.appendChild(manualSection);
+
+            const manualList = manualSection.querySelector('#manual-travelers-settings-list');
+            tempManualTravelers.forEach((traveler, index) => {
+                manualList.appendChild(
+                    createTravelerSettingRow(traveler, index + 1, settings, groupsArray, true)
+                );
+            });
+
             openModal('expense-settings-modal');
+        };
+
+        window.addManualTravelerToSettings = () => {
+            const input = document.getElementById('new-manual-traveler-name');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const trip = tripsData.find(t => t.id === currentTripId);
+            const allCurrentNames = [
+                ...(trip?.travelers || []).map(t => t.name.toLowerCase()),
+                ...tempManualTravelers.map(m => m.name.toLowerCase())
+            ];
+
+            if (allCurrentNames.includes(name.toLowerCase())) {
+                alert('Já existe um viajante com este nome na lista.');
+                return;
+            }
+
+            const newManual = {
+                uid: `manual_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+                name: name
+            };
+            tempManualTravelers.push(newManual);
+
+            // Coleta grupos já existentes na tela (inclusive recém-criados)
+            const currentGroups = new Set();
+            document.querySelectorAll('.config-role-select option').forEach(opt => {
+                if (opt.value.startsWith('existing_')) {
+                    currentGroups.add(opt.value.replace('existing_', ''));
+                }
+            });
+
+            const manualList = document.getElementById('manual-travelers-settings-list');
+            const row = createTravelerSettingRow(
+                newManual,
+                tempManualTravelers.length,
+                {},
+                Array.from(currentGroups),
+                true
+            );
+            manualList.appendChild(row);
+
+            input.value = '';
+            input.focus();
+            updateManualTravelersNumbers();
+        };
+
+        window.removeManualTravelerFromSettings = (uid) => {
+            tempManualTravelers = tempManualTravelers.filter(m => m.uid !== uid);
+            const row = document.getElementById(`setting-row-${uid}`);
+            if (row) row.remove();
+            updateManualTravelersNumbers();
         };
 
         // Mostra/Esconde o input de texto
         window.toggleCustomGroupInput = (uid) => {
             const select = document.getElementById(`config-role-${uid}`);
             const input = document.getElementById(`custom-group-${uid}`);
-            
+
             if (select.value === 'grupo_custom') {
                 input.classList.remove('hidden');
                 input.classList.add('block');
@@ -19868,7 +20009,7 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             } else {
                 input.classList.add('hidden');
                 input.classList.remove('block');
-                input.value = ''; // Limpa se desistir
+                input.value = '';
             }
         };
 
@@ -19878,17 +20019,15 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             if (!newGroup) return;
 
             document.querySelectorAll('.config-role-select').forEach(select => {
-                // Ignora o select da própria pessoa que está digitando
                 if (select.id.replace('config-role-', '') === inputElement.id.replace('custom-group-', '')) return;
 
                 const existingValue = `existing_${newGroup}`;
-                let exists = Array.from(select.options).some(opt => opt.value === existingValue);
+                const exists = Array.from(select.options).some(opt => opt.value === existingValue);
 
                 if (!exists) {
-                    // Insere a nova opção logo acima da opção "➕ Criar Novo Grupo..."
                     const newOption = new Option(`Agrupar com: ${newGroup}`, existingValue);
                     const customOptIndex = Array.from(select.options).findIndex(o => o.value === 'grupo_custom');
-                    
+
                     if (customOptIndex > -1) {
                         select.add(newOption, customOptIndex);
                     } else {
@@ -19900,8 +20039,8 @@ window.saveDivider = async function(tripId, categoryKey, value) {
 
         window.saveExpenseSettings = async () => {
             if (!currentTripId) return;
-            
-            const { ref, set } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js"); 
+
+            const { ref, set } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js");
             const db = getDatabase();
 
             const selects = document.querySelectorAll('#expense-settings-list select');
@@ -19914,7 +20053,6 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                 if (val === 'isento') {
                     newSettings[uid] = { group: 'none', weight: 0 };
                 } else if (val === 'grupo_custom') {
-                    // Lê o que o usuário digitou no input
                     const customInput = document.getElementById(`custom-group-${uid}`);
                     const groupName = customInput.value.trim();
                     if (groupName) {
@@ -19923,7 +20061,6 @@ window.saveDivider = async function(tripId, categoryKey, value) {
                         newSettings[uid] = { group: 'individual', weight: 1 };
                     }
                 } else if (val.startsWith('existing_')) {
-                    // Remove o prefixo que usamos apenas para a interface
                     const groupName = val.replace('existing_', '');
                     newSettings[uid] = { group: groupName, weight: 1 };
                 } else {
@@ -19932,20 +20069,23 @@ window.saveDivider = async function(tripId, categoryKey, value) {
             });
 
             try {
-                const tripRef = ref(db, `trips/${currentTripId}/expenseSettings`);
-                await set(tripRef, newSettings);
-                
+                await set(ref(db, `trips/${currentTripId}/expenseSettings`), newSettings);
+                await set(ref(db, `trips/${currentTripId}/manualTravelers`), tempManualTravelers);
+
                 const trip = tripsData.find(t => t.id === currentTripId);
-                if (trip) trip.expenseSettings = newSettings;
-                
+                if (trip) {
+                    trip.expenseSettings = newSettings;
+                    trip.manualTravelers = tempManualTravelers;
+                    renderSharedExpenses(trip);
+                }
+
                 closeModal('expense-settings-modal');
             } catch (error) {
                 console.error("Erro ao salvar configurações de rateio:", error);
                 alert("Não foi possível salvar as configurações.");
             }
         };
-
-        // --- FIM: LÓGICA DE CONFIGURAÇÕES DE RATEIO ---
+        // --- FIM: LÓGICA DE CONFIGURAÇÕES DE RATEIO ---   
 
 
     </script>
